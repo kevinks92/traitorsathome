@@ -1761,7 +1761,7 @@ return (
                   if (here.length === 0) return null;
                   return (
                     <div key={key} style={{ display: "flex", alignItems: "center", gap: 10, padding: "7px 10px", background: "rgba(201,168,76,.04)", border: "1px solid rgba(201,168,76,.1)", borderRadius: 3 }}>
-                      <span style={{ fontSize: ".82rem", minWidth: 120, color: "var(--gold2)", fontFamily: "'Cinzel',serif", fontSize: ".6rem" }}>{label}</span>
+                      <span style={{ fontSize: ".6rem", minWidth: 120, color: "var(--gold2)", fontFamily: "'Cinzel',serif" }}>{label}</span>
                       <span style={{ fontSize: ".88rem" }}>{here.map(p => `${p.emoji} ${p.name}`).join("  ")}</span>
                     </div>
                   );
@@ -2696,8 +2696,6 @@ return (
         setSeerLocked={setSeerLocked}
         seerExplain={seerExplain}
         gameId={gameId}
-        deadPlayers={deadPlayers}
-        startGame={startGame}
         dmTriviaQ={dmTriviaQ} setDmTriviaQ={setDmTriviaQ}
         dmTriviaScores={dmTriviaScores} setDmTriviaScores={setDmTriviaScores}
         dmTriviaBank={dmTriviaBank}
