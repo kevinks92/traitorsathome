@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { RULES_TUTORIAL } from "../constants/demoTutorial.jsx";
 
 function TutorialScreen({ mode, step, setStep, setMode, onExit, CSS }) {
 const slides = RULES_TUTORIAL;
@@ -11,43 +12,42 @@ return (
 <style>{CSS}</style>
 <div className="noise" />
 <div className="z1">
-<div className=“hdr” style={{ padding: “20px 16px 12px” }}>
-<div style={{ textAlign: “center”, overflow: “visible” }}>
-<div className=“logo-title flicker” style={{
-fontFamily: “‘Cinzel Decorative’,cursive”,
-fontSize: “clamp(2.4rem,8vw,5rem)”,
+<div className="hdr" style={{ padding: "20px 16px 12px" }}>
+<div style={{ textAlign: "center", overflow: "visible" }}>
+<div className="logo-title flicker" style={{
+fontFamily: "'Cinzel Decorative',cursive",
+fontSize: "clamp(2.4rem,8vw,5rem)",
 fontWeight: 900,
-color: “var(–gold)”,
-letterSpacing: “.06em”,
+color: "var(--gold)",
+letterSpacing: ".06em",
 lineHeight: .9,
-WebkitFontSmoothing: “antialiased”,
-overflow: “visible”,
-display: “block”,
-paddingBottom: “.05em”,
-paddingTop: “.1em”,
+WebkitFontSmoothing: "antialiased",
+overflow: "visible",
+display: "block",
+paddingBottom: ".05em",
+paddingTop: ".1em",
 }}>The Traitors</div>
 <div style={{
-fontFamily: “‘Cinzel Decorative’,cursive”,
-fontSize: “.8rem”,
+fontFamily: "'Cinzel Decorative',cursive",
+fontSize: ".8rem",
 fontWeight: 900,
-letterSpacing: “.2em”,
-color: “var(–gold)”,
-textShadow: “0 0 20px rgba(201,168,76,.4)”,
-textTransform: “uppercase”,
+letterSpacing: ".2em",
+color: "var(--gold)",
+textShadow: "0 0 20px rgba(201,168,76,.4)",
+textTransform: "uppercase",
 marginTop: 6,
 }}>at home</div>
 <div style={{
-fontFamily: “‘Crimson Text’,serif”,
-fontSize: “.88rem”,
-fontStyle: “italic”,
-color: “var(–dim)”,
-letterSpacing: “.04em”,
+fontFamily: "'Crimson Text',serif",
+fontSize: ".88rem",
+fontStyle: "italic",
+color: "var(--dim)",
+letterSpacing: ".04em",
 marginTop: 8,
 }}>a party game of deception and murder</div>
 </div>
 </div>
 
-```
     <div style={{ display: "flex", borderBottom: "1px solid var(--border)", background: "rgba(0,0,0,.3)" }}>
       <div style={{ flex: 1, padding: "10px", textAlign: "center", fontFamily: "'Cinzel',serif", fontSize: ".62rem", letterSpacing: ".12em", textTransform: "uppercase", color: "var(--gold)", borderBottom: "2px solid var(--gold)" }}>
         📜 Rules & Overview
@@ -98,7 +98,6 @@ marginTop: 8,
     </div>
   </div>
 </div>
-```
 
 );
 }

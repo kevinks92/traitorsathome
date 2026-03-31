@@ -3,7 +3,7 @@
 function MsgLog({ messages }) {
 if (!messages?.length) return null;
 return (
-<div className=“card” style={{ marginTop: 14 }}>
+<div className="card" style={{ marginTop: 14 }}>
 <div className="ctitle">Chronicles</div>
 <div className="msglog">
 {[...messages].reverse().map((m, i) => (

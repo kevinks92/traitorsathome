@@ -33,18 +33,18 @@ import { MsgLog }            from "./components/MsgLog.jsx";
 import { GhostChat }         from "./components/GhostChat.jsx";
 
 export default function TraitorsGame() {
-const [screen, setScreen] = useState(“start”);
-const [tutorialMode, setTutorialMode] = useState(“rules”);
+const [screen, setScreen] = useState("start");
+const [tutorialMode, setTutorialMode] = useState("rules");
 const [tutorialStep, setTutorialStep] = useState(0);
-const [joinTab, setJoinTab] = useState(“join”);
-const [playerName, setPlayerName] = useState(””);
-const [joinId, setJoinId] = useState(””);
+const [joinTab, setJoinTab] = useState("join");
+const [playerName, setPlayerName] = useState("");
+const [joinId, setJoinId] = useState("");
 const [game, setGame] = useState(null);
 const [messages, setMessages] = useState([]);
 const [myId, setMyId] = useState(null);
-const [gameId, setGameId] = useState(””);
+const [gameId, setGameId] = useState("");
 const [isHost, setIsHost] = useState(false);
-const [error, setError] = useState(””);
+const [error, setError] = useState("");
 const [loading, setLoading] = useState(false);
 const [copied, setCopied] = useState(false);
 
@@ -64,12 +64,12 @@ const [deathLetter, setDeathLetter] = useState(false); // murder reveal letter f
 const [seerEnabled, setSeerEnabled] = useState(true);
 const [daggerEnabled, setDaggerEnabled] = useState(true);
 const [stRevealPlayerIdx, setStRevealPlayerIdx] = useState(0); // which player is currently being revealed during ST selection
-const [stRevealResult, setStRevealResult] = useState(null);    // what this player’s screen shows during ST selection
+const [stRevealResult, setStRevealResult] = useState(null);    // what this player's screen shows during ST selection
 
 // Game UI state
 const [selectedTarget, setSelectedTarget] = useState(null);
 const [selectedMission, setSelectedMission] = useState(null);
-const [missionFilter, setMissionFilter] = useState(“all”);
+const [missionFilter, setMissionFilter] = useState("all");
 const [dmTriviaQ, setDmTriviaQ] = useState(0);
 const [dmTriviaScores, setDmTriviaScores] = useState({});
 const [dmTriviaBank, setDmTriviaBank] = useState([]);
@@ -78,7 +78,7 @@ const [dmForbiddenWords, setDmForbiddenWords] = useState({});
 const [dmForbiddenElim, setDmForbiddenElim] = useState([]);
 const [dmAuctionBids, setDmAuctionBids] = useState({});
 const [dmAuctionRevealed, setDmAuctionRevealed] = useState(false);
-const [dmWhisperPhrase, setDmWhisperPhrase] = useState(””);
+const [dmWhisperPhrase, setDmWhisperPhrase] = useState("");
 const [dmEmojiIdx, setDmEmojiIdx] = useState(0);
 const [dmName5Idx, setDmName5Idx] = useState(0);
 const [dmName5Round, setDmName5Round] = useState(0);
@@ -95,7 +95,7 @@ const [dmSecretBallotVotes, setDmSecretBallotVotes] = useState({});
 const [dmLastWordCat, setDmLastWordCat] = useState(null);
 const [dmLastWordElim, setDmLastWordElim] = useState([]);
 const [dmRelicObject, setDmRelicObject] = useState(null);
-const [myRoom, setMyRoom] = useState(“living”);
+const [myRoom, setMyRoom] = useState("living");
 const [timerSec, setTimerSec] = useState(0);
 const [pauseElapsed, setPauseElapsed] = useState(0);
 const pauseRef = useRef(null);
@@ -103,20 +103,20 @@ const [timerMax, setTimerMax] = useState(0);
 const [timerRunning, setTimerRunning] = useState(false);
 
 // Night chat
-const [chatDraft, setChatDraft] = useState(””);
+const [chatDraft, setChatDraft] = useState("");
 const [traitorChats, setTraitorChats] = useState([]);
 const [ghostChats, setGhostChats] = useState([]);
-const [ghostDraft, setGhostDraft] = useState(””);
-const [stChatDraft, setStChatDraft] = useState(””);
+const [ghostDraft, setGhostDraft] = useState("");
+const [stChatDraft, setStChatDraft] = useState("");
 const [stChats, setStChats] = useState([]);
 const [seerChats, setSeerChats] = useState([]);
-const [seerDraft, setSeerDraft] = useState(””);
+const [seerDraft, setSeerDraft] = useState("");
 const [recruitChats, setRecruitChats] = useState([]);
-const [recruitDraft, setRecruitDraft] = useState(””);
+const [recruitDraft, setRecruitDraft] = useState("");
 
 // Shortlist (secret traitor)
 const [shortlist, setShortlist] = useState([]);
-const [recruitTarget, setRecruitTarget] = useState(null); // traitor’s recruit pick
+const [recruitTarget, setRecruitTarget] = useState(null); // traitor's recruit pick
 
 // Seer
 const [seerResult, setSeerResult] = useState(null);
@@ -155,15 +155,15 @@ const chatRef = useRef(null);
 const me = game?.players?.find(p => p.id === myId);
 const alivePlayers = game?.players?.filter(p => p.alive) || [];
 const deadPlayers = game?.players?.filter(p => !p.alive) || [];
-const aliveTraitors = alivePlayers.filter(p => p.role === “traitor” || p.role === “secret_traitor”);
+const aliveTraitors = alivePlayers.filter(p => p.role === "traitor" || p.role === "secret_traitor");
 const phaseTimers = game?.phaseDurations || PHASE_TIMERS;
-const aliveFaithful = alivePlayers.filter(p => p.role === “faithful” || p.role === “seer”);
-const isTraitor = me?.role === “traitor”;
-const isSecretTraitor = me?.role === “secret_traitor”;
+const aliveFaithful = alivePlayers.filter(p => p.role === "faithful" || p.role === "seer");
+const isTraitor = me?.role === "traitor";
+const isSecretTraitor = me?.role === "secret_traitor";
 const hasTraitorRole = isTraitor || isSecretTraitor;
 const isGhost = me && !me.alive; // banished or murdered player
 const isSeer = me?.seerRole;
-const knownAllies = isTraitor ? alivePlayers.filter(p => p.role === “traitor” && p.id !== myId) : [];
+const knownAllies = isTraitor ? alivePlayers.filter(p => p.role === "traitor" && p.id !== myId) : [];
 const currentMission = game?.currentMission ? MISSIONS.find(m => m.id === game.currentMission) : null;
 const secretTraitorRevealedInChat = game?.secretTraitorRevealedInChat || false;
 const canJoinTraitorChat = isTraitor || (isSecretTraitor && secretTraitorRevealedInChat);
@@ -172,13 +172,13 @@ const canJoinTraitorChat = isTraitor || (isSecretTraitor && secretTraitorReveale
 useEffect(() => {
 const tryRejoin = async () => {
 try {
-const sess = await window.storage.get(“traitors-session”);
+const sess = await load("traitors-session");
 if (!sess) return;
 const { gId, pId, host, name } = JSON.parse(sess.value);
 const g = await load(gId);
 if (!g || g.phase === PHASES.LOBBY) return;
 setGame(g); setGameId(gId); setMyId(pId); setIsHost(!!host);
-setPlayerName(name || “”); setScreen(“game”);
+setPlayerName(name || ""); setScreen("game");
 } catch(e) {}
 };
 tryRejoin();
@@ -196,44 +196,43 @@ setIsOnline(true);
 const prevPhase = prevPhaseRef.current;
 prevPhaseRef.current = g.phase;
 setGame(g);
-const msgs = await load(gameId + “-msgs”);
+const msgs = await load(gameId + "-msgs");
 if (msgs) setMessages(msgs);
-const chats = await load(gameId + “-traitor-chat”);
+const chats = await load(gameId + "-traitor-chat");
 if (chats) { setTraitorChats(chats); if (chatRef.current) chatRef.current.scrollTop = chatRef.current.scrollHeight; }
-const gChats = await load(gameId + “-ghost-chat”);
+const gChats = await load(gameId + "-ghost-chat");
 if (gChats) setGhostChats(gChats);
 // Poll ST chat only during ST shortlist phase
 if (g.phase === PHASES.NIGHT_SECRET_TRAITOR) {
-const stC = await load(gameId + “-st-chat”);
+const stC = await load(gameId + "-st-chat");
 if (stC) setStChats(stC);
 }
 // Poll seer chat during seer phase (seer player + host + ghosts)
 if (g.phase === PHASES.NIGHT_SEER && (isHost || me?.seerRole || (me && !me.alive))) {
-const sC = await load(gameId + “-seer-chat”);
+const sC = await load(gameId + "-seer-chat");
 if (sC) setSeerChats(sC);
 } else if (g.phase !== PHASES.NIGHT_SEER) {
 setSeerChats([]);
 }
 // Poll recruit chat during recruit response phase (recruit target + host + ghosts)
 if (g.phase === PHASES.NIGHT_RECRUIT_RESPONSE && (isHost || (me && g.recruitTargetId === myId) || (me && !me.alive))) {
-const rC = await load(gameId + “-recruit-chat”);
+const rC = await load(gameId + "-recruit-chat");
 if (rC) setRecruitChats(rC);
 } else if (g.phase !== PHASES.NIGHT_RECRUIT_RESPONSE) {
 setRecruitChats([]);
 }
-const seerR = await load(gameId + “-seer-” + myId);
+const seerR = await load(gameId + "-seer-" + myId);
 if (seerR && !seerResult) setSeerResult(seerR);
-const seerEx = await load(gameId + “-seer-explain-” + myId);
+const seerEx = await load(gameId + "-seer-explain-" + myId);
 if (seerEx && !seerExplain) setSeerExplain(seerEx);
 // Poll for ST reveal result during ST selection phase
 if (g.phase === PHASES.SECRET_TRAITOR_SELECTION) {
-const stR = await load(gameId + “-st-reveal-” + myId);
+const stR = await load(gameId + "-st-reveal-" + myId);
 if (stR) setStRevealResult(stR);
 } else if (stRevealResult) {
 setStRevealResult(null); // clear once phase moves on
 }
 
-```
   if (prevPhase !== g.phase) {
     if (g.phase === PHASES.BANISHMENT) setShowBanishModal(true);
     if (g.phase === PHASES.BREAKFAST) setShowMurderModal(false);
@@ -287,7 +286,7 @@ setStRevealResult(null); // clear once phase moves on
   // Poll avatars for all players
   try {
     const avKey = gameId + "-avatars";
-    const avR = await window.storage.get(avKey);
+    const avR = await load(avKey);
     if (avR) setAvatars(JSON.parse(avR.value));
   } catch(e) {}
   } catch(e) { setIsOnline(false); }
@@ -295,7 +294,6 @@ setStRevealResult(null); // clear once phase moves on
 poll();
 pollRef.current = setInterval(poll, 2200);
 return () => clearInterval(pollRef.current);
-```
 
 }, [gameId, myId]);
 
@@ -336,18 +334,18 @@ useEffect(() => () => { if (timerRef.current) clearInterval(timerRef.current); }
 
 const fmtTime = (s) => `${Math.floor(s/60)}:${String(s%60).padStart(2,"0")}`;
 const timerPct = timerMax > 0 ? (timerSec / timerMax) * 100 : 0;
-const timerClass = timerPct < 15 ? “urgent” : timerPct < 30 ? “warn” : “”;
+const timerClass = timerPct < 15 ? "urgent" : timerPct < 30 ? "warn" : "";
 
 // ── STORAGE HELPERS ────────────────────────────────────────────────────────
 const addMsg = async (gKey, msg) => {
-const msgs = (await load(gKey + “-msgs”)) || [];
+const msgs = (await load(gKey + "-msgs")) || [];
 msgs.push({ ...msg, ts: Date.now() });
-await save(gKey + “-msgs”, msgs);
+await save(gKey + "-msgs", msgs);
 };
 
 // ── CREATE / JOIN ──────────────────────────────────────────────────────────
 const createGame = async () => {
-if (!playerName.trim()) return setError(“Enter your name”);
+if (!playerName.trim()) return setError("Enter your name");
 setLoading(true);
 const gId = genId();
 const hId = genId();
@@ -357,7 +355,7 @@ players: [{ id: hId, name: playerName.trim(), emoji: getEmoji(playerName), role:
 nightVotes: {}, dayVotes: {}, endgameVotes: {},
 round: 0, currentMission: null,
 lastKilled: null, lastBanished: null, winner: null,
-rooms: { [hId]: “living” },
+rooms: { [hId]: "living" },
 secretTraitorEnabled: false,
 breakfastGroups: [],
 breakfastGroupIdx: 0,
@@ -366,52 +364,51 @@ secretTraitorRevealedInChat: false,
 currentRound: 0,
 };
 await save(gId, g);
-await save(gId + “-msgs”, []);
-await save(gId + “-traitor-chat”, []);
-await save(gId + “-ghost-chat”, []);
+await save(gId + "-msgs", []);
+await save(gId + "-traitor-chat", []);
+await save(gId + "-ghost-chat", []);
 setGame(g); setGameId(gId); setMyId(hId);
-setIsHost(true); setScreen(“game”); setLoading(false); setError(””);
-try { await window.storage.set(“traitors-session”, JSON.stringify({ gId, pId: hId, host: true, name: playerName.trim() })); } catch(e) {}
+setIsHost(true); setScreen("game"); setLoading(false); setError("");
+try { await save("traitors-session", JSON.stringify({ gId, pId: hId, host: true, name: playerName.trim() })); } catch(e) {}
 };
 
 const joinGame = async () => {
-if (!playerName.trim()) return setError(“Enter your name”);
-if (!joinId.trim()) return setError(“Enter a Game ID”);
+if (!playerName.trim()) return setError("Enter your name");
+if (!joinId.trim()) return setError("Enter a Game ID");
 setLoading(true);
 const key = joinId.trim().toUpperCase();
 const g = await load(key);
-if (!g) { setLoading(false); return setError(“Game not found.”); }
+if (!g) { setLoading(false); return setError("Game not found."); }
 if (g.phase !== PHASES.LOBBY) {
 const sId = genId();
 setGame(g); setGameId(key); setMyId(sId);
-setIsHost(false); setScreen(“game”); setLoading(false); setError(””);
-try { await window.storage.set(“traitors-session”, JSON.stringify({ gId: key, pId: sId, host: false, name: playerName.trim() })); } catch(e) {}
+setIsHost(false); setScreen("game"); setLoading(false); setError("");
+try { await save("traitors-session", JSON.stringify({ gId: key, pId: sId, host: false, name: playerName.trim() })); } catch(e) {}
 return;
 }
-if (g.players.length >= 24) { setLoading(false); return setError(“Game is full — maximum 24 players.”); }
-if (g.players.find(p => p.name.toLowerCase() === playerName.trim().toLowerCase())) { setLoading(false); return setError(“Name already taken.”); }
+if (g.players.length >= 24) { setLoading(false); return setError("Game is full — maximum 24 players."); }
+if (g.players.find(p => p.name.toLowerCase() === playerName.trim().toLowerCase())) { setLoading(false); return setError("Name already taken."); }
 const pId = genId();
-const updated = { ...g, players: [...g.players, { id: pId, name: playerName.trim(), emoji: getEmoji(playerName), role: null, alive: true, shield: false, dagger: false, seerRole: false }], rooms: { ...g.rooms, [pId]: “living” } };
+const updated = { ...g, players: [...g.players, { id: pId, name: playerName.trim(), emoji: getEmoji(playerName), role: null, alive: true, shield: false, dagger: false, seerRole: false }], rooms: { ...g.rooms, [pId]: "living" } };
 await save(key, updated);
 setGame(updated); setGameId(key); setMyId(pId);
-setIsHost(false); setScreen(“game”); setLoading(false); setError(””);
-try { await window.storage.set(“traitors-session”, JSON.stringify({ gId: key, pId, host: false, name: playerName.trim() })); } catch(e) {}
+setIsHost(false); setScreen("game"); setLoading(false); setError("");
+try { await save("traitors-session", JSON.stringify({ gId: key, pId, host: false, name: playerName.trim() })); } catch(e) {}
 };
 
 // ── START GAME ─────────────────────────────────────────────────────────────
 const startGame = async () => {
 // Require all players to have submitted avatars
-const avKey = gameId + “-avatars”;
-const avRaw = await window.storage.get(avKey, true).catch(()=>null);
-const avMap = avRaw ? JSON.parse(avRaw.value) : {};
+const avKey = gameId + "-avatars";
+const avRaw = await load(avKey).catch(()=>null);
+const avMap = avRaw || {};
 const missingAvatars = game.players.filter(p => !avMap[p.id] && p.id !== myId && !myAvatar);
 // Just check the count — host can override if needed
-if (!game || game.players.length < 10) return setError(“Need at least 10 players to start”);
-const cleanManual = manualTraitorIds.filter(id => id !== ‘select’);
+if (!game || game.players.length < 10) return setError("Need at least 10 players to start");
+const cleanManual = manualTraitorIds.filter(id => id !== 'select');
 const tc = cleanManual.length > 0 ? cleanManual.length : Math.min(traitorCount, Math.floor(game.players.length / 3));
 const n = game.players.length;
 
-```
 // Each round removes ~2 players (1 banishment + 1 murder).
 // We need (n - 4) eliminations to reach the final 4.
 // That takes ceil((n-4)/2) rounds.
@@ -478,7 +475,6 @@ const updated = {
 await save(gameId, updated);
 await addMsg(gameId, { type: "system", text: `⚔️ The castle doors close. ${tc} Traitor${tc > 1 ? "s" : ""} walk among you. Good luck. You'll need it.` });
 setGame(updated);
-```
 
 };
 
@@ -506,13 +502,13 @@ await save(gameId, updated); setGame(updated);
 stopTimer();
 };
 
-// Host: reveal current player’s ST status during ceremony
-// Sends a private result to that player’s screen, then advances to next player
+// Host: reveal current player's ST status during ceremony
+// Sends a private result to that player's screen, then advances to next player
 const stRevealPlayer = async (playerId) => {
 const g = await load(gameId);
 const isTheOne = playerId === g.stCandidateId;
 // Write private result for this player to read on their screen
-await save(gameId + “-st-reveal-” + playerId, { isSecretTraitor: isTheOne, ts: Date.now() });
+await save(gameId + "-st-reveal-" + playerId, { isSecretTraitor: isTheOne, ts: Date.now() });
 setGame(g); // refresh
 };
 
@@ -521,9 +517,9 @@ const g = await load(gameId);
 const nextIdx = (g.stSelectionIdx || 0) + 1;
 if (nextIdx >= g.players.length) {
 // All players revealed — now lock in ST role and move to role reveal
-const withST = g.players.map(p => p.id === g.stCandidateId ? { ...p, role: “secret_traitor” } : p);
+const withST = g.players.map(p => p.id === g.stCandidateId ? { ...p, role: "secret_traitor" } : p);
 const updated = { ...g, players: withST, stSelectionDone: true, phase: PHASES.ROLE_REVEAL, stSelectionIdx: nextIdx };
-await addMsg(gameId, { type: “system”, text: “🎭 The Secret Traitor has been chosen. They know who they are. Nobody else does. Yet.” });
+await addMsg(gameId, { type: "system", text: "🎭 The Secret Traitor has been chosen. They know who they are. Nobody else does. Yet." });
 await save(gameId, updated);
 setGame(updated);
 } else {
@@ -543,7 +539,7 @@ setGame(updated);
 
 const releaseRoles = async () => {
 const g = await load(gameId);
-const updated = { ...g, rolesReleased: true, roleRevealStep: “silence” };
+const updated = { ...g, rolesReleased: true, roleRevealStep: "silence" };
 await save(gameId, updated);
 setGame(updated);
 startTimer(60);
@@ -551,7 +547,7 @@ startTimer(60);
 
 const finishRoleReveal = async () => {
 const g = await load(gameId);
-const updated = { ...g, roleRevealStep: “done” };
+const updated = { ...g, roleRevealStep: "done" };
 await save(gameId, updated);
 setGame(updated);
 };
@@ -567,20 +563,20 @@ setDmHotTakeVotes({}); setDmDrawWinner(null);
 setDmWitnessQs([]); setDmWitnessQ(0); setDmWitnessScores({});
 setDmSecretBallotVotes({});
 setDmLastWordElim([]); setDmLastWordCat(null); setDmRelicObject(null);
-if (m?.digitalType === “last_word”) {
+if (m?.digitalType === "last_word") {
 const cat = LAST_WORD_CATEGORIES[Math.floor(Math.random() * LAST_WORD_CATEGORIES.length)];
 setDmLastWordCat(cat);
 }
-if (m?.digitalType === “the_relic”) {
+if (m?.digitalType === "the_relic") {
 const obj = RELIC_OBJECTS[Math.floor(Math.random() * RELIC_OBJECTS.length)];
 setDmRelicObject(obj);
 }
-if (m?.digitalType === “trivia_scored” || m?.digitalType === “trivia_buzzer”) {
+if (m?.digitalType === "trivia_scored" || m?.digitalType === "trivia_buzzer") {
 const shuffled = [...TRIVIA_BANK].sort(() => Math.random() - 0.5).slice(0, 10);
 setDmTriviaBank(shuffled);
 }
-if (m?.digitalType === “forbidden_word”) {
-const wordPool = [“castle”,“shadow”,“trust”,“knife”,“night”,“secret”,“vote”,“shield”,“traitor”,“innocent”,“never”,“always”,“guilty”,“obvious”,“honest”,“blood”,“dark”,“silent”,“hidden”,“certain”];
+if (m?.digitalType === "forbidden_word") {
+const wordPool = ["castle","shadow","trust","knife","night","secret","vote","shield","traitor","innocent","never","always","guilty","obvious","honest","blood","dark","silent","hidden","certain"];
 const words = {}; const g = await load(gameId);
 const alive = (g.players||[]).filter(p=>p.alive);
 const shuffled = [...wordPool].sort(()=>Math.random()-0.5);
@@ -588,54 +584,54 @@ alive.forEach((pl,i) => { words[pl.id] = shuffled[i % shuffled.length]; });
 setDmForbiddenWords(words);
 // Push each word privately via storage
 for (const [pid, word] of Object.entries(words)) {
-await save(gameId + “-fw-” + pid, word);
+await save(gameId + "-fw-" + pid, word);
 }
 }
-if (m?.digitalType === “whisper_chain”) {
+if (m?.digitalType === "whisper_chain") {
 const phrase = WHISPER_PHRASES[Math.floor(Math.random() * WHISPER_PHRASES.length)];
 setDmWhisperPhrase(phrase);
 // Will be sent to team leaders by host tapping
 }
-if (m?.digitalType === “emoji_cipher”) {
+if (m?.digitalType === "emoji_cipher") {
 const eidx = Math.floor(Math.random() * EMOJI_CIPHERS.length);
 setDmEmojiIdx(eidx);
-await save(gameId + “-emoji-cipher”, EMOJI_CIPHERS[eidx].emoji);
+await save(gameId + "-emoji-cipher", EMOJI_CIPHERS[eidx].emoji);
 }
-if (m?.digitalType === “name5”) {
+if (m?.digitalType === "name5") {
 const nidx = Math.floor(Math.random() * NAME5_CATEGORIES.length);
 setDmName5Idx(nidx);
 setDmName5Round(0); setDmName5Scores({});
-await save(gameId + “-name5-cat”, NAME5_CATEGORIES[nidx].cat);
+await save(gameId + "-name5-cat", NAME5_CATEGORIES[nidx].cat);
 }
-if (m?.digitalType === “rps_bracket”) {
+if (m?.digitalType === "rps_bracket") {
 const g = await load(gameId);
 const alive = (g.players||[]).filter(p=>p.alive).map(p=>p.id);
 const shuffled = [...alive].sort(()=>Math.random()-0.5);
 setDmRpsBracket(shuffled);
 }
-if (m?.digitalType === “hot_take”) {
+if (m?.digitalType === "hot_take") {
 const htIdx = Math.floor(Math.random() * HOT_TAKES.length);
 setDmHotTakeIdx(htIdx);
-await save(gameId + “-hot-take”, HOT_TAKES[htIdx]);
+await save(gameId + "-hot-take", HOT_TAKES[htIdx]);
 }
-if (m?.digitalType === “the_draw”) {
+if (m?.digitalType === "the_draw") {
 const g = await load(gameId);
 const alive = (g.players||[]).filter(p=>p.alive);
 const winner = alive[Math.floor(Math.random() * alive.length)];
 setDmDrawWinner(winner?.id || null);
-if (winner) await save(gameId + “-draw-winner”, winner.id);
+if (winner) await save(gameId + "-draw-winner", winner.id);
 }
-if (m?.digitalType === “the_witness”) {
+if (m?.digitalType === "the_witness") {
 const g = await load(gameId);
 const qs = generateWitnessQuestions(g, g.players||[]);
 setDmWitnessQs(qs); setDmWitnessQ(0); setDmWitnessScores({});
 // Push questions to player phones (strip opts function — not serialisable)
 const qsForPlayers = qs.map((q, i) => ({ q: q.q, a: q.a, opts: q.opts ? q.opts() : [q.a], idx: i }));
-await save(gameId + “-witness-qs”, qsForPlayers);
-await save(gameId + “-witness-answers”, {});
+await save(gameId + "-witness-qs", qsForPlayers);
+await save(gameId + "-witness-answers", {});
 }
-if (m?.digitalType === “secret_ballot”) {
-await save(gameId + “-ballot-votes”, {});
+if (m?.digitalType === "secret_ballot") {
+await save(gameId + "-ballot-votes", {});
 }
 await advanceTo(PHASES.MISSION_ACTIVE, { currentMission: selectedMission });
 setSelectedMission(null);
@@ -643,35 +639,35 @@ setSelectedMission(null);
 
 const castleMsg = async (text) => {
 try {
-const msgs = (await load(gameId + “-ghost-chat”)) || [];
-msgs.push({ sender: “🏰 THE CASTLE”, senderId: “system”, text, ts: Date.now(), isSystem: true });
-await save(gameId + “-ghost-chat”, msgs);
+const msgs = (await load(gameId + "-ghost-chat")) || [];
+msgs.push({ sender: "🏰 THE CASTLE", senderId: "system", text, ts: Date.now(), isSystem: true });
+await save(gameId + "-ghost-chat", msgs);
 setGhostChats([...msgs]);
 } catch(e) {}
 };
 
 const sendSeerChat = async () => {
 if (!seerDraft.trim()) return;
-const name = isHost ? “🏰 Host” : (me?.name || “Seer”);
-const msgs = (await load(gameId + “-seer-chat”)) || [];
+const name = isHost ? "🏰 Host" : (me?.name || "Seer");
+const msgs = (await load(gameId + "-seer-chat")) || [];
 msgs.push({ sender: name, senderId: myId, text: seerDraft.trim(), ts: Date.now() });
-await save(gameId + “-seer-chat”, msgs);
-setSeerChats(msgs); setSeerDraft(””);
+await save(gameId + "-seer-chat", msgs);
+setSeerChats(msgs); setSeerDraft("");
 };
 
 const sendRecruitChat = async () => {
 if (!recruitDraft.trim()) return;
-const msgs = (await load(gameId + “-recruit-chat”)) || [];
-const name = isHost ? “🏰 Host” : (me?.name || “Recruit”);
+const msgs = (await load(gameId + "-recruit-chat")) || [];
+const name = isHost ? "🏰 Host" : (me?.name || "Recruit");
 msgs.push({ sender: name, senderId: myId, text: recruitDraft.trim(), ts: Date.now() });
-await save(gameId + “-recruit-chat”, msgs);
-setRecruitChats(msgs); setRecruitDraft(””);
+await save(gameId + "-recruit-chat", msgs);
+setRecruitChats(msgs); setRecruitDraft("");
 };
 
 const awardPower = async (pId, power, shieldMode) => {
 const g = await load(gameId);
 let updated;
-if (power === “shield”) {
+if (power === "shield") {
 // Max 25% of alive players can hold shields at once
 const alive = g.players.filter(p => p.alive);
 const maxShields = Math.max(1, Math.floor(alive.length * 0.25));
@@ -679,36 +675,36 @@ const currentShields = alive.filter(p => p.shield).length;
 if (currentShields >= maxShields) return;
 const winnerPlayer = g.players.find(p => p.id === pId);
 updated = { ...g, players: g.players.map(p => p.id === pId ? { ...p, shield: true } : p) };
-const mode = shieldMode || “hidden_winner”;
+const mode = shieldMode || "hidden_winner";
 let msg;
-if (mode === “public” || mode === “all_know”) {
+if (mode === "public" || mode === "all_know") {
 msg = `🛡️ ${winnerPlayer?.name} has won a Shield — and everyone knows it. Use that information accordingly.`;
-} else if (mode === “team_hidden”) {
+} else if (mode === "team_hidden") {
 msg = `🛡️ The winning team has been shielded. Only they know. Everyone else: speculate freely.`;
 } else {
 msg = `🛡️ A shield was quietly slipped to someone. They know. You don't. Isn't that fun.`;
 }
-await addMsg(gameId, { type: “power”, text: msg });
+await addMsg(gameId, { type: "power", text: msg });
 // Castle ghost update — reveals winner only if public mode
-if (mode === “public” || mode === “all_know”) {
+if (mode === "public" || mode === "all_know") {
 await castleMsg(`🛡️ ${winnerPlayer?.emoji} ${winnerPlayer?.name} has won a Shield — publicly awarded.`);
-} else if (mode === “team_hidden”) {
+} else if (mode === "team_hidden") {
 await castleMsg(`🛡️ A Shield was awarded to someone on the winning team. Identity hidden.`);
 } else {
 await castleMsg(`🛡️ A Shield was secretly awarded to someone. Only they know.`);
 }
-} else if (power === “dagger”) {
+} else if (power === "dagger") {
 if (g.daggerAwarded) return;
 updated = { ...g, daggerAwarded: true, players: g.players.map(p => p.id === pId ? { ...p, dagger: true } : p) };
 await castleMsg(`🗡️ The Dagger has been awarded to a player. It will double their vote at the Round Table — once. Only the holder knows.`);
-} else if (power === “seer”) {
+} else if (power === "seer") {
 if (g.seerAwarded) return;
 updated = { ...g, seerAwarded: true, players: g.players.map(p => p.id === pId ? { ...p, seerRole: true } : p) };
 await castleMsg(`👁️ The Seer power has been bestowed on a player. Each night they may interrogate one person — the truth will be theirs alone.`);
-// Send private explanation to the seer’s storage key — no public message
-await save(gameId + “-seer-explain-” + pId, {
+// Send private explanation to the seer's storage key — no public message
+await save(gameId + "-seer-explain-" + pId, {
 ts: Date.now(),
-msg: “You have been awarded the Seer power. Each night, the host will wake you before the Traitors. You may privately interrogate one player — their true role (Faithful or Traitor) will be revealed on your screen alone. You are free to share what you learn with others, but revealing that you hold the Seer power makes you a target. You may also choose to save your power for a future night.”,
+msg: "You have been awarded the Seer power. Each night, the host will wake you before the Traitors. You may privately interrogate one player — their true role (Faithful or Traitor) will be revealed on your screen alone. You are free to share what you learn with others, but revealing that you hold the Seer power makes you a target. You may also choose to save your power for a future night.",
 });
 }
 if (updated) { await save(gameId, updated); setGame(updated); }
@@ -716,7 +712,7 @@ if (updated) { await save(gameId, updated); setGame(updated); }
 
 const hostBeginNight = async () => {
 const g = await load(gameId);
-const isSTInPlay = g.secretTraitorEnabled && g.players.some(p => p.role === “secret_traitor” && p.alive);
+const isSTInPlay = g.secretTraitorEnabled && g.players.some(p => p.role === "secret_traitor" && p.alive);
 const shouldRevealST = isSTInPlay && g.currentRound >= g.secretTraitorRevealCycle && !g.secretTraitorRevealedInChat;
 // Build breakfast groups for tomorrow
 const alive = g.players.filter(p => p.alive);
@@ -735,12 +731,11 @@ i += size;
 // 4. ST shortlist ONLY if NOT being revealed this night
 // 5. Traitor chat (Turret)
 const hasSeer = g.players.some(p => p.seerRole && p.alive);
-const aliveTraitors = alive.filter(p => p.role === “traitor” || p.role === “secret_traitor”);
+const aliveTraitors = alive.filter(p => p.role === "traitor" || p.role === "secret_traitor");
 const soloTraitor = aliveTraitors.length === 1;
 const canRecruit = soloTraitor && alive.length >= 6;
-const canUseTurret = !soloTraitor || alive.length >= 6; // solo traitor with only 5 alive can’t use Turret
+const canUseTurret = !soloTraitor || alive.length >= 6; // solo traitor with only 5 alive can't use Turret
 
-```
 let nightPhase;
 if (canRecruit) {
   nightPhase = PHASES.NIGHT_RECRUIT;
@@ -791,13 +786,12 @@ await addMsg(gameId, { type: "system", text: "🌙 Night falls on the castle. Th
 const timers = g.phaseDurations || PHASE_TIMERS;
 startTimer(timers.night_sequester * 60);
 setGame(updated);
-```
 
 };
 
 const hostEndSeerPhase = async () => {
 const g = await load(gameId);
-const isSTInPlay = g.secretTraitorEnabled && g.players.some(p => p.role === “secret_traitor” && p.alive);
+const isSTInPlay = g.secretTraitorEnabled && g.players.some(p => p.role === "secret_traitor" && p.alive);
 // On reveal night, ST skips shortlist and goes straight to Turret (they stay awake)
 const nextPhase = isSTInPlay && !g.secretTraitorRevealedInChat && !g.stBeingRevealedThisNight
 ? PHASES.NIGHT_SECRET_TRAITOR
@@ -817,11 +811,11 @@ setRecruitTarget(null);
 const acceptRecruitment = async () => {
 const g = await load(gameId);
 const me2 = g.players.find(p => p.id === myId);
-const newPlayers = g.players.map(p => p.id === myId ? { ...p, role: “traitor” } : p);
+const newPlayers = g.players.map(p => p.id === myId ? { ...p, role: "traitor" } : p);
 const updated = { ...g, players: newPlayers, phase: PHASES.NIGHT_TRAITOR_CHAT, recruitTargetId: null, recruitDeclined: false, recruitedThisNight: true };
 await save(gameId, updated); setGame(updated);
 await castleMsg(`🗡️ ${me2?.emoji} ${me2?.name} has accepted the offer and joined the Traitors. The Turret grows.`);
-await save(gameId + “-recruit-chat”, []); setRecruitChats([]);
+await save(gameId + "-recruit-chat", []); setRecruitChats([]);
 };
 
 // Faithful declines → murdered; if now 5 alive, no more recruiting AND no Turret — go to breakfast
@@ -832,7 +826,7 @@ const target = g.players.find(p => p.id === targetId);
 // Shield blocks decline-murder
 let newPlayers;
 if (target?.shield) {
-await addMsg(gameId, { type: “power”, text: `🛡️ ${target.name} refused recruitment — and had a Shield. The attempt was blocked. Their shield expires at breakfast.` });
+await addMsg(gameId, { type: "power", text: `🛡️ ${target.name} refused recruitment — and had a Shield. The attempt was blocked. Their shield expires at breakfast.` });
 newPlayers = g.players.map(p => p.id === targetId ? { ...p, shield: false } : p);
 } else {
 newPlayers = g.players.map(p => p.id === targetId ? { ...p, alive: false, isGhost: true } : p);
@@ -843,23 +837,23 @@ const aliveAfter = dagStripped.filter(p => p.alive).length;
 const shieldBlocked = !!target?.shield;
 const noMurderPossible = aliveAfter <= 5;
 if (!shieldBlocked) {
-await addMsg(gameId, { type: “system”, text: `🌙 ${target?.name} refused recruitment and was murdered. The Traitor will now convene in the Turret to debrief${noMurderPossible ? " — but with only " + aliveAfter + " players remaining, no further murder is possible tonight." : "."}` });
+await addMsg(gameId, { type: "system", text: `🌙 ${target?.name} refused recruitment and was murdered. The Traitor will now convene in the Turret to debrief${noMurderPossible ? " — but with only " + aliveAfter + " players remaining, no further murder is possible tonight." : "."}` });
 await castleMsg(`❌ ${target?.emoji} ${target?.name} refused recruitment and was immediately eliminated. They died a Faithful.`);
 } else {
 await castleMsg(`🛡️ ${target?.emoji} ${target?.name} refused recruitment — but their Shield blocked the murder. They survive, Shield spent.`);
 }
 // Post decline status to Turret chat so Traitor sees it
-const chats = (await load(gameId + “-traitor-chat”)) || [];
+const chats = (await load(gameId + "-traitor-chat")) || [];
 chats.push({
-sender: “🏰 THE CASTLE”,
-senderId: “system”,
+sender: "🏰 THE CASTLE",
+senderId: "system",
 text: shieldBlocked
 ? `😬 ${target?.name} has declined your offer. Even worse — they had a Shield, and it saved them from murder. They're alive, they know you tried to recruit them, and breakfast is going to be absolutely delightful. Good luck.`
 : `⚰️ ${target?.name} refused recruitment and has been eliminated. ${noMurderPossible ? "With only " + aliveAfter + " players remaining, no Turret murder is possible — morning comes after this debrief." : "You may now recruit again or proceed to morning."}`,
 ts: Date.now(),
 isSystem: true,
 });
-await save(gameId + “-traitor-chat”, chats);
+await save(gameId + "-traitor-chat", chats);
 const updated = {
 ...g,
 players: newPlayers,
@@ -873,7 +867,7 @@ canTwoTraitorRecruit: false, // one chance — used, regardless of outcome
 lastKilled: !shieldBlocked ? { name: target?.name, emoji: target?.emoji, role: target?.role } : g.lastKilled,
 };
 await save(gameId, updated); setGame(updated);
-await save(gameId + “-recruit-chat”, []); setRecruitChats([]);
+await save(gameId + "-recruit-chat", []); setRecruitChats([]);
 };
 
 // Host advances from recruit phase once traitor has locked in (host shows target their screen)
@@ -885,20 +879,20 @@ const hostEndSecretTraitorPhase = async () => {
 const g = await load(gameId);
 if (g.stBeingRevealedThisNight) {
 // Promote the secret traitor to regular traitor
-const stPlayer = g.players.find(p => p.role === “secret_traitor” && p.alive);
+const stPlayer = g.players.find(p => p.role === "secret_traitor" && p.alive);
 const newPlayers = g.players.map(p =>
-p.role === “secret_traitor” ? { ...p, role: “traitor” } : p
+p.role === "secret_traitor" ? { ...p, role: "traitor" } : p
 );
 // Inject dramatic reveal into traitor chat
-const chats = (await load(gameId + “-traitor-chat”)) || [];
+const chats = (await load(gameId + "-traitor-chat")) || [];
 chats.push({
-sender: “🎭 THE CASTLE”,
-senderId: “system”,
+sender: "🎭 THE CASTLE",
+senderId: "system",
 text: `THE SECRET TRAITOR HAS BEEN REVEALED — IT'S ${stPlayer?.name?.toUpperCase() || "UNKNOWN"}. They are now one of you. Welcome them. Or don't. Either way — you're all Traitors now.`,
 ts: Date.now(),
 isSystem: true,
 });
-await save(gameId + “-traitor-chat”, chats);
+await save(gameId + "-traitor-chat", chats);
 const updated = {
 ...g,
 phase: PHASES.NIGHT_TRAITOR_CHAT,
@@ -912,7 +906,7 @@ if (stPlayer) await castleMsg(`🎭 The Secret Traitor has been revealed to thei
 } else {
 await advanceTo(PHASES.NIGHT_TRAITOR_CHAT);
 }
-await save(gameId + “-st-chat”, []); // clear ST chat — phase is over
+await save(gameId + "-st-chat", []); // clear ST chat — phase is over
 setStChats([]);
 const timers = (await load(gameId))?.phaseDurations || PHASE_TIMERS;
 startTimer(timers.night_traitor_chat * 60);
@@ -922,64 +916,64 @@ const resolveNight = async () => {
 const g = await load(gameId);
 // If a new Traitor was recruited this night, they meet their allies in the Turret but no murder happens
 if (g.recruitedThisNight) {
-await addMsg(gameId, { type: “system”, text: “🌙 A new Traitor was recruited tonight. The Turret met but no murder was committed — the night of recruitment is always safe.” });
+await addMsg(gameId, { type: "system", text: "🌙 A new Traitor was recruited tonight. The Turret met but no murder was committed — the night of recruitment is always safe." });
 const newPlayers = g.players.map(p => ({ ...p, shield: false }));
 const updated = { ...g, players: newPlayers, phase: PHASES.BREAKFAST, lastKilled: null, nightVotes: {}, recruitedThisNight: false };
-await save(gameId + “-traitor-chat”, []);
+await save(gameId + "-traitor-chat", []);
 await save(gameId, updated); setGame(updated);
 return;
 }
 // Decline with no murder possible (≤5 alive after decline) — Turret debriefed, go to breakfast
 if (g.declineNoMurder) {
-await addMsg(gameId, { type: “system”, text: `🌙 The night ends. ${g.recruitDeclinedName || "The target"} refused and was eliminated. With too few players remaining, no Turret murder is possible. Morning comes.` });
+await addMsg(gameId, { type: "system", text: `🌙 The night ends. ${g.recruitDeclinedName || "The target"} refused and was eliminated. With too few players remaining, no Turret murder is possible. Morning comes.` });
 const newPlayers = g.players.map(p => ({ ...p, shield: false }));
 const updated = { ...g, players: newPlayers, phase: PHASES.BREAKFAST, nightVotes: {}, declineNoMurder: false };
-await save(gameId + “-traitor-chat”, []);
+await save(gameId + "-traitor-chat", []);
 await save(gameId, updated); setGame(updated);
 return;
 }
 const votes = g.nightVotes || {};
-const aliveTraitors = g.players.filter(p => (p.role === “traitor” || p.role === “secret_traitor”) && p.alive);
+const aliveTraitors = g.players.filter(p => (p.role === "traitor" || p.role === "secret_traitor") && p.alive);
 const voteValues = Object.values(votes);
 const allVoted = aliveTraitors.every(t => votes[t.id]);
 const unanimous = allVoted && voteValues.length > 0 && new Set(voteValues).size === 1;
 let updated;
 if (!unanimous) {
 const reason = voteValues.length === 0
-? “The Traitors couldn’t agree before time ran out. No murder tonight.”
-: “The Traitors were divided. No unanimous target — no murder tonight.”;
-await addMsg(gameId, { type: “system”, text: `🌙 ${reason} The Faithful sleep soundly, unaware of how close it was.` });
+? "The Traitors couldn't agree before time ran out. No murder tonight."
+: "The Traitors were divided. No unanimous target — no murder tonight.";
+await addMsg(gameId, { type: "system", text: `🌙 ${reason} The Faithful sleep soundly, unaware of how close it was.` });
 const noMurderPlayers = g.players.map(p => ({ ...p, shield: false }));
 updated = { ...g, players: noMurderPlayers, phase: PHASES.BREAKFAST, lastKilled: null, nightVotes: {} };
 } else {
 const targetId = voteValues[0];
 const target = g.players.find(p => p.id === targetId);
 if (target?.shield) {
-await addMsg(gameId, { type: “power”, text: “🛡️ The Traitors were unanimous — and their target had a Shield. It blocks the attempt. Their target survives. Their dignity does not.” });
+await addMsg(gameId, { type: "power", text: "🛡️ The Traitors were unanimous — and their target had a Shield. It blocks the attempt. Their target survives. Their dignity does not." });
 await castleMsg(`🛡️ The Traitors targeted someone last night — but their Shield blocked it. ${target.emoji} ${target.name} survives. The Shield is spent.`);
 const newPlayers = g.players.map(p => p.id === targetId ? { ...p, shield: false } : p);
 // Track shield block for stats
 const shieldLog = [...(g.shieldLog || []), { round: g.currentRound || 1, savedId: targetId }];
-const shieldTl = [...(g.timeline || []), { round: g.currentRound || 1, type: “shield”, text: `🛡️ Night ${g.currentRound || 1}: ${target.emoji} ${target.name}'s Shield blocked a murder attempt.` }];
+const shieldTl = [...(g.timeline || []), { round: g.currentRound || 1, type: "shield", text: `🛡️ Night ${g.currentRound || 1}: ${target.emoji} ${target.name}'s Shield blocked a murder attempt.` }];
 updated = { ...g, players: newPlayers, phase: PHASES.BREAKFAST, lastKilled: null, nightVotes: {}, shieldLog, timeline: shieldTl };
 } else {
 const newPlayers = g.players.map(p => p.id === targetId ? { ...p, alive: false, isGhost: true } : p);
-await addMsg(gameId, { type: “death”, text: `🌙 Dawn breaks on the castle. ${target.name}'s seat at breakfast will be conspicuously, permanently empty.` });
+await addMsg(gameId, { type: "death", text: `🌙 Dawn breaks on the castle. ${target.name}'s seat at breakfast will be conspicuously, permanently empty.` });
 await castleMsg(`🌙 The Traitors struck last night. ${target.emoji} ${target.name} has been murdered.`);
 // Append to kill log for end-game stats
 const killLog = [...(g.killLog || []), { round: g.currentRound || 1, killedId: targetId, killedRole: target.role }];
-const tl = [...(g.timeline || []), { round: g.currentRound || 1, type: “murder”, text: `🌙 Night ${g.currentRound || 1}: ${target.emoji} ${target.name} was murdered.` }];
+const tl = [...(g.timeline || []), { round: g.currentRound || 1, type: "murder", text: `🌙 Night ${g.currentRound || 1}: ${target.emoji} ${target.name} was murdered.` }];
 updated = { ...g, players: newPlayers, phase: PHASES.BREAKFAST, lastKilled: { name: target.name, emoji: target.emoji, role: target.role }, nightVotes: {}, killLog, timeline: tl };
 }
 }
 // Archive the turret chat before clearing it
-const currentChats = await load(gameId + “-traitor-chat”) || [];
+const currentChats = await load(gameId + "-traitor-chat") || [];
 if (currentChats.length) {
-const archR = await load(gameId + “-traitor-chat-archive”);
+const archR = await load(gameId + "-traitor-chat-archive");
 const archive = archR ? [...archR, ...currentChats] : currentChats;
-await save(gameId + “-traitor-chat-archive”, archive);
+await save(gameId + "-traitor-chat-archive", archive);
 }
-await save(gameId + “-traitor-chat”, []);
+await save(gameId + "-traitor-chat", []);
 // Shields expire each morning — clear all regardless of whether they were used
 updated = { ...updated, players: updated.players.map(p => ({ ...p, shield: false })) };
 // No mid-game win conditions. Everyone goes to the Fire of Truth. Always.
@@ -1000,7 +994,6 @@ tally[tId] = (tally[tId] || 0) + w;
 const sorted = Object.entries(tally).sort((a, b) => b[1] - a[1]);
 const isTie = !sorted.length || (sorted.length > 1 && sorted[0][1] === sorted[1][1]);
 
-```
 if (isTie) {
   const topScore = sorted.length ? sorted[0][1] : 0;
   const tiedIds = sorted.filter(([,v]) => v === topScore).map(([id]) => id);
@@ -1076,7 +1069,6 @@ updated = { ...updated, banishLog, timeline: banTl };
 // No mid-game win conditions. Everyone goes to the Fire of Truth. Always.
 await save(gameId, updated); setGame(updated);
 setShowBanishModal(true);
-```
 
 };
 
@@ -1094,11 +1086,11 @@ const nextRound = g.round + 1;
 const nextCurrentRound = (g.currentRound || 1) + 1;
 if (alive.length <= 4) {
 // 4 remain — Fire of Truth
-await addMsg(gameId, { type: “system”, text: `🔥 Only ${alive.length} remain. The Fire of Truth awaits.` });
+await addMsg(gameId, { type: "system", text: `🔥 Only ${alive.length} remain. The Fire of Truth awaits.` });
 await advanceTo(PHASES.ENDGAME_FREE_ROAM, { endgameVotes: {}, round: nextRound, currentRound: nextCurrentRound, breakfastRevealed: false });
 } else if (alive.length === 5) {
 // 5 remain — skip mission, go straight to final free roam before last banishment
-await addMsg(gameId, { type: “system”, text: `⚔️ Five remain. No mission — the final Round Table follows this roam.` });
+await addMsg(gameId, { type: "system", text: `⚔️ Five remain. No mission — the final Round Table follows this roam.` });
 await advanceTo(PHASES.FREE_ROAM, { round: nextRound, currentRound: nextCurrentRound, breakfastRevealed: false });
 } else {
 await advanceTo(PHASES.MISSION_BRIEFING, { currentMission: null, round: nextRound, currentRound: nextCurrentRound, breakfastRevealed: false });
@@ -1128,19 +1120,19 @@ await save(gameId, { ...g, nightVotes: { ...(g.nightVotes || {}), [myId]: select
 setSelectedTarget(null);
 };
 
-// 2-Traitor recruitment vote — each Traitor votes “recruit” or “murder”
+// 2-Traitor recruitment vote — each Traitor votes "recruit" or "murder"
 const submitTwoTraitorRecruitChoice = async (choice) => {
 if (!me?.alive || !isTraitor) return;
 const g = await load(gameId);
 const votes = { ...(g.twoTraitorRecruitVotes || {}), [myId]: choice };
-const turretT = (g.players || []).filter(p => p.role === “traitor” && p.alive);
+const turretT = (g.players || []).filter(p => p.role === "traitor" && p.alive);
 const allVoted = turretT.every(t => votes[t.id]);
 const unanimous = allVoted && new Set(Object.values(votes)).size === 1;
 const decision = unanimous ? Object.values(votes)[0] : null;
 await save(gameId, { ...g, twoTraitorRecruitVotes: votes,
-twoTraitorRecruitMode: decision === “recruit” ? true : g.twoTraitorRecruitMode });
+twoTraitorRecruitMode: decision === "recruit" ? true : g.twoTraitorRecruitMode });
 setGame({ ...g, twoTraitorRecruitVotes: votes,
-twoTraitorRecruitMode: decision === “recruit” ? true : g.twoTraitorRecruitMode });
+twoTraitorRecruitMode: decision === "recruit" ? true : g.twoTraitorRecruitMode });
 };
 
 // 2-Traitor recruitment target vote
@@ -1148,7 +1140,7 @@ const submitTwoTraitorTarget = async (targetId) => {
 if (!me?.alive || !isTraitor) return;
 const g = await load(gameId);
 const targetVotes = { ...(g.twoTraitorTargetVotes || {}), [myId]: targetId };
-const turretT = (g.players || []).filter(p => p.role === “traitor” && p.alive);
+const turretT = (g.players || []).filter(p => p.role === "traitor" && p.alive);
 const allVoted = turretT.every(t => targetVotes[t.id]);
 const unanimous = allVoted && new Set(Object.values(targetVotes)).size === 1;
 const agreedTarget = unanimous ? Object.values(targetVotes)[0] : null;
@@ -1158,7 +1150,7 @@ setGame({ ...g, twoTraitorTargetVotes: targetVotes, twoTraitorRecruitTarget: agr
 
 const submitShortlist = async () => {
 if (shortlist.length !== 5) return;
-await save(gameId + “-st-shortlist”, { submittedBy: myId, targets: shortlist });
+await save(gameId + "-st-shortlist", { submittedBy: myId, targets: shortlist });
 // Notify host
 const g = await load(gameId);
 await save(gameId, { ...g, stShortlistSubmitted: true, stShortlist: shortlist });
@@ -1166,32 +1158,32 @@ await save(gameId, { ...g, stShortlistSubmitted: true, stShortlist: shortlist })
 
 const sendChat = async () => {
 if (!chatDraft.trim() || (!canJoinTraitorChat && !isHost)) return;
-const chats = (await load(gameId + “-traitor-chat”)) || [];
-const senderName = isHost ? “👁️ Host” : me.name;
+const chats = (await load(gameId + "-traitor-chat")) || [];
+const senderName = isHost ? "👁️ Host" : me.name;
 chats.push({ sender: senderName, senderId: myId, text: chatDraft.trim(), ts: Date.now() });
-await save(gameId + “-traitor-chat”, chats);
+await save(gameId + "-traitor-chat", chats);
 setTraitorChats(chats);
-setChatDraft(””);
+setChatDraft("");
 };
 
 const sendGhostChat = async () => {
 if (!ghostDraft.trim()) return;
-const senderName = isHost ? “👁️ Host” : (me?.name || “Ghost”);
-const chats = (await load(gameId + “-ghost-chat”)) || [];
+const senderName = isHost ? "👁️ Host" : (me?.name || "Ghost");
+const chats = (await load(gameId + "-ghost-chat")) || [];
 chats.push({ sender: senderName, senderId: myId, text: ghostDraft.trim(), ts: Date.now(), isHost });
-await save(gameId + “-ghost-chat”, chats);
+await save(gameId + "-ghost-chat", chats);
 setGhostChats(chats);
-setGhostDraft(””);
+setGhostDraft("");
 };
 
 const sendStChat = async () => {
 if (!stChatDraft.trim()) return;
-const senderName = isHost ? “👁️ Host” : (me?.name || “?”);
-const chats = (await load(gameId + “-st-chat”)) || [];
+const senderName = isHost ? "👁️ Host" : (me?.name || "?");
+const chats = (await load(gameId + "-st-chat")) || [];
 chats.push({ sender: senderName, senderId: myId, text: stChatDraft.trim(), ts: Date.now(), isHost });
-await save(gameId + “-st-chat”, chats);
+await save(gameId + "-st-chat", chats);
 setStChats(chats);
-setStChatDraft(””);
+setStChatDraft("");
 };
 
 const useSeerPower = async (delay = false) => {
@@ -1208,7 +1200,7 @@ return;
 if (!seerTarget || !me?.seerRole) return;
 const g = await load(gameId);
 const target = g.players.find(p => p.id === seerTarget);
-const isTraitorTarget = target.role === “traitor” || target.role === “secret_traitor”;
+const isTraitorTarget = target.role === "traitor" || target.role === "secret_traitor";
 setSeerResult({ name: target.name, emoji: target.emoji, isTraitor: isTraitorTarget });
 setSeerLocked(false);
 const updated = { ...g, seerUsed: true, seerInvestigated: { targetId: seerTarget, targetName: target.name, targetEmoji: target.emoji, isTraitor: isTraitorTarget } };
@@ -1229,10 +1221,10 @@ const votes = { ...(g.endgameVotes || {}), [myId]: choice };
 const updated = { ...g, endgameVotes: votes };
 await save(gameId, updated); setGame(updated);
 if (Object.keys(votes).length >= alive.length) {
-if (Object.values(votes).every(v => v === “end”)) {
-const winner = checkWinner(g) || “faithful”;
+if (Object.values(votes).every(v => v === "end")) {
+const winner = checkWinner(g) || "faithful";
 const final = { ...updated, phase: PHASES.ENDED, winner };
-await addMsg(gameId, { type: “win”, text: “✅ A unanimous vote to end it. The masks come off. The truth comes out. Someone is about to feel very, very vindicated — and someone else very, very exposed.” });
+await addMsg(gameId, { type: "win", text: "✅ A unanimous vote to end it. The masks come off. The truth comes out. Someone is about to feel very, very vindicated — and someone else very, very exposed." });
 await save(gameId, final);
 } else {
 await advanceTo(PHASES.ROUND_TABLE);
@@ -1242,11 +1234,11 @@ await advanceTo(PHASES.ROUND_TABLE);
 
 const checkWinner = (g) => {
 const alive = g.players.filter(p => p.alive);
-const aliveT = alive.filter(p => p.role === “traitor” || p.role === “secret_traitor”);
-const aliveF = alive.filter(p => p.role === “faithful” || p.role === “seer”);
-if (aliveT.length === 0) return “faithful”; // all traitors gone — faithful win anytime
+const aliveT = alive.filter(p => p.role === "traitor" || p.role === "secret_traitor");
+const aliveF = alive.filter(p => p.role === "faithful" || p.role === "seer");
+if (aliveT.length === 0) return "faithful"; // all traitors gone — faithful win anytime
 // Traitor parity win only triggers at/after endgame threshold (≤4 alive)
-if (alive.length <= 4 && aliveT.length >= aliveF.length) return “traitors”;
+if (alive.length <= 4 && aliveT.length >= aliveF.length) return "traitors";
 return null;
 };
 
@@ -1262,10 +1254,10 @@ const g = await load(gameId);
 const target = g.players.find(p => p.id === playerId);
 if (!target || !target.alive) return;
 const newPlayers = g.players.map(p => p.id === playerId ? { ...p, alive: false, isGhost: true } : p);
-const tl = [...(g.timeline || []), { round: g.currentRound || 1, type: “manual_kill”, text: `🪄 Host override: ${target.emoji} ${target.name} manually removed from the game.`, ts: Date.now() }];
+const tl = [...(g.timeline || []), { round: g.currentRound || 1, type: "manual_kill", text: `🪄 Host override: ${target.emoji} ${target.name} manually removed from the game.`, ts: Date.now() }];
 const updated = { ...g, players: newPlayers, timeline: tl };
 await save(gameId, updated); setGame(updated);
-await addMsg(gameId, { type: “death”, text: `🪄 ${target.name} has been removed from the game by the host.` });
+await addMsg(gameId, { type: "death", text: `🪄 ${target.name} has been removed from the game by the host.` });
 };
 
 const manualRevivePlayer = async (playerId) => {
@@ -1273,20 +1265,20 @@ const g = await load(gameId);
 const target = g.players.find(p => p.id === playerId);
 if (!target || target.alive) return;
 const newPlayers = g.players.map(p => p.id === playerId ? { ...p, alive: true, isGhost: false } : p);
-const tl = [...(g.timeline || []), { round: g.currentRound || 1, type: “manual_revive”, text: `🪄 Host override: ${target.emoji} ${target.name} returned to the game.`, ts: Date.now() }];
+const tl = [...(g.timeline || []), { round: g.currentRound || 1, type: "manual_revive", text: `🪄 Host override: ${target.emoji} ${target.name} returned to the game.`, ts: Date.now() }];
 const updated = { ...g, players: newPlayers, timeline: tl };
 await save(gameId, updated); setGame(updated);
-await addMsg(gameId, { type: “system”, text: `🪄 ${target.name} has been returned to the game by the host.` });
+await addMsg(gameId, { type: "system", text: `🪄 ${target.name} has been returned to the game by the host.` });
 };
 
 const saveAvatar = async (dataUrl) => {
 setMyAvatar(dataUrl);
 try {
-const avKey = gameId + “-avatars”;
-const avR = await window.storage.get(avKey).catch(() => null);
-const avMap = avR ? JSON.parse(avR.value) : {};
+const avKey = gameId + "-avatars";
+const avR = await load(avKey).catch(() => null);
+const avMap = avR || {};
 avMap[myId] = dataUrl;
-await window.storage.set(avKey, JSON.stringify(avMap));
+await save(avKey, avMap);
 setAvatars(avMap);
 } catch(e) {}
 };
@@ -1295,8 +1287,8 @@ const resetGame = async () => {
 const g = await load(gameId);
 const fresh = { ...g, phase: PHASES.LOBBY, players: g.players.map(p => ({ ...p, role: null, alive: true, shield: false, dagger: false, seerRole: false })), round: 0, currentRound: 0, nightVotes: {}, dayVotes: {}, endgameVotes: {}, currentMission: null, winner: null, lastKilled: null, lastBanished: null, breakfastGroups: [], breakfastGroupIdx: 0, secretTraitorRevealedInChat: false, monologueIdx: -1 };
 await save(gameId, fresh);
-await save(gameId + “-msgs”, []);
-await save(gameId + “-traitor-chat”, []);
+await save(gameId + "-msgs", []);
+await save(gameId + "-traitor-chat", []);
 setGame(fresh); setMessages([]); setTraitorChats([]); setGhostChats([]); setSeerResult(null); setEndgameChoice(null);
 stopTimer();
 };
@@ -1308,14 +1300,14 @@ await save(gameId, updated);
 // Save to game history (last 10 games)
 try {
 const host = g.players?.find(p => p.id === g.hostId);
-const confR = await window.storage.get(gameId + “-confessions”).catch(() => null);
-const confessions = confR ? JSON.parse(confR.value) : [];
-const tChatR = await window.storage.get(gameId + “-traitor-chat-archive”).catch(() => null);
+const confR = await load(gameId + "-confessions").catch(() => null);
+const confessions = confR || [];
+const tChatR = await load(gameId + "-traitor-chat-archive").catch(() => null);
 const traitorChatArchive = tChatR ? JSON.parse(tChatR.value) : (traitorChats.length ? traitorChats : []);
 const historyEntry = {
 gameId,
 date: new Date().toLocaleDateString(),
-hostName: host ? `${host.emoji} ${host.name}` : “Unknown”,
+hostName: host ? `${host.emoji} ${host.name}` : "Unknown",
 winner: g.winner,
 players: g.players,
 banishLog: g.banishLog || [],
@@ -1326,10 +1318,10 @@ totalRounds: g.currentRound || 1,
 confessions,
 traitorChatArchive,
 };
-const existing = await window.storage.get(‘game-history’).catch(() => null);
-const history = existing ? JSON.parse(existing.value) : [];
+const existing = await load('game-history').catch(() => null);
+const history = existing || [];
 const trimmed = [historyEntry, ...history].slice(0, 10);
-await window.storage.set(‘game-history’, JSON.stringify(trimmed));
+await save('game-history', trimmed);
 } catch(e) { /* storage unavailable */ }
 };
 
@@ -1341,8 +1333,8 @@ await save(gameId, { ...g, endgameRevealIdx: idx });
 
 const endGameFinal = async () => {
 const g = await load(gameId);
-const final = { ...g, phase: PHASES.ENDED, winner: checkWinner(g) || “faithful”, rolesRevealed: false };
-await addMsg(gameId, { type: “win”, text: “✅ A unanimous vote to end it. The masks come off. The truth comes out. Someone is about to feel very, very vindicated — and someone else very, very exposed.” });
+const final = { ...g, phase: PHASES.ENDED, winner: checkWinner(g) || "faithful", rolesRevealed: false };
+await addMsg(gameId, { type: "win", text: "✅ A unanimous vote to end it. The masks come off. The truth comes out. Someone is about to feel very, very vindicated — and someone else very, very exposed." });
 await save(gameId, final);
 };
 
@@ -1360,47 +1352,46 @@ const phaseStripIdx = PHASE_STRIP.findIndex(s => s.key === game?.phase);
 // ═══════════════════════════════════════════════════════════════════════════
 
 // START SCREEN
-if (screen === “start”) return (
+if (screen === "start") return (
 <div className="app">
 <style>{CSS}</style>
 <div className="noise" />
 <div className="z1">
 <div className="hdr">
-<div style={{ textAlign: “center”, overflow: “visible” }}>
-<div className=“logo-title flicker” style={{
-fontFamily: “‘Cinzel Decorative’,cursive”,
-fontSize: “clamp(2.4rem,8vw,5rem)”,
+<div style={{ textAlign: "center", overflow: "visible" }}>
+<div className="logo-title flicker" style={{
+fontFamily: "'Cinzel Decorative',cursive",
+fontSize: "clamp(2.4rem,8vw,5rem)",
 fontWeight: 900,
-color: “var(–gold)”,
-letterSpacing: “.06em”,
+color: "var(--gold)",
+letterSpacing: ".06em",
 lineHeight: .9,
-WebkitFontSmoothing: “antialiased”,
-overflow: “visible”,
-display: “block”,
-paddingBottom: “.05em”,
-paddingTop: “.1em”,
+WebkitFontSmoothing: "antialiased",
+overflow: "visible",
+display: "block",
+paddingBottom: ".05em",
+paddingTop: ".1em",
 }}>The Traitors</div>
 <div style={{
-fontFamily: “‘Cinzel Decorative’,cursive”,
-fontSize: “.8rem”,
+fontFamily: "'Cinzel Decorative',cursive",
+fontSize: ".8rem",
 fontWeight: 900,
-letterSpacing: “.2em”,
-color: “var(–gold)”,
-textShadow: “0 0 20px rgba(201,168,76,.4)”,
-textTransform: “uppercase”,
+letterSpacing: ".2em",
+color: "var(--gold)",
+textShadow: "0 0 20px rgba(201,168,76,.4)",
+textTransform: "uppercase",
 marginTop: 6,
 }}>at home</div>
 <div style={{
-fontFamily: “‘Crimson Text’,serif”,
-fontSize: “.88rem”,
-fontStyle: “italic”,
-color: “var(–dim)”,
-letterSpacing: “.04em”,
+fontFamily: "'Crimson Text',serif",
+fontSize: ".88rem",
+fontStyle: "italic",
+color: "var(--dim)",
+letterSpacing: ".04em",
 marginTop: 8,
 }}>a party game of deception and murder</div>
 </div>
 
-```
     </div>
     <div className="main" style={{ maxWidth: 400 }}>
       <div className="card">
@@ -1443,30 +1434,29 @@ marginTop: 8,
     </div>
   </div>
 </div>
-```
 
 );
 
-if (screen === “history”) return (
-<HistoryScreen onExit={() => setScreen(“start”)} CSS={CSS} />
+if (screen === "history") return (
+<HistoryScreen onExit={() => setScreen("start")} CSS={CSS} />
 );
 
-if (screen === “tutorial”) return (
+if (screen === "tutorial") return (
 <TutorialScreen
 mode={tutorialMode}
 step={tutorialStep}
 setStep={setTutorialStep}
 setMode={(m) => { setTutorialMode(m); setTutorialStep(0); }}
-onExit={() => setScreen(“start”)}
+onExit={() => setScreen("start")}
 CSS={CSS}
 />
 );
 
-if (screen === “demo-host” || screen === “demo-player”) return (
-<DemoScreen mode={screen === “demo-host” ? “host” : “player”} onExit={() => setScreen(“start”)} CSS={CSS} />
+if (screen === "demo-host" || screen === "demo-player") return (
+<DemoScreen mode={screen === "demo-host" ? "host" : "player"} onExit={() => setScreen("start")} CSS={CSS} />
 );
 
-if (!game || !myId) return <div className="app"><style>{CSS}</style><div style={{ padding: 40, textAlign: “center”, color: “var(–dim)” }}>Loading…</div></div>;
+if (!game || !myId) return <div className="app"><style>{CSS}</style><div style={{ padding: 40, textAlign: "center", color: "var(--dim)" }}>Loading…</div></div>;
 
 // ENDED SCREEN
 if (game.phase === PHASES.GAME_INTRO) return (
@@ -1477,36 +1467,36 @@ secretTraitorEnabled={game.secretTraitorEnabled} />
 
 if (game.phase === PHASES.ENDED) return (
 <div className="app"><style>{CSS}</style><div className="noise" /><div className="z1">
-<div className="hdr"><div style={{ textAlign: “center”, overflow: “visible” }}>
-<div className=“logo-title flicker” style={{
-fontFamily: “‘Cinzel Decorative’,cursive”,
-fontSize: “clamp(2.4rem,8vw,5rem)”,
+<div className="hdr"><div style={{ textAlign: "center", overflow: "visible" }}>
+<div className="logo-title flicker" style={{
+fontFamily: "'Cinzel Decorative',cursive",
+fontSize: "clamp(2.4rem,8vw,5rem)",
 fontWeight: 900,
-color: “var(–gold)”,
-letterSpacing: “.06em”,
+color: "var(--gold)",
+letterSpacing: ".06em",
 lineHeight: .9,
-WebkitFontSmoothing: “antialiased”,
-overflow: “visible”,
-display: “block”,
-paddingBottom: “.05em”,
-paddingTop: “.1em”,
+WebkitFontSmoothing: "antialiased",
+overflow: "visible",
+display: "block",
+paddingBottom: ".05em",
+paddingTop: ".1em",
 }}>The Traitors</div>
 <div style={{
-fontFamily: “‘Cinzel Decorative’,cursive”,
-fontSize: “.8rem”,
+fontFamily: "'Cinzel Decorative',cursive",
+fontSize: ".8rem",
 fontWeight: 900,
-letterSpacing: “.2em”,
-color: “var(–gold)”,
-textShadow: “0 0 20px rgba(201,168,76,.4)”,
-textTransform: “uppercase”,
+letterSpacing: ".2em",
+color: "var(--gold)",
+textShadow: "0 0 20px rgba(201,168,76,.4)",
+textTransform: "uppercase",
 marginTop: 6,
 }}>at home</div>
 <div style={{
-fontFamily: “‘Crimson Text’,serif”,
-fontSize: “.88rem”,
-fontStyle: “italic”,
-color: “var(–dim)”,
-letterSpacing: “.04em”,
+fontFamily: "'Crimson Text',serif",
+fontSize: ".88rem",
+fontStyle: "italic",
+color: "var(--dim)",
+letterSpacing: ".04em",
 marginTop: 8,
 }}>a party game of deception and murder</div>
 </div></div>
@@ -1515,15 +1505,14 @@ marginTop: 8,
 isHost ? (() => {
 // Build reveal order: Faithful first, then Traitors, Secret Traitor absolutely last
 const all = game.players?.filter(p => !p.isGhost && p.alive) || [];
-const faithful = all.filter(p => p.role === “faithful” || p.role === “seer”);
-const traitors = all.filter(p => p.role === “traitor”);
-const st = all.filter(p => p.role === “secret_traitor”);
+const faithful = all.filter(p => p.role === "faithful" || p.role === "seer");
+const traitors = all.filter(p => p.role === "traitor");
+const st = all.filter(p => p.role === "secret_traitor");
 const revealOrder = [...faithful, ...traitors, ...st];
 const calledIdx = game.monologueIdx ?? -1;
 const allCalled = calledIdx >= revealOrder.length - 1;
 const currentPlayer = calledIdx >= 0 ? revealOrder[calledIdx] : null;
 
-```
         return (
           <div className="card" style={{ padding: "28px 20px" }}>
             <div style={{ textAlign: "center", marginBottom: 20 }}>
@@ -1620,7 +1609,6 @@ const currentPlayer = calledIdx >= 0 ? revealOrder[calledIdx] : null;
     <MsgLog messages={messages} />
   </div>
 </div></div>
-```
 
 );
 
@@ -1632,35 +1620,35 @@ const isRecruitTarget = game.recruitTargetId === myId;
 const faithfulShouldBeBlind = isNightPhase && !hasTraitorRole && !isHost && !isGhost && !stStaysAwake && game.phase !== PHASES.NIGHT_SEER && !(game.phase === PHASES.NIGHT_RECRUIT_RESPONSE && isRecruitTarget);
 if (faithfulShouldBeBlind) return (
 <div className="app"><style>{CSS}</style>
-<div className=“blindfold” style={{ animation:“fadeInEl .4s ease”, position:“relative”, overflow:“hidden” }}>
+<div className="blindfold" style={{ animation:"fadeInEl .4s ease", position:"relative", overflow:"hidden" }}>
 {/* Candles along the bottom */}
-<div style={{ position:“absolute”, bottom:0, left:0, right:0, height:80, pointerEvents:“none” }}>
+<div style={{ position:"absolute", bottom:0, left:0, right:0, height:80, pointerEvents:"none" }}>
 {[0,1,2,3,4,5,6,7].map(i => (
-<div key={i} style={{ position:“absolute”, left:`${5+i*13}%`, bottom:0, display:“flex”, flexDirection:“column”, alignItems:“center”, opacity:0.45+i%3*.12 }}>
-<div style={{ width:7, height:12+i%4*4, background:“linear-gradient(to top,#ff8010,#ffcc40,rgba(255,240,120,.1))”, borderRadius:“50% 50% 30% 30%/60% 60% 40% 40%”, animation:`candleFlicker ${1.9+i*.26}s ${i*.22}s ease-in-out infinite`, boxShadow:“0 0 8px 3px rgba(255,140,40,.25)”, transformOrigin:“bottom center” }} />
-<div style={{ width:1.5, height:5, background:”#1a0f05” }} />
-<div style={{ width:9, height:18+i%3*6, background:“linear-gradient(to right,rgba(230,210,170,.8),rgba(255,245,220,.95),rgba(210,190,155,.8))”, borderRadius:“2px 2px 1px 1px” }} />
-<div style={{ width:12, height:3, background:“rgba(160,130,90,.7)”, borderRadius:“0 0 2px 2px” }} />
+<div key={i} style={{ position:"absolute", left:`${5+i*13}%`, bottom:0, display:"flex", flexDirection:"column", alignItems:"center", opacity:0.45+i%3*.12 }}>
+<div style={{ width:7, height:12+i%4*4, background:"linear-gradient(to top,#ff8010,#ffcc40,rgba(255,240,120,.1))", borderRadius:"50% 50% 30% 30%/60% 60% 40% 40%", animation:`candleFlicker ${1.9+i*.26}s ${i*.22}s ease-in-out infinite`, boxShadow:"0 0 8px 3px rgba(255,140,40,.25)", transformOrigin:"bottom center" }} />
+<div style={{ width:1.5, height:5, background:"#1a0f05" }} />
+<div style={{ width:9, height:18+i%3*6, background:"linear-gradient(to right,rgba(230,210,170,.8),rgba(255,245,220,.95),rgba(210,190,155,.8))", borderRadius:"2px 2px 1px 1px" }} />
+<div style={{ width:12, height:3, background:"rgba(160,130,90,.7)", borderRadius:"0 0 2px 2px" }} />
 </div>
 ))}
 </div>
 {/* Stars */}
 {[0,1,2,3,4,5,6,7,8,9].map(i => (
-<div key={i} style={{ position:“absolute”, left:`${3+i*10+i%3*3}%`, top:`${8+i%5*10}%`, width:i%3===0?3:2, height:i%3===0?3:2, borderRadius:“50%”, background:“rgba(220,200,255,.7)”, animation:`starTwinkle ${1.5+i*.28}s ${i*.18}s ease-in-out infinite`, pointerEvents:“none” }} />
+<div key={i} style={{ position:"absolute", left:`${3+i*10+i%3*3}%`, top:`${8+i%5*10}%`, width:i%3===0?3:2, height:i%3===0?3:2, borderRadius:"50%", background:"rgba(220,200,255,.7)", animation:`starTwinkle ${1.5+i*.28}s ${i*.18}s ease-in-out infinite`, pointerEvents:"none" }} />
 ))}
 <span className="bf-icon pulse">🌑</span>
 <div className="bf-title">Night Sequester Area</div>
-<div className=“bf-sub” style={{ maxWidth: 320, lineHeight: 1.9 }}>
+<div className="bf-sub" style={{ maxWidth: 320, lineHeight: 1.9 }}>
 Blindfold on. Stay seated.<br />
 Nobody leaves the room.<br />
 Eyes down. Phone face-down.
 </div>
 {timerSec > 0 && (
-<div style={{ fontFamily: “‘Cinzel Decorative’,cursive”, fontSize: “2.2rem”, color: “rgba(201,168,76,.5)”, margin: “16px 0” }}>{fmtTime(timerSec)}</div>
+<div style={{ fontFamily: "'Cinzel Decorative',cursive", fontSize: "2.2rem", color: "rgba(201,168,76,.5)", margin: "16px 0" }}>{fmtTime(timerSec)}</div>
 )}
-<div style={{ marginTop: 8, fontSize: “.8rem”, color: “rgba(201,168,76,.3)”, fontStyle: “italic”, letterSpacing: “.05em” }}>
+<div style={{ marginTop: 8, fontSize: ".8rem", color: "rgba(201,168,76,.3)", fontStyle: "italic", letterSpacing: ".05em" }}>
 🔕 Silence your phone.<br />
-<span style={{ opacity: .6 }}>The host will call everyone when it’s done.</span>
+<span style={{ opacity: .6 }}>The host will call everyone when it's done.</span>
 </div>
 </div>
 </div>
@@ -1670,25 +1658,24 @@ Eyes down. Phone face-down.
 const isSpectator = !me && !isHost && game.phase !== PHASES.LOBBY;
 if ((isGhost || isSpectator) && !isHost && game.phase !== PHASES.ENDED && game.phase !== PHASES.LOBBY) {
 const phaseLabel = {
-[PHASES.GAME_INTRO]: “🏰 The Game Begins”,
-[PHASES.MISSION_BRIEFING]: “⚔️ Mission Briefing”,
-[PHASES.MISSION_ACTIVE]: “⚔️ Mission In Progress”,
-[PHASES.FREE_ROAM]: “🏰 Free Roam”,
-[PHASES.ROUND_TABLE]: “🕯️ Round Table”,
-[PHASES.VOTING]: “🗳️ Voting”,
-[PHASES.BANISHMENT]: “🔥 Banishment”,
-[PHASES.NIGHT_SEQUESTER]: “🌙 Night”,
-[PHASES.NIGHT_SEER]: “🌙 Night — The Seer Wakes”,
-[PHASES.NIGHT_RECRUIT]: “🌙 Night — Recruitment”,
-[PHASES.NIGHT_RECRUIT_RESPONSE]: “🌙 Night — Recruitment Offer”,
-[PHASES.NIGHT_SECRET_TRAITOR]: “🌙 Night — Secret Traitor”,
-[PHASES.NIGHT_TRAITOR_CHAT]: “🌙 Night — Traitor Conclave”,
-[PHASES.BREAKFAST]: “🍳 Breakfast”,
-[PHASES.ENDGAME_FREE_ROAM]: “🔥 Final Free Roam”,
-[PHASES.ENDGAME]: “🔥 Fire of Truth”,
-}[game.phase] || “…”;
+[PHASES.GAME_INTRO]: "🏰 The Game Begins",
+[PHASES.MISSION_BRIEFING]: "⚔️ Mission Briefing",
+[PHASES.MISSION_ACTIVE]: "⚔️ Mission In Progress",
+[PHASES.FREE_ROAM]: "🏰 Free Roam",
+[PHASES.ROUND_TABLE]: "🕯️ Round Table",
+[PHASES.VOTING]: "🗳️ Voting",
+[PHASES.BANISHMENT]: "🔥 Banishment",
+[PHASES.NIGHT_SEQUESTER]: "🌙 Night",
+[PHASES.NIGHT_SEER]: "🌙 Night — The Seer Wakes",
+[PHASES.NIGHT_RECRUIT]: "🌙 Night — Recruitment",
+[PHASES.NIGHT_RECRUIT_RESPONSE]: "🌙 Night — Recruitment Offer",
+[PHASES.NIGHT_SECRET_TRAITOR]: "🌙 Night — Secret Traitor",
+[PHASES.NIGHT_TRAITOR_CHAT]: "🌙 Night — Traitor Conclave",
+[PHASES.BREAKFAST]: "🍳 Breakfast",
+[PHASES.ENDGAME_FREE_ROAM]: "🔥 Final Free Roam",
+[PHASES.ENDGAME]: "🔥 Fire of Truth",
+}[game.phase] || "…";
 
-```
 return (
   <div className="app"><style>{CSS}</style><div className="noise" />
     <div className="z1">
@@ -2103,7 +2090,6 @@ return (
     </div>
   </div>
 );
-```
 
 }
 
@@ -2177,7 +2163,7 @@ if (game.phase === PHASES.LOBBY) return (
               {/* Game duration */}
               <div className="label" style={{ marginBottom: 4 }}>Game Duration</div>
               <div style={{ display: "flex", gap: 6 }}>
-                {[{h:3,p:"10–11"},{h:4,p:"12–13"},{h:5,p:"14–15"},{h:6,p:"16–19"},{h:7,p:"20–22"},{h:8,p:"23–24"}].map(({h,p}) => (
+                {[{h:3,p:"10--11"},{h:4,p:"12--13"},{h:5,p:"14--15"},{h:6,p:"16--19"},{h:7,p:"20--22"},{h:8,p:"23--24"}].map(({h,p}) => (
                   <button key={h} onClick={() => setGameDuration(h)} style={{
                     flex: 1, padding: "8px 4px", borderRadius: 3, cursor: "pointer", fontFamily: "'Cinzel',serif",
                     transition: "all .2s",
@@ -2202,7 +2188,7 @@ if (game.phase === PHASES.LOBBY) return (
                 const overhead = 50;
                 const estimatedMins = overhead + rounds * (scaledPerRound + fixedPerRound);
                 const estimatedHours = (estimatedMins / 60).toFixed(1);
-                // Suggested: 3h works for 10–11 players, 4h for 12–13, 5h for 14–15, 6h for 16+
+                // Suggested: 3h works for 10--11 players, 4h for 12--13, 5h for 14--15, 6h for 16+
                 const suggested = n <= 11 ? 3 : n <= 13 ? 4 : n <= 15 ? 5 : n <= 19 ? 6 : n <= 22 ? 7 : 8;
                 const tooShort = gameDuration < suggested;
                 const tight = gameDuration === suggested;
@@ -2367,7 +2353,6 @@ return (
 <style>{CSS}</style>
 <div className="noise" />
 
-```
   {/* AVATAR CAPTURE MODAL */}
   {showAvatarCapture && (
     <AvatarCapture onSave={async (dataUrl) => { await saveAvatar(dataUrl); setShowAvatarCapture(false); setMyAvatar(dataUrl); }} onClose={() => setShowAvatarCapture(false)} />
@@ -2710,6 +2695,27 @@ return (
         seerLocked={seerLocked}
         setSeerLocked={setSeerLocked}
         seerExplain={seerExplain}
+        gameId={gameId}
+        deadPlayers={deadPlayers}
+        startGame={startGame}
+        dmTriviaQ={dmTriviaQ} setDmTriviaQ={setDmTriviaQ}
+        dmTriviaScores={dmTriviaScores} setDmTriviaScores={setDmTriviaScores}
+        dmTriviaBank={dmTriviaBank}
+        dmBuzzerWinner={dmBuzzerWinner} setDmBuzzerWinner={setDmBuzzerWinner}
+        dmForbiddenWords={dmForbiddenWords} dmForbiddenElim={dmForbiddenElim} setDmForbiddenElim={setDmForbiddenElim}
+        dmAuctionBids={dmAuctionBids} setDmAuctionBids={setDmAuctionBids}
+        dmAuctionRevealed={dmAuctionRevealed} setDmAuctionRevealed={setDmAuctionRevealed}
+        dmWhisperPhrase={dmWhisperPhrase}
+        dmEmojiIdx={dmEmojiIdx} dmName5Idx={dmName5Idx} dmName5Round={dmName5Round} dmName5Scores={dmName5Scores}
+        dmRpsBracket={dmRpsBracket} setDmRpsBracket={setDmRpsBracket} dmRpsRound={dmRpsRound}
+        dmHotTakeIdx={dmHotTakeIdx} dmHotTakeVotes={dmHotTakeVotes} setDmHotTakeVotes={setDmHotTakeVotes}
+        dmDrawWinner={dmDrawWinner} setDmDrawWinner={setDmDrawWinner}
+        dmWitnessQs={dmWitnessQs} dmWitnessQ={dmWitnessQ} setDmWitnessQ={setDmWitnessQ}
+        dmWitnessScores={dmWitnessScores} setDmWitnessScores={setDmWitnessScores}
+        dmSecretBallotVotes={dmSecretBallotVotes} setDmSecretBallotVotes={setDmSecretBallotVotes}
+        dmLastWordCat={dmLastWordCat} setDmLastWordCat={setDmLastWordCat}
+        dmLastWordElim={dmLastWordElim} setDmLastWordElim={setDmLastWordElim}
+        dmRelicObject={dmRelicObject} setDmRelicObject={setDmRelicObject}
       />
 
       {/* DEAD PLAYERS */}
@@ -2745,7 +2751,6 @@ return (
     </div>
   </div>
 </div>
-```
 
 );
 }

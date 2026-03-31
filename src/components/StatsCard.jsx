@@ -1,30 +1,30 @@
 import { useState, useEffect } from "react";
-import { load } from "../storage.js";
+// storage.js load not needed here — StatsCard uses its own internal fetch
 
 function StatsCard({ game, gameId, myId, me }) {
 if (!game?.rolesRevealed) return null;
-const [confessionDraft, setConfessionDraft] = React.useState(””);
-const [confessionSubmitted, setConfessionSubmitted] = React.useState(false);
-const [confessionUnlocked, setConfessionUnlocked] = React.useState(false);
-React.useEffect(() => { const t = setTimeout(() => setConfessionUnlocked(true), 30000); return () => clearTimeout(t); }, []);
-const [confessions, setConfessions] = React.useState([]);
-const [showTurretArchive, setShowTurretArchive] = React.useState(false);
-const [turretArchive, setTurretArchive] = React.useState([]);
-const [showTimeline, setShowTimeline] = React.useState(false);
+const [confessionDraft, setConfessionDraft] = useState("");
+const [confessionSubmitted, setConfessionSubmitted] = useState(false);
+const [confessionUnlocked, setConfessionUnlocked] = useState(false);
+useEffect(() => { const t = setTimeout(() => setConfessionUnlocked(true), 30000); return () => clearTimeout(t); }, []);
+const [confessions, setConfessions] = useState([]);
+const [showTurretArchive, setShowTurretArchive] = useState(false);
+const [turretArchive, setTurretArchive] = useState([]);
+const [showTimeline, setShowTimeline] = useState(false);
 
-React.useEffect(() => {
+useEffect(() => {
 if (!gameId) return;
-const load = async () => {
+const loadStats = async () => {
 try {
-const r = await window.storage.get(gameId + “-confessions”);
-if (r) setConfessions(JSON.parse(r.value));
+const r = await load(gameId + "-confessions");
+if (r) setConfessions(r);
 } catch(e) {}
 try {
-const r2 = await window.storage.get(gameId + “-traitor-chat-archive”);
+const r2 = await load(gameId + "-traitor-chat-archive");
 if (r2) setTurretArchive(JSON.parse(r2.value));
 } catch(e) {}
 };
-load();
+loadStats();
 const interval = setInterval(load, 3000);
 return () => clearInterval(interval);
 }, [gameId]);
@@ -32,12 +32,12 @@ return () => clearInterval(interval);
 const submitConfession = async () => {
 if (!confessionDraft.trim()) return;
 try {
-const existing = await window.storage.get(gameId + “-confessions”).catch(() => null);
-const list = existing ? JSON.parse(existing.value) : [];
+const existing = await load(gameId + "-confessions").catch(() => null);
+const list = existing || [];
 list.push({ text: confessionDraft.trim(), ts: Date.now() });
-await window.storage.set(gameId + “-confessions”, JSON.stringify(list));
+await save(gameId + "-confessions", list);
 setConfessions(list);
-setConfessionDraft(””);
+setConfessionDraft("");
 setConfessionSubmitted(true);
 } catch(e) {}
 };
@@ -47,9 +47,9 @@ const banishLog = game.banishLog || [];
 const killLog = game.killLog || [];
 const shieldLog = game.shieldLog || [];
 
-const name = (id) => { const p = players.find(x => x.id === id); return p ? `${p.emoji} ${p.name}` : “?”; };
+const name = (id) => { const p = players.find(x => x.id === id); return p ? `${p.emoji} ${p.name}` : "?"; };
 const player = (id) => players.find(x => x.id === id);
-const isTraitorRole = (r) => r === “traitor” || r === “secret_traitor”;
+const isTraitorRole = (r) => r === "traitor" || r === "secret_traitor";
 
 const stats = [];
 
@@ -62,10 +62,10 @@ if (targetId === b.banishedId) correctVotes[voterId] = (correctVotes[voterId] ||
 });
 });
 const best = Object.entries(correctVotes).sort((a,b) => b[1]-a[1])[0];
-if (best) stats.push({ icon: “🎯”, label: “Best Voting Record”, value: name(best[0]), detail: `Called it right ${best[1]} time${best[1]>1?"s":""}` });
+if (best) stats.push({ icon: "🎯", label: "Best Voting Record", value: name(best[0]), detail: `Called it right ${best[1]} time${best[1]>1?"s":""}` });
 }
 
-// 🤡 Wrongest Voter — most votes cast for people who weren’t banished
+// 🤡 Wrongest Voter — most votes cast for people who weren't banished
 if (banishLog.length >= 2) {
 const wrongVotes = {};
 banishLog.forEach(b => {
@@ -74,7 +74,7 @@ if (targetId !== b.banishedId) wrongVotes[voterId] = (wrongVotes[voterId] || 0) 
 });
 });
 const worst = Object.entries(wrongVotes).sort((a,b) => b[1]-a[1])[0];
-if (worst && worst[1] >= 2) stats.push({ icon: “🤡”, label: “Most Spectacularly Wrong”, value: name(worst[0]), detail: `Voted for the wrong person ${worst[1]} times` });
+if (worst && worst[1] >= 2) stats.push({ icon: "🤡", label: "Most Spectacularly Wrong", value: name(worst[0]), detail: `Voted for the wrong person ${worst[1]} times` });
 }
 
 // 👀 Most Suspected — received the most votes across all rounds (even if not banished)
@@ -86,7 +86,7 @@ totalVotesReceived[targetId] = (totalVotesReceived[targetId] || 0) + 1;
 });
 const mostSuspected = Object.entries(totalVotesReceived).sort((a,b) => b[1]-a[1])[0];
 if (mostSuspected && mostSuspected[1] >= 2) {
-stats.push({ icon: “👀”, label: “Most Suspected”, value: name(mostSuspected[0]), detail: `Received ${mostSuspected[1]} votes across the game` });
+stats.push({ icon: "👀", label: "Most Suspected", value: name(mostSuspected[0]), detail: `Received ${mostSuspected[1]} votes across the game` });
 }
 
 // 🎭 Master of Disguise — Traitor who received the fewest votes (min 1 round survived)
@@ -94,7 +94,7 @@ const traitors = players.filter(p => isTraitorRole(p.role));
 if (traitors.length > 0) {
 const traitorVotes = traitors.map(p => ({ p, v: totalVotesReceived[p.id] || 0 })).sort((a,b) => a.v-b.v);
 const sneakiest = traitorVotes[0];
-if (sneakiest) stats.push({ icon: “🎭”, label: “Master of Disguise”, value: name(sneakiest.p.id), detail: sneakiest.v === 0 ? “Never received a single vote. Terrifying.” : `Only ${sneakiest.v} vote${sneakiest.v>1?"s":""} against them all game` });
+if (sneakiest) stats.push({ icon: "🎭", label: "Master of Disguise", value: name(sneakiest.p.id), detail: sneakiest.v === 0 ? "Never received a single vote. Terrifying." : `Only ${sneakiest.v} vote${sneakiest.v>1?"s":""} against them all game` });
 }
 
 // 🗡️ Longest Surviving Traitor
@@ -106,42 +106,42 @@ const endRound = banishRound || killRound || (game.currentRound || 99);
 return { p, rounds: endRound };
 }).sort((a,b) => b.rounds - a.rounds);
 const longest = traitorSurvival[0];
-if (longest) stats.push({ icon: “🗡️”, label: “Longest Surviving Traitor”, value: name(longest.p.id), detail: longest.p.alive ? “Survived to the end. Won.” : `Lasted ${longest.rounds} round${longest.rounds>1?"s":""}` });
+if (longest) stats.push({ icon: "🗡️", label: "Longest Surviving Traitor", value: name(longest.p.id), detail: longest.p.alive ? "Survived to the end. Won." : `Lasted ${longest.rounds} round${longest.rounds>1?"s":""}` });
 }
 
 // 🛡️ Saved by the Shield
 if (shieldLog.length > 0) {
 const saved = shieldLog[0];
-stats.push({ icon: “🛡️”, label: “Saved by the Shield”, value: name(saved.savedId), detail: “Would have been murdered. Wasn’t. Shield expired at breakfast.” });
+stats.push({ icon: "🛡️", label: "Saved by the Shield", value: name(saved.savedId), detail: "Would have been murdered. Wasn't. Shield expired at breakfast." });
 }
 
 // 💀 First Blood — first person banished
 if (banishLog.length > 0) {
 const first = banishLog[0];
-stats.push({ icon: “💀”, label: “First Blood”, value: name(first.banishedId), detail: `First to be banished${isTraitorRole(first.banishedRole) ? " — and they were a Traitor" : " — and they were innocent"}` });
+stats.push({ icon: "💀", label: "First Blood", value: name(first.banishedId), detail: `First to be banished${isTraitorRole(first.banishedRole) ? " — and they were a Traitor" : " — and they were innocent"}` });
 }
 
 // 🌙 Night One Victim — first murder
 if (killLog.length > 0) {
 const first = killLog[0];
-stats.push({ icon: “🌙”, label: “Night One Victim”, value: name(first.killedId), detail: `First to be murdered in the dark` });
+stats.push({ icon: "🌙", label: "Night One Victim", value: name(first.killedId), detail: `First to be murdered in the dark` });
 }
 
 // 🗳️ Dagger Bearer — who used it
 const daggerUser = banishLog.find(b => b.daggerUserId);
 if (daggerUser) {
-stats.push({ icon: “🗳️”, label: “The Dagger Bearer”, value: name(daggerUser.daggerUserId), detail: `Declared the Dagger in round ${daggerUser.round}. Made it count.` });
+stats.push({ icon: "🗳️", label: "The Dagger Bearer", value: name(daggerUser.daggerUserId), detail: `Declared the Dagger in round ${daggerUser.round}. Made it count.` });
 }
 
 // 🔮 The Seer — just show who held the power
 const seer = players.find(p => p.seerRole);
-if (seer) stats.push({ icon: “🔮”, label: “The Seer”, value: name(seer.id), detail: “Held the power of truth. What they saw, only they know.” });
+if (seer) stats.push({ icon: "🔮", label: "The Seer", value: name(seer.id), detail: "Held the power of truth. What they saw, only they know." });
 
 // 🎭 The Secret Traitor
-const secretTraitor = players.find(p => p.role === “secret_traitor”);
+const secretTraitor = players.find(p => p.role === "secret_traitor");
 if (secretTraitor) {
 const rounds = banishLog.find(b => b.banishedId === secretTraitor.id)?.round || killLog.find(k => k.killedId === secretTraitor.id)?.round;
-stats.push({ icon: “🎭”, label: “The Secret Traitor”, value: name(secretTraitor.id), detail: secretTraitor.alive ? “Worked alone in the shadows — and survived to the end.” : rounds ? `Operated alone for ${rounds} round${rounds > 1 ? "s" : ""} before being uncovered.` : “Operated in complete secrecy the entire game.” });
+stats.push({ icon: "🎭", label: "The Secret Traitor", value: name(secretTraitor.id), detail: secretTraitor.alive ? "Worked alone in the shadows — and survived to the end." : rounds ? `Operated alone for ${rounds} round${rounds > 1 ? "s" : ""} before being uncovered.` : "Operated in complete secrecy the entire game." });
 }
 
 // 🏆 Most Rounds Survived — player who lasted longest overall
@@ -153,7 +153,7 @@ return { p, rounds: banishRound || killRound || (game.currentRound || 99) };
 }).sort((a,b) => b.rounds - a.rounds);
 const survivor = survival[0];
 if (survivor && !isTraitorRole(survivor.p.role)) {
-stats.push({ icon: “🏅”, label: “Last Faithful Standing”, value: name(survivor.p.id), detail: survivor.p.alive ? “Made it to the very end.” : `Survived ${survivor.rounds} rounds before falling` });
+stats.push({ icon: "🏅", label: "Last Faithful Standing", value: name(survivor.p.id), detail: survivor.p.alive ? "Made it to the very end." : `Survived ${survivor.rounds} rounds before falling` });
 }
 
 // 💩 Worst Traitor — Traitor banished the quickest (fewest rounds survived)
@@ -162,7 +162,7 @@ if (banishedTraitors.length > 0) {
 const worst = banishedTraitors.map(p => ({
 p, round: banishLog.find(b => b.banishedId === p.id)?.round || 99
 })).sort((a, b) => a.round - b.round)[0];
-if (worst) stats.push({ icon: “💩”, label: “Worst Traitor”, value: name(worst.p.id), detail: worst.round === 1 ? “Banished in round 1. Spectacular.” : `Banished in round ${worst.round}. The deception was not strong with this one.` });
+if (worst) stats.push({ icon: "💩", label: "Worst Traitor", value: name(worst.p.id), detail: worst.round === 1 ? "Banished in round 1. Spectacular." : `Banished in round ${worst.round}. The deception was not strong with this one.` });
 }
 
 // 🤦 Worst Faithful — voted most often for other Faithful players (friendly fire)
@@ -178,51 +178,50 @@ friendlyFire[voterId] = (friendlyFire[voterId] || 0) + 1;
 });
 });
 const worst = Object.entries(friendlyFire).sort((a, b) => b[1] - a[1])[0];
-if (worst && worst[1] >= 2) stats.push({ icon: “🤦”, label: “Worst Faithful”, value: name(worst[0]), detail: `Voted for fellow Faithful ${worst[1]} time${worst[1] > 1 ? "s" : ""}. Doing the Traitors' job for them.` });
+if (worst && worst[1] >= 2) stats.push({ icon: "🤦", label: "Worst Faithful", value: name(worst[0]), detail: `Voted for fellow Faithful ${worst[1]} time${worst[1] > 1 ? "s" : ""}. Doing the Traitors' job for them.` });
 }
 
 if (stats.length === 0) return null;
 
 return (
-<div className=“card” style={{ marginTop: 16, padding: “20px 16px” }}>
-<div style={{ fontFamily: “‘Cinzel Decorative’,cursive”, fontSize: “1.1rem”, color: “var(–gold)”, textAlign: “center”, marginBottom: 16 }}>🏆 The Verdicts</div>
+<div className="card" style={{ marginTop: 16, padding: "20px 16px" }}>
+<div style={{ fontFamily: "'Cinzel Decorative',cursive", fontSize: "1.1rem", color: "var(--gold)", textAlign: "center", marginBottom: 16 }}>🏆 The Verdicts</div>
 {/* Winner announcement */}
 {(() => {
-const tw = game.winner === “traitors”;
+const tw = game.winner === "traitors";
 const winners = tw
 ? players.filter(p => isTraitorRole(p.role))
 : players.filter(p => !isTraitorRole(p.role));
 const hostPlayer = players.find(p => p.id === game.hostId);
 return (
-<div style={{ background: tw ? “rgba(139,26,26,.15)” : “rgba(20,60,20,.15)”, border: tw ? “2px solid rgba(139,26,26,.4)” : “2px solid rgba(40,120,40,.3)”, borderRadius: 4, padding: “14px 16px”, marginBottom: 14, textAlign: “center” }}>
-<div style={{ fontFamily: “‘Cinzel Decorative’,cursive”, fontSize: “1.4rem”, color: tw ? “var(–crim2)” : “#80e080”, marginBottom: 8 }}>
-{tw ? “🗡️ The Traitors Win!” : “🏆 The Faithful Win!”}
+<div style={{ background: tw ? "rgba(139,26,26,.15)" : "rgba(20,60,20,.15)", border: tw ? "2px solid rgba(139,26,26,.4)" : "2px solid rgba(40,120,40,.3)", borderRadius: 4, padding: "14px 16px", marginBottom: 14, textAlign: "center" }}>
+<div style={{ fontFamily: "'Cinzel Decorative',cursive", fontSize: "1.4rem", color: tw ? "var(--crim2)" : "#80e080", marginBottom: 8 }}>
+{tw ? "🗡️ The Traitors Win!" : "🏆 The Faithful Win!"}
 </div>
-<div style={{ display: “flex”, flexWrap: “wrap”, justifyContent: “center”, gap: 6, marginBottom: 10 }}>
+<div style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: 6, marginBottom: 10 }}>
 {winners.map(p => (
-<span key={p.id} style={{ background: tw ? “rgba(139,26,26,.2)” : “rgba(40,120,40,.2)”, border: tw ? “1px solid rgba(139,26,26,.4)” : “1px solid rgba(40,120,40,.3)”, borderRadius: 20, padding: “3px 10px”, fontSize: “.78rem”, fontFamily: “‘Cinzel’,serif”, color: tw ? “var(–crim3)” : “#80e080” }}>{p.emoji} {p.name}</span>
+<span key={p.id} style={{ background: tw ? "rgba(139,26,26,.2)" : "rgba(40,120,40,.2)", border: tw ? "1px solid rgba(139,26,26,.4)" : "1px solid rgba(40,120,40,.3)", borderRadius: 20, padding: "3px 10px", fontSize: ".78rem", fontFamily: "'Cinzel',serif", color: tw ? "var(--crim3)" : "#80e080" }}>{p.emoji} {p.name}</span>
 ))}
 </div>
 {hostPlayer && (
-<div style={{ fontSize: “.72rem”, color: “var(–dim)”, fontStyle: “italic” }}>👑 Hosted by {hostPlayer.emoji} {hostPlayer.name}</div>
+<div style={{ fontSize: ".72rem", color: "var(--dim)", fontStyle: "italic" }}>👑 Hosted by {hostPlayer.emoji} {hostPlayer.name}</div>
 )}
 </div>
 );
 })()}
-<div style={{ display: “flex”, flexDirection: “column”, gap: 8 }}>
+<div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
 {stats.map((s, i) => (
-<div key={i} style={{ display: “flex”, gap: 12, alignItems: “flex-start”, padding: “10px 12px”, background: “rgba(201,168,76,.04)”, border: “1px solid rgba(201,168,76,.12)”, borderRadius: 3 }}>
-<div style={{ fontSize: “1.4rem”, flexShrink: 0, marginTop: 1 }}>{s.icon}</div>
+<div key={i} style={{ display: "flex", gap: 12, alignItems: "flex-start", padding: "10px 12px", background: "rgba(201,168,76,.04)", border: "1px solid rgba(201,168,76,.12)", borderRadius: 3 }}>
+<div style={{ fontSize: "1.4rem", flexShrink: 0, marginTop: 1 }}>{s.icon}</div>
 <div style={{ flex: 1 }}>
-<div style={{ fontFamily: “‘Cinzel’,serif”, fontSize: “.65rem”, letterSpacing: “.12em”, textTransform: “uppercase”, color: “var(–gold2)”, marginBottom: 3 }}>{s.label}</div>
-<div style={{ fontFamily: “‘Cinzel Decorative’,cursive”, fontSize: “.95rem”, color: “var(–text)”, marginBottom: 3 }}>{s.value}</div>
-<div style={{ fontSize: “.8rem”, color: “var(–dim)”, fontStyle: “italic” }}>{s.detail}</div>
+<div style={{ fontFamily: "'Cinzel',serif", fontSize: ".65rem", letterSpacing: ".12em", textTransform: "uppercase", color: "var(--gold2)", marginBottom: 3 }}>{s.label}</div>
+<div style={{ fontFamily: "'Cinzel Decorative',cursive", fontSize: ".95rem", color: "var(--text)", marginBottom: 3 }}>{s.value}</div>
+<div style={{ fontSize: ".8rem", color: "var(--dim)", fontStyle: "italic" }}>{s.detail}</div>
 </div>
 </div>
 ))}
 </div>
 
-```
   {/* Confession Wall */}
   <div style={{ marginTop: 20, borderTop: "1px solid rgba(201,168,76,.15)", paddingTop: 16 }}>
     <div style={{ fontFamily: "'Cinzel Decorative',cursive", fontSize: "1rem", color: "var(--gold)", textAlign: "center", marginBottom: 12 }}>🕯️ Confession Wall</div>
@@ -298,7 +297,6 @@ return (
     else { navigator.clipboard.writeText(text); alert("Copied to clipboard!"); }
   }}>📤 Share This Game</button>
 </div>
-```
 
 );
 }

@@ -4,18 +4,36 @@ import { RoleCard } from "./RoleCard.jsx";
 import { BanishReveal } from "./BanishReveal.jsx";
 import { RoomSelector } from "./RoomSelector.jsx";
 import { GhostChat } from "./GhostChat.jsx";
+import { save, load } from "../storage.js";
+import { PHASES } from "../constants/phases.js";
+import { PHASE_TIMERS } from "../constants/timers.js";
+import { PHASE_INSTRUCTIONS, PHASE_STRIP } from "../constants/phases.js";
+import { getQuip } from "../constants/quips.js";
+import { MISSIONS, TRIVIA_BANK, NAME5_CATEGORIES, EMOJI_CIPHERS,
+         WHISPER_PHRASES, LAST_WORD_CATEGORIES, RELIC_OBJECTS, HOT_TAKES } from "../constants/content.js";
+import { SHIELD_MODE_LABELS, EMOJIS, genId, getEmoji, shuffleArray, shuffle } from "../utils/gameUtils.js";
+import { generateWitnessQuestions } from "../utils/gameUtils.js";
 
 function PhaseContent(props) {
-const { game, me, myId, isHost, isTraitor, isSecretTraitor, isSeer, canJoinTraitorChat, hasTraitorRole, alivePlayers, aliveTraitors, selectedTarget, setSelectedTarget, selectedMission, setSelectedMission, missionFilter, setMissionFilter, myRoom, updateRoom, timerSec, timerMax, timerRunning, timerClass, fmtTime, timerPct, startTimer, chatDraft, setChatDraft, traitorChats, chatRef, stChats, stChatDraft, setStChatDraft, sendStChat, seerChats, seerDraft, setSeerDraft, sendSeerChat, recruitChats, recruitDraft, setRecruitDraft, sendRecruitChat, shortlist, setShortlist, dayTally, hasVotedDay, hasVotedNight, breakfastGroupIdx, endgameChoice, hostStartMission, awardPower, advanceTo, hostBeginNight, hostEndSeerPhase, hostEndSecretTraitorPhase, submitRecruitTarget, acceptRecruitment, declineRecruitment, recruitTarget, setRecruitTarget, resolveNight, resolveBanishment, advanceBreakfastGroup, advanceFromBreakfast, revealBreakfast, submitDayVote, submitNightVote, submitTwoTraitorRecruitChoice, submitTwoTraitorTarget, submitShortlist, sendChat, submitEndgameVote, resetGame, goBackPhase, manualKillPlayer, manualRevivePlayer, avatars, releaseRoles, finishRoleReveal, stRevealPlayer, stAdvanceToNext, stSkipSelection, stRevealResult, phaseTimers, seerTarget, setSeerTarget, seerResult, useSeerPower, seerLocked, setSeerLocked, seerExplain } = props;
-const [showPowers, setShowPowers] = React.useState(false);
-const [ghostTab, setGhostTab] = React.useState(“turret”);
-const [pendingShieldId, setPendingShieldId] = React.useState(null);
-const [showPlayerList, setShowGameState] = React.useState(false);
+const { game, me, myId, gameId, isHost, isTraitor, isSecretTraitor, isSeer, canJoinTraitorChat, hasTraitorRole, alivePlayers, aliveTraitors, selectedTarget, setSelectedTarget, selectedMission, setSelectedMission, missionFilter, setMissionFilter, myRoom, updateRoom, timerSec, timerMax, timerRunning, timerClass, fmtTime, timerPct, startTimer, chatDraft, setChatDraft, traitorChats, chatRef, stChats, stChatDraft, setStChatDraft, sendStChat, seerChats, seerDraft, setSeerDraft, sendSeerChat, recruitChats, recruitDraft, setRecruitDraft, sendRecruitChat, shortlist, setShortlist, dayTally, hasVotedDay, hasVotedNight, breakfastGroupIdx, endgameChoice, hostStartMission, awardPower, advanceTo, hostBeginNight, hostEndSeerPhase, hostEndSecretTraitorPhase, submitRecruitTarget, acceptRecruitment, declineRecruitment, recruitTarget, setRecruitTarget, resolveNight, resolveBanishment, advanceBreakfastGroup, advanceFromBreakfast, revealBreakfast, submitDayVote, submitNightVote, submitTwoTraitorRecruitChoice, submitTwoTraitorTarget, submitShortlist, sendChat, submitEndgameVote, resetGame, goBackPhase, manualKillPlayer, manualRevivePlayer, avatars, releaseRoles, finishRoleReveal, stRevealPlayer, stAdvanceToNext, stSkipSelection, stRevealResult, phaseTimers, seerTarget, setSeerTarget, seerResult, useSeerPower, seerLocked, setSeerLocked, seerExplain,
+  dmTriviaQ, setDmTriviaQ, dmTriviaScores, setDmTriviaScores, dmTriviaBank,
+  dmBuzzerWinner, setDmBuzzerWinner, dmForbiddenWords, dmForbiddenElim, setDmForbiddenElim,
+  dmAuctionBids, setDmAuctionBids, dmAuctionRevealed, setDmAuctionRevealed,
+  dmWhisperPhrase, dmEmojiIdx, dmName5Idx, dmName5Round, dmName5Scores,
+  dmRpsBracket, setDmRpsBracket, dmRpsRound, dmHotTakeIdx, dmHotTakeVotes, setDmHotTakeVotes,
+  dmDrawWinner, setDmDrawWinner, dmWitnessQs, dmWitnessQ, setDmWitnessQ,
+  dmWitnessScores, setDmWitnessScores, dmSecretBallotVotes, setDmSecretBallotVotes,
+  dmLastWordCat, setDmLastWordCat, dmLastWordElim, setDmLastWordElim,
+  dmRelicObject, setDmRelicObject, startGame, deadPlayers } = props;
+const [showPowers, setShowPowers] = useState(false);
+const [ghostTab, setGhostTab] = useState("turret");
+const [pendingShieldId, setPendingShieldId] = useState(null);
+const [showPlayerList, setShowGameState] = useState(false);
 const pt = phaseTimers || PHASE_TIMERS; // scaled timers for this game
 const isRecruitTarget = game.recruitTargetId === myId;
 const p = game.phase;
 const instr = PHASE_INSTRUCTIONS[p];
-const quip = p === PHASES.LOBBY ? “” : getQuip([PHASES.NIGHT_SEQUESTER, PHASES.NIGHT_SEER, PHASES.NIGHT_RECRUIT, PHASES.NIGHT_RECRUIT_RESPONSE, PHASES.NIGHT_SECRET_TRAITOR, PHASES.NIGHT_TRAITOR_CHAT].includes(p) ? “night_sequester” : p === PHASES.BREAKFAST ? “breakfast” : p.replace(”_”, “ “).split(” “)[0].toLowerCase() || p);
+const quip = p === PHASES.LOBBY ? "" : getQuip([PHASES.NIGHT_SEQUESTER, PHASES.NIGHT_SEER, PHASES.NIGHT_RECRUIT, PHASES.NIGHT_RECRUIT_RESPONSE, PHASES.NIGHT_SECRET_TRAITOR, PHASES.NIGHT_TRAITOR_CHAT].includes(p) ? "night_sequester" : p === PHASES.BREAKFAST ? "breakfast" : p.replace("_", " ").split(" ")[0].toLowerCase() || p);
 const nightVoteCount = Object.keys(game.nightVotes || {}).length;
 const dayVoteCount = Object.keys(game.dayVotes || {}).length;
 const breakfastGroups = game.breakfastGroups || [];
@@ -26,7 +44,7 @@ return (
 <>
 {/* HOST PANEL */}
 {isHost && instr && (
-<div className=“card host” style={{ marginTop: 16 }}>
+<div className="card host" style={{ marginTop: 16 }}>
 <div className="host-label">⚜ Host · {instr.title}</div>
 {/* Timer */}
 <div className="timer-wrap">
@@ -35,22 +53,22 @@ return (
 <span className="timer-num">{fmtTime(timerSec)}</span>
 </div>
 <div className="timer-bar">
-<div className=“timer-fill” style={{ width: `${timerPct}%` }} />
+<div className="timer-fill" style={{ width: `${timerPct}%` }} />
 </div>
 {pt[p] && (
-<div style={{ fontSize: “.65rem”, fontFamily: “‘Cinzel’,serif”, color: “var(–gold2)”, textAlign: “center”, marginTop: 6, letterSpacing: “.1em” }}>
-Recommended: <strong style={{ color: “var(–gold)” }}>{pt[p]} min</strong>
-<button className=“btn btn-outline btn-sm” style={{ marginLeft: 8, padding: “2px 8px”, fontSize: “.6rem” }} onClick={() => startTimer(pt[p] * 60)}>Set →</button>
+<div style={{ fontSize: ".65rem", fontFamily: "'Cinzel',serif", color: "var(--gold2)", textAlign: "center", marginTop: 6, letterSpacing: ".1em" }}>
+Recommended: <strong style={{ color: "var(--gold)" }}>{pt[p]} min</strong>
+<button className="btn btn-outline btn-sm" style={{ marginLeft: 8, padding: "2px 8px", fontSize: ".6rem" }} onClick={() => startTimer(pt[p] * 60)}>Set →</button>
 </div>
 )}
-<div className=“row” style={{ marginTop: 8, gap: 6 }}>
-{[2, 5, 8, 12, 18, 25].map(m => <button key={m} className=“btn btn-outline btn-sm” onClick={() => startTimer(m * 60)}>{m}m</button>)}
+<div className="row" style={{ marginTop: 8, gap: 6 }}>
+{[2, 5, 8, 12, 18, 25].map(m => <button key={m} className="btn btn-outline btn-sm" onClick={() => startTimer(m * 60)}>{m}m</button>)}
 </div>
 </div>
 {/* Quip */}
-{quip && <div className=“quip” style={{ marginBottom: 16 }}><span style={{ marginLeft: 14 }}>{quip}</span></div>}
+{quip && <div className="quip" style={{ marginBottom: 16 }}><span style={{ marginLeft: 14 }}>{quip}</span></div>}
 {/* Instructions */}
-<ul className=“inst-list” style={{ marginBottom: 18 }}>
+<ul className="inst-list" style={{ marginBottom: 18 }}>
 {instr.steps.map((s, i) => (
 <li key={i} className="inst-item"><span className="inst-num">{i + 1}</span><span>{s}</span></li>
 ))}
@@ -64,67 +82,67 @@ const isLast = idx >= players.length - 1;
 const alreadyRevealed = idx > 0;
 return (
 <div className="col">
-<div className=“info-box purple” style={{ fontSize: “.95rem”, lineHeight: 1.75 }}>
-Players stand in front of the group one at a time and look at their phone. Tap <strong style={{ color: “#d88ef0” }}>Reveal</strong> — their screen will show whether they are the Secret Traitor. Everyone watches their face. Only one will know the truth.
+<div className="info-box purple" style={{ fontSize: ".95rem", lineHeight: 1.75 }}>
+Players stand in front of the group one at a time and look at their phone. Tap <strong style={{ color: "#d88ef0" }}>Reveal</strong> — their screen will show whether they are the Secret Traitor. Everyone watches their face. Only one will know the truth.
 </div>
 {currentPlayer && (
-<div style={{ background: “rgba(60,0,80,.2)”, border: “1px solid rgba(120,40,180,.4)”, borderRadius: 4, padding: 20, textAlign: “center” }}>
-<div style={{ fontSize: “.65rem”, fontFamily: “‘Cinzel’,serif”, letterSpacing: “.2em”, textTransform: “uppercase”, color: “#c090ff”, marginBottom: 10 }}>
+<div style={{ background: "rgba(60,0,80,.2)", border: "1px solid rgba(120,40,180,.4)", borderRadius: 4, padding: 20, textAlign: "center" }}>
+<div style={{ fontSize: ".65rem", fontFamily: "'Cinzel',serif", letterSpacing: ".2em", textTransform: "uppercase", color: "#c090ff", marginBottom: 10 }}>
 Now Standing: Player {idx + 1} of {players.length}
 </div>
-<div style={{ fontSize: “2.5rem”, marginBottom: 8 }}>{currentPlayer.emoji}</div>
-<div style={{ fontFamily: “‘Cinzel’,serif”, fontSize: “1.1rem”, color: “var(–text)”, marginBottom: 16 }}>{currentPlayer.name}</div>
-<div className=“info-box purple” style={{ marginBottom: 16, fontSize: “.85rem” }}>
+<div style={{ fontSize: "2.5rem", marginBottom: 8 }}>{currentPlayer.emoji}</div>
+<div style={{ fontFamily: "'Cinzel',serif", fontSize: "1.1rem", color: "var(--text)", marginBottom: 16 }}>{currentPlayer.name}</div>
+<div className="info-box purple" style={{ marginBottom: 16, fontSize: ".85rem" }}>
 {currentPlayer.id === game.stCandidateId
-? <span style={{ color: “#f0a0ff” }}>⚠️ This IS the Secret Traitor. Their screen will show a dramatic reveal. Watch their face.</span>
+? <span style={{ color: "#f0a0ff" }}>⚠️ This IS the Secret Traitor. Their screen will show a dramatic reveal. Watch their face.</span>
 : <span>Their screen will show they are NOT the Secret Traitor.</span>}
 </div>
-<button className=“btn btn-night btn-lg” style={{ width: “100%”, marginBottom: 10 }} onClick={() => stRevealPlayer(currentPlayer.id)}>
+<button className="btn btn-night btn-lg" style={{ width: "100%", marginBottom: 10 }} onClick={() => stRevealPlayer(currentPlayer.id)}>
 👁️ Reveal to {currentPlayer.name}
 </button>
-<button className=“btn btn-outline btn-sm” style={{ width: “100%” }} onClick={stAdvanceToNext}>
-{isLast ? “All Done — Proceed to Role Reveal →” : `Next Player → (${players[idx + 1]?.name})`}
+<button className="btn btn-outline btn-sm" style={{ width: "100%" }} onClick={stAdvanceToNext}>
+{isLast ? "All Done — Proceed to Role Reveal →" : `Next Player → (${players[idx + 1]?.name})`}
 </button>
 </div>
 )}
-<button className=“btn btn-ghost btn-sm” onClick={stSkipSelection} style={{ alignSelf: “flex-start” }}>Skip ceremony & go straight to Role Reveal</button>
+<button className="btn btn-ghost btn-sm" onClick={stSkipSelection} style={{ alignSelf: "flex-start" }}>Skip ceremony & go straight to Role Reveal</button>
 </div>
 );
 })()}
 {/* Phase-specific host controls */}
 {p === PHASES.ROLE_REVEAL && (() => {
-const step = game.roleRevealStep || “tapping”;
-const traitors = game.players.filter(pl => pl.role === “traitor”);
-const secretTraitor = game.players.find(pl => pl.role === “secret_traitor”);
+const step = game.roleRevealStep || "tapping";
+const traitors = game.players.filter(pl => pl.role === "traitor");
+const secretTraitor = game.players.find(pl => pl.role === "secret_traitor");
 return (
 <>
 {/* STEP 1: TAPPING */}
-{step === “tapping” && (
+{step === "tapping" && (
 <div className="col">
-<div className=“info-box” style={{ borderColor: “rgba(201,168,76,.3)”, fontSize: “.95rem”, lineHeight: 1.75 }}>
-Everyone blindfolded, phones face-down. Walk behind each <strong style={{ color: “var(–gold)” }}>regular Traitor</strong> and tap them <strong style={{ color: “var(–gold)” }}>twice on the shoulder</strong>. Do not tap the Faithful or the Secret Traitor — the ST already knows their role from the ceremony.
+<div className="info-box" style={{ borderColor: "rgba(201,168,76,.3)", fontSize: ".95rem", lineHeight: 1.75 }}>
+Everyone blindfolded, phones face-down. Walk behind each <strong style={{ color: "var(--gold)" }}>regular Traitor</strong> and tap them <strong style={{ color: "var(--gold)" }}>twice on the shoulder</strong>. Do not tap the Faithful or the Secret Traitor — the ST already knows their role from the ceremony.
 </div>
-<div style={{ background: “rgba(139,26,26,.12)”, border: “1px solid var(–crim-border)”, borderRadius: 4, padding: 16 }}>
-<div className=“label” style={{ color: “var(–crim3)”, marginBottom: 10 }}>Tap TWICE — Regular Traitors Only</div>
+<div style={{ background: "rgba(139,26,26,.12)", border: "1px solid var(--crim-border)", borderRadius: 4, padding: 16 }}>
+<div className="label" style={{ color: "var(--crim3)", marginBottom: 10 }}>Tap TWICE — Regular Traitors Only</div>
 <div className="pgrid">
 {traitors.map(pl => (
-<div key={pl.id} className=“pcard” style={{ borderColor: “rgba(139,26,26,.5)”, background: “rgba(139,26,26,.1)” }}>
+<div key={pl.id} className="pcard" style={{ borderColor: "rgba(139,26,26,.5)", background: "rgba(139,26,26,.1)" }}>
 <div className="pavatar">{pl.emoji}</div>
 <div className="pname">{pl.name}</div>
 <div className="prole role-t">Traitor</div>
 </div>
 ))}
 {secretTraitor && (
-<div className=“pcard” style={{ borderColor: “rgba(120,0,140,.3)”, background: “rgba(80,0,100,.08)”, opacity: .6 }}>
+<div className="pcard" style={{ borderColor: "rgba(120,0,140,.3)", background: "rgba(80,0,100,.08)", opacity: .6 }}>
 <div className="pavatar">{secretTraitor.emoji}</div>
 <div className="pname">{secretTraitor.name}</div>
 <div className="prole role-s">Secret Traitor</div>
-<div style={{ fontSize: “.62rem”, color: “#d88ef0”, marginTop: 4, fontStyle: “italic” }}>Do NOT tap — already selected</div>
+<div style={{ fontSize: ".62rem", color: "#d88ef0", marginTop: 4, fontStyle: "italic" }}>Do NOT tap — already selected</div>
 </div>
 )}
 </div>
 {secretTraitor && (
-<div className=“info-box purple” style={{ marginTop: 12, fontSize: “.85rem” }}>
+<div className="info-box purple" style={{ marginTop: 12, fontSize: ".85rem" }}>
 The Secret Traitor was identified in their own ceremony — skip them here.
 </div>
 )}
@@ -135,7 +153,6 @@ Tapping Done — Release Roles →
 </div>
 )}
 
-```
             {/* STEP 2: SILENCE */}
             {step === "silence" && (
               <div className="col">
@@ -341,7 +358,7 @@ Tapping Done — Release Roles →
 
             if (m.digitalType === "secret_ballot") {
               // Auto-poll votes every 3s
-              React.useEffect(() => {
+              useEffect(() => {
                 const poll = async () => {
                   const v = {};
                   for (const pl of alivePlayers) {
@@ -418,7 +435,7 @@ Tapping Done — Release Roles →
                   <div style={{ background:"rgba(10,5,20,.8)",border:"1px solid rgba(201,168,76,.2)",borderRadius:4,padding:12,marginBottom:10 }}>
                     <div style={{ fontFamily:"'Cinzel',serif",fontSize:".6rem",letterSpacing:".12em",textTransform:"uppercase",color:"var(--gold2)",marginBottom:8 }}>🏺 Midnight Auction — {Object.keys(dmAuctionBids).length}/{alivePlayers.length} bids</div>
                     {/* Auto-poll bid count */}
-                    {React.useEffect(() => {
+                    {useEffect(() => {
                       if (dmAuctionRevealed) return;
                       const poll = async () => {
                         let count = 0;
@@ -432,7 +449,7 @@ Tapping Done — Release Roles →
                       const t = setInterval(poll, 2000);
                       return () => clearInterval(t);
                     }, [dmAuctionRevealed]) || null}
-                    <div style={{ fontSize:".82rem",color:"var(--dim)",fontStyle:"italic",marginBottom:10 }}>Players submit bids (1–10) on their phones. Once all bids are in, reveal simultaneously.</div>
+                    <div style={{ fontSize:".82rem",color:"var(--dim)",fontStyle:"italic",marginBottom:10 }}>Players submit bids (1--10) on their phones. Once all bids are in, reveal simultaneously.</div>
                     {!dmAuctionRevealed ? (
                       <>
                         <div style={{ display:"flex",flexWrap:"wrap",gap:6,marginBottom:10 }}>
@@ -589,7 +606,7 @@ Tapping Done — Release Roles →
                           </div>
                         );
                         // Push this matchup to player phones
-                        React.useEffect(() => {
+                        useEffect(() => {
                           if (pa && pb) save(gameId+"-rps-matchup", {p1:a, p2:b});
                         }, [a, b]);
                         return (
@@ -625,7 +642,7 @@ Tapping Done — Release Roles →
               const take = HOT_TAKES[dmHotTakeIdx];
               const votes = dmHotTakeVotes;
               // Auto-poll votes every 3s
-              React.useEffect(() => {
+              useEffect(() => {
                 const poll = async () => {
                   const v = {};
                   for (const pl of alivePlayers) {
@@ -795,9 +812,9 @@ Tapping Done — Release Roles →
             }
 
             if (m.digitalType === "the_relic") {
-              const [relicPhase, setRelicPhase] = React.useState("pick"); // pick → blindfold → hide → search
-              const [hideTimer, setHideTimer] = React.useState(60);
-              React.useEffect(() => {
+              const [relicPhase, setRelicPhase] = useState("pick"); // pick → blindfold → hide → search
+              const [hideTimer, setHideTimer] = useState(60);
+              useEffect(() => {
                 if (relicPhase !== "hide") return;
                 if (hideTimer <= 0) { setRelicPhase("search"); return; }
                 const t = setTimeout(() => setHideTimer(s => s-1), 1000);
@@ -1606,8 +1623,8 @@ Tapping Done — Release Roles →
 
     // ── Forbidden Word: show player's secret word ──
     if (m.digitalType === "forbidden_word") {
-      const [myWord, setMyWord] = React.useState("loading…");
-      React.useEffect(() => {
+      const [myWord, setMyWord] = useState("loading…");
+      useEffect(() => {
         load(gameId + "-fw-" + myId).then(w => { if (w) setMyWord(w); });
       }, []);
       return (
@@ -1625,7 +1642,7 @@ Tapping Done — Release Roles →
 
     // ── Secret Ballot: vote on phone ──
     if (m.digitalType === "secret_ballot") {
-      const [voted, setVoted] = React.useState(null);
+      const [voted, setVoted] = useState(null);
       return (
         <div className="card" style={{ marginTop: 16 }}>
           <div className="ctitle">🗳️ Secret Ballot</div>
@@ -1651,8 +1668,8 @@ Tapping Done — Release Roles →
 
     // ── Midnight Auction: submit bid on phone ──
     if (m.digitalType === "auction") {
-      const [bid, setBid] = React.useState("");
-      const [submitted, setSubmitted] = React.useState(false);
+      const [bid, setBid] = useState("");
+      const [submitted, setSubmitted] = useState(false);
       return (
         <div className="card" style={{ marginTop: 16, textAlign: "center", padding: "24px 20px" }}>
           <div style={{ fontSize: "2.5rem", marginBottom: 10 }}>🏺</div>
@@ -1675,9 +1692,9 @@ Tapping Done — Release Roles →
 
     // ── Hot Take: vote agree/disagree ──
     if (m.digitalType === "hot_take") {
-      const [voted, setVoted] = React.useState(null);
-      const [takeText, setTakeText] = React.useState("Loading…");
-      React.useEffect(() => { load(gameId+"-hot-take").then(t=>{ if(t) setTakeText(t); }); }, []);
+      const [voted, setVoted] = useState(null);
+      const [takeText, setTakeText] = useState("Loading…");
+      useEffect(() => { load(gameId+"-hot-take").then(t=>{ if(t) setTakeText(t); }); }, []);
       return (
         <div className="card" style={{ marginTop: 16, textAlign: "center", padding: "24px 20px" }}>
           <div style={{ fontSize: "2.5rem", marginBottom: 10 }}>🔥</div>
@@ -1699,11 +1716,11 @@ Tapping Done — Release Roles →
 
     // ── The Witness: answer questions privately ──
     if (m.digitalType === "the_witness") {
-      const [qs, setQs] = React.useState([]);
-      const [qIdx, setQIdx] = React.useState(0);
-      const [answers, setAnswers] = React.useState({});
-      const [done, setDone] = React.useState(false);
-      React.useEffect(() => { load(gameId+"-witness-qs").then(q=>{ if(q) setQs(q); }); }, []);
+      const [qs, setQs] = useState([]);
+      const [qIdx, setQIdx] = useState(0);
+      const [answers, setAnswers] = useState({});
+      const [done, setDone] = useState(false);
+      useEffect(() => { load(gameId+"-witness-qs").then(q=>{ if(q) setQs(q); }); }, []);
       const q = qs[qIdx];
       const submit = async (opt) => {
         const newAnswers = {...answers, [qIdx]: opt};
@@ -1741,8 +1758,8 @@ Tapping Done — Release Roles →
 
     // ── The Draw: show winner notification to the winner only ──
     if (m.digitalType === "the_draw") {
-      const [isWinner, setIsWinner] = React.useState(false);
-      React.useEffect(() => {
+      const [isWinner, setIsWinner] = useState(false);
+      useEffect(() => {
         load(gameId + "-draw-winner").then(wid => { if (wid === myId) setIsWinner(true); });
       }, []);
       return (
@@ -1766,8 +1783,8 @@ Tapping Done — Release Roles →
 
     // ── Emoji Cipher: show the emoji on player phones ──
     if (m.digitalType === "emoji_cipher") {
-      const [emojiDisplay, setEmojiDisplay] = React.useState("…");
-      React.useEffect(() => {
+      const [emojiDisplay, setEmojiDisplay] = useState("…");
+      useEffect(() => {
         load(gameId + "-emoji-cipher").then(e => { if (e) setEmojiDisplay(e); });
       }, []);
       return (
@@ -1783,8 +1800,8 @@ Tapping Done — Release Roles →
 
     // ── Name 5 in 30: show current category on player phones ──
     if (m.digitalType === "name5") {
-      const [cat, setCat] = React.useState("…");
-      React.useEffect(() => {
+      const [cat, setCat] = useState("…");
+      useEffect(() => {
         const poll = () => load(gameId + "-name5-cat").then(c => { if (c) setCat(c); });
         poll();
         const t = setInterval(poll, 2000);
@@ -1806,8 +1823,8 @@ Tapping Done — Release Roles →
 
     // ── RPS Bracket: show current matchup on player phones ──
     if (m.digitalType === "rps_bracket") {
-      const [matchup, setMatchup] = React.useState(null);
-      React.useEffect(() => {
+      const [matchup, setMatchup] = useState(null);
+      useEffect(() => {
         const poll = () => load(gameId + "-rps-matchup").then(m => { if (m) setMatchup(m); });
         poll();
         const t = setInterval(poll, 2000);
@@ -1838,8 +1855,8 @@ Tapping Done — Release Roles →
 
     // ── The Relic: phase-aware player screen ──
     if (m.digitalType === "the_relic") {
-      const [phase, setPhase] = React.useState("waiting");
-      React.useEffect(() => {
+      const [phase, setPhase] = useState("waiting");
+      useEffect(() => {
         const poll = () => load(gameId+"-relic-phase").then(p => { if (p) setPhase(p); });
         poll();
         const t = setInterval(poll, 2000);
@@ -2458,7 +2475,6 @@ Tapping Done — Release Roles →
     </div>
   )}
 </>
-```
 
 );
 }

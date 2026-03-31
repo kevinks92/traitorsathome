@@ -1,24 +1,24 @@
 import { useState, useEffect } from "react";
 
 function WinnerScreen({ tw, isHost, resetGame, game }) {
-const [particles, setParticles] = React.useState([]);
-const [knifes, setKnifes] = React.useState([]);
-const [blood, setBlood] = React.useState([]);
-const [phase, setPhase] = React.useState(“reveal”); // reveal → celebrate
+const [particles, setParticles] = useState([]);
+const [knifes, setKnifes] = useState([]);
+const [blood, setBlood] = useState([]);
+const [phase, setPhase] = useState("reveal"); // reveal → celebrate
 
-React.useEffect(() => {
+useEffect(() => {
 if (tw) {
 // Traitors win: knife stabs then blood splatters
-const k = Array.from({ length: 7 }, (*, i) => ({
+const k = Array.from({ length: 7 }, (_, i) => ({
 id: i, x: 10 + Math.random() * 80, delay: i * 180,
 angle: -30 + Math.random() * 60, size: 2 + Math.random() * 2,
 }));
 setKnifes(k);
 setTimeout(() => {
-const b = Array.from({ length: 18 }, (*, i) => ({
+const b = Array.from({ length: 18 }, (_, i) => ({
 id: i, x: 5 + Math.random() * 90, y: 10 + Math.random() * 80,
 size: 3 + Math.random() * 8, opacity: 0.6 + Math.random() * 0.4,
-shape: Math.random() > 0.5 ? “circle” : “splat”,
+shape: Math.random() > 0.5 ? "circle" : "splat",
 delay: i * 80,
 }));
 setBlood(b);
@@ -32,33 +32,32 @@ size: 3 + Math.random() * 5,
 delay: Math.random() * 2000,
 duration: 2500 + Math.random() * 2000,
 drift: -20 + Math.random() * 40,
-color: [”#f5e090”,”#c9a84c”,”#f0d060”,”#ffffff”,”#ffd700”][Math.floor(Math.random()*5)],
-shape: Math.random() > 0.6 ? “star” : Math.random() > 0.5 ? “circle” : “diamond”,
+color: ["#f5e090","#c9a84c","#f0d060","#ffffff","#ffd700"][Math.floor(Math.random()*5)],
+shape: Math.random() > 0.6 ? "star" : Math.random() > 0.5 ? "circle" : "diamond",
 }));
 setParticles(p);
 }
-setTimeout(() => setPhase(“celebrate”), 1200);
+setTimeout(() => setPhase("celebrate"), 1200);
 }, []);
 
 const Particle = ({ p }) => {
 const style = {
-position: “fixed”, left: `${p.x}%`, top: “-20px”, zIndex: 1000,
+position: "fixed", left: `${p.x}%`, top: "-20px", zIndex: 1000,
 width: p.size, height: p.size,
 animation: `fairyDust ${p.duration}ms ${p.delay}ms ease-in forwards`,
 color: p.color, fontSize: p.size * 2,
-pointerEvents: “none”,
+pointerEvents: "none",
 };
-if (p.shape === “star”) return <div style={style}>✦</div>;
-if (p.shape === “diamond”) return <div style={{ ...style, width: p.size*1.4, height: p.size*1.4, background: p.color, transform: “rotate(45deg)”, borderRadius: 1 }} />;
-return <div style={{ ...style, borderRadius: “50%”, background: p.color, boxShadow: `0 0 ${p.size*2}px ${p.color}` }} />;
+if (p.shape === "star") return <div style={style}>✦</div>;
+if (p.shape === "diamond") return <div style={{ ...style, width: p.size*1.4, height: p.size*1.4, background: p.color, transform: "rotate(45deg)", borderRadius: 1 }} />;
+return <div style={{ ...style, borderRadius: "50%", background: p.color, boxShadow: `0 0 ${p.size*2}px ${p.color}` }} />;
 };
 
 return (
-<div style={{ position: “relative”, overflow: “hidden” }}>
+<div style={{ position: "relative", overflow: "hidden" }}>
 {/* Faithful: floating fairy dust */}
 {!tw && particles.map(p => <Particle key={p.id} p={p} />)}
 
-```
   {/* Traitors: blood splatters */}
   {tw && blood.map(b => (
     <div key={b.id} style={{
@@ -163,7 +162,6 @@ return (
     {isHost && <button className="btn btn-outline" style={{ marginTop: 8 }} onClick={resetGame}>Do It All Again (You Masochist)</button>}
   </div>
 </div>
-```
 
 );
 }

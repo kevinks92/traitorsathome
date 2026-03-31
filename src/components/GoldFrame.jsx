@@ -6,7 +6,7 @@ const photoW = size;
 const photoH = Math.round(size * 1.33); // 3:4 portrait ratio
 const totalW = photoW + border * 2;
 const totalH = photoH + border * 2;
-const imgFilter = dead ? “grayscale(1) brightness(0.4)” : “none”;
+const imgFilter = dead ? "grayscale(1) brightness(0.4)" : "none";
 
 // Corner cartouche size
 const cc = Math.max(6, Math.round(border * 0.85));
@@ -16,7 +16,7 @@ const mo = Math.max(4, Math.round(border * 0.6));
 const uid = `${size}-${dead ? 'd' : 'a'}`;
 
 // Frame band gradient — simulates carved moulding with highlight/shadow
-// We’ll draw 4 trapezoid faces (top, right, bottom, left) each with its own shading
+// We'll draw 4 trapezoid faces (top, right, bottom, left) each with its own shading
 
 const T = 0; const L = 0;
 const W = totalW; const H = totalH;
@@ -25,28 +25,27 @@ const b = border;
 // Each face: outer edge, inner edge — moulding faces
 const faces = [
 // top face — bright highlight
-{ pts: `${L},${T} ${W},${T} ${W-b},${b} ${L+b},${b}`, fill: “url(#gf-top-”+uid+”)” },
+{ pts: `${L},${T} ${W},${T} ${W-b},${b} ${L+b},${b}`, fill: "url(#gf-top-"+uid+")" },
 // right face — mid tone
-{ pts: `${W},${T} ${W},${H} ${W-b},${H-b} ${W-b},${b}`, fill: “url(#gf-right-”+uid+”)” },
+{ pts: `${W},${T} ${W},${H} ${W-b},${H-b} ${W-b},${b}`, fill: "url(#gf-right-"+uid+")" },
 // bottom face — darker shadow
-{ pts: `${W},${H} ${L},${H} ${L+b},${H-b} ${W-b},${H-b}`, fill: “url(#gf-bottom-”+uid+”)” },
+{ pts: `${W},${H} ${L},${H} ${L+b},${H-b} ${W-b},${H-b}`, fill: "url(#gf-bottom-"+uid+")" },
 // left face — mid tone
-{ pts: `${L},${H} ${L},${T} ${L+b},${b} ${L+b},${H-b}`, fill: “url(#gf-left-”+uid+”)” },
+{ pts: `${L},${H} ${L},${T} ${L+b},${b} ${L+b},${H-b}`, fill: "url(#gf-left-"+uid+")" },
 ];
 
 return (
-<div style={{ position: “relative”, width: totalW, height: totalH, flexShrink: 0 }}>
+<div style={{ position: "relative", width: totalW, height: totalH, flexShrink: 0 }}>
 {/* Photo / emoji behind everything */}
-<div style={{ position: “absolute”, top: border, left: border, width: photoW, height: photoH, overflow: “hidden”, zIndex: 1, background: “rgba(10,5,20,.95)” }}>
+<div style={{ position: "absolute", top: border, left: border, width: photoW, height: photoH, overflow: "hidden", zIndex: 1, background: "rgba(10,5,20,.95)" }}>
 {src
-? <img src={src} style={{ width: “100%”, height: “100%”, objectFit: “cover”, filter: imgFilter }} />
-: <div style={{ width: “100%”, height: “100%”, display: “flex”, alignItems: “center”, justifyContent: “center”, fontSize: size * 0.45, filter: imgFilter }}>{emoji}</div>
+? <img src={src} style={{ width: "100%", height: "100%", objectFit: "cover", filter: imgFilter }} />
+: <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: size * 0.45, filter: imgFilter }}>{emoji}</div>
 }
 {/* Mat inner shadow */}
-<div style={{ position: “absolute”, inset: 0, boxShadow: “inset 0 0 12px rgba(0,0,0,0.6)”, pointerEvents: “none” }} />
+<div style={{ position: "absolute", inset: 0, boxShadow: "inset 0 0 12px rgba(0,0,0,0.6)", pointerEvents: "none" }} />
 </div>
 
-```
   {/* SVG ornate frame overlay */}
   <svg width={totalW} height={totalH} style={{ position: "absolute", top: 0, left: 0, zIndex: 2, pointerEvents: "none" }}>
     <defs>
@@ -159,7 +158,6 @@ return (
     )}
   </svg>
 </div>
-```
 
 );
 }

@@ -2,7 +2,7 @@ const BASE_PHASE_TIMERS = {
 role_reveal: 3,
 mission_briefing: 2,
 mission_active: 12,
-free_roam: 12,       // 10–15 min range; scales with duration
+free_roam: 12,       // 10--15 min range; scales with duration
 round_table: 12,
 voting: 5,
 banishment: 4,
@@ -21,8 +21,8 @@ function getPhaseTimers(durationHours = 4) {
 const scale = durationHours / 4;
 const scaled = {};
 for (const [k, v] of Object.entries(BASE_PHASE_TIMERS)) {
-// Don’t scale ceremony phases (role reveal, sequester walkover)
-const fixed = [“role_reveal”, “mission_briefing”, “night_sequester”, “night_seer”, “night_secret_traitor”, “night_traitor_chat”, “endgame”, “unmasking”, “breakfast_convo”].includes(k);
+// Don't scale ceremony phases (role reveal, sequester walkover)
+const fixed = ["role_reveal", "mission_briefing", "night_sequester", "night_seer", "night_secret_traitor", "night_traitor_chat", "endgame", "unmasking", "breakfast_convo"].includes(k);
 scaled[k] = fixed ? v : Math.round(v * scale);
 }
 return scaled;
