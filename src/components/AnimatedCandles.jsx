@@ -1,7 +1,8 @@
 
+import { useMemo } from "react";
 
 function AnimatedCandles({ count = 5, style = {} }) {
-const candles = Array.from({ length: count }, (_, i) => ({
+const candles = useMemo(() => Array.from({ length: count }, (_, i) => ({
 id: i,
 left: `${8 + (i * (84 / (count - 1)))}%`,
 height: 28 + Math.floor(Math.random() * 18),
@@ -9,7 +10,8 @@ delay: `${(i * 0.4 + Math.random() * 0.3).toFixed(2)}s`,
 speed: `${(1.8 + Math.random() * 1.2).toFixed(2)}s`,
 glowSpeed: `${(2.2 + Math.random() * 1.5).toFixed(2)}s`,
 opacity: 0.7 + Math.random() * 0.3,
-}));
+drip: Math.random() > 0.5,
+})), [count]);
 return (
 <div style={{ position:"relative", width:"100%", height:70, pointerEvents:"none", ...style }}>
 {candles.map(c => (
@@ -37,7 +39,7 @@ boxShadow:"0 2px 8px rgba(0,0,0,.4)",
 {/* Base */}
 <div style={{ width:14, height:4, background:"rgba(180,150,100,.8)", borderRadius:"0 0 2px 2px", marginTop:-1 }} />
 {/* Drip */}
-{Math.random() > 0.5 && <div style={{ position:"absolute", left:"60%", top:c.height * 0.2, width:3, height:c.height * 0.3, background:"rgba(240,220,180,.6)", borderRadius:"0 0 2px 2px" }} />}
+{c.drip && <div style={{ position:"absolute", left:"60%", top:c.height * 0.2, width:3, height:c.height * 0.3, background:"rgba(240,220,180,.6)", borderRadius:"0 0 2px 2px" }} />}
 </div>
 ))}
 </div>
