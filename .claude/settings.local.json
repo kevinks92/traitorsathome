@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//Users/kevin/Documents/**)",
+      "Read(//Users/kevin/Downloads/**)",
+      "Bash(python3 -c \":*)",
+      "Read(//tmp/**)",
+      "Read(//private/tmp/**)",
+      "Bash(python3:*)"
+    ]
+  }
+}
