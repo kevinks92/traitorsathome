@@ -14,7 +14,6 @@
  */
 
 import { ConvexHttpClient } from "convex/browser";
-import { api } from "../convex/_generated/api";
 
 // CONVEX_URL is injected by Vite from the .env file:
 //   VITE_CONVEX_URL=https://happy-animal-123.convex.cloud
@@ -37,7 +36,7 @@ export const httpClient = new ConvexHttpClient(convexUrl ?? "");
  */
 export const save = async (key, value) => {
   try {
-    await httpClient.mutation(api.storage.set, {
+    await httpClient.mutation("storage:set", {
       key,
       value: JSON.stringify(value),
     });
@@ -51,7 +50,7 @@ export const save = async (key, value) => {
  */
 export const load = async (key) => {
   try {
-    const result = await httpClient.query(api.storage.get, { key });
+    const result = await httpClient.query("storage:get", { key });
     return result ? JSON.parse(result.value) : null;
   } catch (e) {
     console.warn("[storage] load error", key, e);
@@ -65,7 +64,7 @@ export const load = async (key) => {
  */
 export const loadMany = async (keys) => {
   try {
-    const results = await httpClient.query(api.storage.getMany, { keys });
+    const results = await httpClient.query("storage:getMany", { keys });
     const out = {};
     for (const { key, value } of results) {
       out[key] = JSON.parse(value);
@@ -83,7 +82,7 @@ export const loadMany = async (keys) => {
  */
 export const clearGame = async (gameId) => {
   try {
-    await httpClient.mutation(api.storage.delByPrefix, { prefix: gameId });
+    await httpClient.mutation("storage:delByPrefix", { prefix: gameId });
   } catch (e) {
     console.warn("[storage] clearGame error", gameId, e);
   }
@@ -97,4 +96,4 @@ export const clearGame = async (gameId) => {
 export const saveSession = (session) => save("traitors-session", session);
 export const loadSession = () => load("traitors-session");
 export const clearSession = () =>
-  httpClient.mutation(api.storage.del, { key: "traitors-session" });
+  httpClient.mutation("storage:del", { key: "traitors-session" });
