@@ -2140,7 +2140,6 @@ if (game.phase === PHASES.LOBBY) return (
           <div className="game-id-box" onClick={copyId}>{gameId}</div>
           <div className="copy-hint">{copied ? "✓ Copied!" : "Tap to copy · Share with all players"}</div>
         </div>
-        <AnimatedCandles count={4} style={{ marginBottom:4 }} />
         <div className="card">
           <div className="ctitle">Players Gathered ({game.players.length})</div>
           <div className="pgrid">

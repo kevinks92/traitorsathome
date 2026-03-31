@@ -1,17 +1,25 @@
 
-import { useMemo } from "react";
+// Pre-generate candle data at module load time so heights never change.
+// Keyed by count so each distinct row gets its own stable set.
+const candleCache = {};
+function getCandleData(count) {
+  if (!candleCache[count]) {
+    candleCache[count] = Array.from({ length: count }, (_, i) => ({
+      id: i,
+      left: `${8 + (i * (84 / (count - 1)))}%`,
+      height: 28 + Math.floor(Math.random() * 18),
+      delay: `${(i * 0.4 + Math.random() * 0.3).toFixed(2)}s`,
+      speed: `${(1.8 + Math.random() * 1.2).toFixed(2)}s`,
+      glowSpeed: `${(2.2 + Math.random() * 1.5).toFixed(2)}s`,
+      opacity: 0.7 + Math.random() * 0.3,
+      drip: Math.random() > 0.5,
+    }));
+  }
+  return candleCache[count];
+}
 
 function AnimatedCandles({ count = 5, style = {} }) {
-const candles = useMemo(() => Array.from({ length: count }, (_, i) => ({
-id: i,
-left: `${8 + (i * (84 / (count - 1)))}%`,
-height: 28 + Math.floor(Math.random() * 18),
-delay: `${(i * 0.4 + Math.random() * 0.3).toFixed(2)}s`,
-speed: `${(1.8 + Math.random() * 1.2).toFixed(2)}s`,
-glowSpeed: `${(2.2 + Math.random() * 1.5).toFixed(2)}s`,
-opacity: 0.7 + Math.random() * 0.3,
-drip: Math.random() > 0.5,
-})), [count]);
+const candles = getCandleData(count);
 return (
 <div style={{ position:"relative", width:"100%", height:70, pointerEvents:"none", ...style }}>
 {candles.map(c => (
@@ -45,8 +53,5 @@ boxShadow:"0 2px 8px rgba(0,0,0,.4)",
 </div>
 );
 }
-
-// ── GOLD FRAME ────────────────────────────────────────────────────────────────
-// Ornate rectangular portrait frame. size = inner photo width; aspect 3:4.
 
 export { AnimatedCandles };
