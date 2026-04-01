@@ -2213,19 +2213,19 @@ if (game.phase === PHASES.LOBBY) return (
               marginTop: 8,
             }}>a party game of deception and murder</div>
           </div>
-        <div style={{
-          fontFamily: "'Cinzel Decorative',cursive",
-          fontSize: "clamp(1rem,3.5vw,1.6rem)",
-          fontWeight: 700,
-          color: "var(--gold)",
-          letterSpacing: ".08em",
-          textAlign: "center",
-          marginTop: 14,
-          textShadow: "0 0 30px rgba(201,168,76,.35)",
-          lineHeight: 1.3,
-        }}>The castle gathers its guests…</div>
       </div>
       <div className="main">
+        <div style={{ background: "rgba(201,168,76,.06)", border: "1px solid rgba(201,168,76,.2)", borderRadius: 6, padding: "14px 20px", textAlign: "center", marginBottom: 8 }}>
+          <div style={{
+            fontFamily: "'Cinzel Decorative',cursive",
+            fontSize: "clamp(1rem,3.5vw,1.5rem)",
+            fontWeight: 700,
+            color: "var(--gold)",
+            letterSpacing: ".08em",
+            textShadow: "0 0 30px rgba(201,168,76,.35)",
+            lineHeight: 1.3,
+          }}>The castle gathers its guests…</div>
+        </div>
         <div style={{ display: "flex", justifyContent: "flex-start", marginBottom: 8 }}>
           <button className="btn btn-outline btn-sm" onClick={async () => {
             setGame(null); setGameId(""); setMyId(""); setIsHost(false); setScreen("start");
