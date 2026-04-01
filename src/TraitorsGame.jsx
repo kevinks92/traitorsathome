@@ -179,7 +179,7 @@ if (recent) setRecentGames(recent);
 
 const sess = await load("traitors-session");
 if (!sess) return;
-const { gId, pId, host, name } = JSON.parse(sess.value);
+const { gId, pId, host, name } = sess;
 const g = await load(gId);
 if (!g) return;
 setGame(g); setGameId(gId); setMyId(pId); setIsHost(!!host);
@@ -1350,7 +1350,7 @@ const host = g.players?.find(p => p.id === g.hostId);
 const confR = await load(gameId + "-confessions").catch(() => null);
 const confessions = confR || [];
 const tChatR = await load(gameId + "-traitor-chat-archive").catch(() => null);
-const traitorChatArchive = tChatR ? JSON.parse(tChatR.value) : (traitorChats.length ? traitorChats : []);
+const traitorChatArchive = tChatR || (traitorChats.length ? traitorChats : []);
 const historyEntry = {
 gameId,
 date: new Date().toLocaleDateString(),
