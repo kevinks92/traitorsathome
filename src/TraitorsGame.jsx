@@ -2139,6 +2139,9 @@ return (
 // LOBBY
 if (game.phase === PHASES.LOBBY) return (
 <div className="app"><style>{CSS}</style><div className="noise" /><div className="z1">
+{showAvatarCapture && (
+  <AvatarCapture onSave={async (dataUrl) => { await saveAvatar(dataUrl); setShowAvatarCapture(false); setMyAvatar(dataUrl); }} onClose={() => setShowAvatarCapture(false)} />
+)}
 <div className="hdr">
 
 <div style={{ textAlign: "center", overflow: "visible" }}>
