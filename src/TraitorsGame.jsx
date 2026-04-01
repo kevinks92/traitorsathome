@@ -174,9 +174,11 @@ const canJoinTraitorChat = isTraitor || (isSecretTraitor && secretTraitorReveale
 useEffect(() => {
 const tryRejoin = async () => {
 try {
-// Load recent games list for recall UI
-const recent = await load("traitors-recent-games");
-if (recent) setRecentGames(recent);
+// Load recent games list for recall UI (localStorage = per-device)
+try {
+  const raw = localStorage.getItem("traitors-recent-games");
+  if (raw) setRecentGames(JSON.parse(raw));
+} catch(e) {}
 
 const sess = await load("traitors-session");
 if (!sess) return;
@@ -408,11 +410,11 @@ await save(gId + "-ghost-chat", []);
 setGame(g); setGameId(gId); setMyId(hId);
 setIsHost(true); setScreen("game"); setLoading(false); setError("");
 try {
-  await save("traitors-session", JSON.stringify({ gId, pId: hId, host: true, name: playerName.trim() }));
-  const prev = (await load("traitors-recent-games")) || [];
-  const entry = { gId, pId: hId, name: playerName.trim(), host: true, playerCount: 1, ts: Date.now() };
+  await save("traitors-session", { gId, pId: hId, host: true, name: playerName.trim() });
+  const prev = JSON.parse(localStorage.getItem("traitors-recent-games") || "[]");
+  const entry = { gId, pId: hId, name: playerName.trim(), host: true, ts: Date.now() };
   const updated = [entry, ...prev.filter(r => r.gId !== gId)].slice(0, 5);
-  await save("traitors-recent-games", updated);
+  localStorage.setItem("traitors-recent-games", JSON.stringify(updated));
   setRecentGames(updated);
 } catch(e) {}
 };
@@ -428,7 +430,7 @@ if (g.phase !== PHASES.LOBBY) {
 const sId = genId();
 setGame(g); setGameId(key); setMyId(sId);
 setIsHost(false); setScreen("game"); setLoading(false); setError("");
-try { await save("traitors-session", JSON.stringify({ gId: key, pId: sId, host: false, name: playerName.trim() })); } catch(e) {}
+try { await save("traitors-session", { gId: key, pId: sId, host: false, name: playerName.trim() }); } catch(e) {}
 return;
 }
 if (g.players.length >= 24) { setLoading(false); return setError("Game is full — maximum 24 players."); }
@@ -438,7 +440,14 @@ const updated = { ...g, players: [...g.players, { id: pId, name: playerName.trim
 await save(key, updated);
 setGame(updated); setGameId(key); setMyId(pId);
 setIsHost(false); setScreen("game"); setLoading(false); setError("");
-try { await save("traitors-session", JSON.stringify({ gId: key, pId, host: false, name: playerName.trim() })); } catch(e) {}
+try {
+  await save("traitors-session", { gId: key, pId, host: false, name: playerName.trim() });
+  const prev = JSON.parse(localStorage.getItem("traitors-recent-games") || "[]");
+  const entry = { gId: key, pId, name: playerName.trim(), host: false, ts: Date.now() };
+  const upd = [entry, ...prev.filter(r => r.gId !== key)].slice(0, 5);
+  localStorage.setItem("traitors-recent-games", JSON.stringify(upd));
+  setRecentGames(upd);
+} catch(e) {}
 };
 
 // ── START GAME ─────────────────────────────────────────────────────────────
@@ -1490,9 +1499,13 @@ marginTop: 8,
                   try {
                     const g = await load(r.gId);
                     if (!g) { setLoading(false); return setError("Game not found — it may have expired."); }
-                    setGame(g); setGameId(r.gId); setMyId(r.pId || r.gId);
+                    const inGame = r.host
+                      ? g.hostId === r.pId
+                      : g.players?.some(p => p.id === r.pId);
+                    if (!inGame) { setLoading(false); return setError("You are no longer in this game."); }
+                    setGame(g); setGameId(r.gId); setMyId(r.pId);
                     setIsHost(!!r.host); setPlayerName(r.name || ""); setScreen("game");
-                    await save("traitors-session", JSON.stringify({ gId: r.gId, pId: r.pId || r.gId, host: r.host, name: r.name }));
+                    await save("traitors-session", { gId: r.gId, pId: r.pId, host: r.host, name: r.name });
                   } catch(e) { setError("Could not rejoin game."); }
                   setLoading(false);
                 }}>
