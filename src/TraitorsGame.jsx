@@ -292,7 +292,7 @@ setStRevealResult(null); // clear once phase moves on
   try {
     const avKey = gameId + "-avatars";
     const avR = await load(avKey);
-    if (avR) setAvatars(JSON.parse(avR.value));
+    if (avR) setAvatars(avR);
   } catch(e) {}
   } catch(e) { setIsOnline(false); }
 };
@@ -301,6 +301,38 @@ pollRef.current = setInterval(poll, 2200);
 return () => clearInterval(pollRef.current);
 
 }, [gameId, myId]);
+
+// ── LOBBY HEARTBEAT ────────────────────────────────────────────────────────
+// Each player pings every 5s. Host's poll evicts anyone silent for 15s.
+useEffect(() => {
+if (!gameId || !myId || !game || game.phase !== PHASES.LOBBY) return;
+const ping = () => save(gameId + "-hb-" + myId, Date.now());
+ping();
+const iv = setInterval(ping, 5000);
+return () => clearInterval(iv);
+}, [gameId, myId, game?.phase]);
+
+useEffect(() => {
+if (!gameId || !isHost || !game || game.phase !== PHASES.LOBBY) return;
+const checkHeartbeats = async () => {
+  try {
+    const now = Date.now();
+    const stale = [];
+    for (const p of game.players) {
+      const ts = await load(gameId + "-hb-" + p.id);
+      if (ts && now - ts > 15000) stale.push(p.id);
+    }
+    if (stale.length === 0) return;
+    const g = await load(gameId);
+    if (!g || g.phase !== PHASES.LOBBY) return;
+    const updated = { ...g, players: g.players.filter(p => !stale.includes(p.id)) };
+    await save(gameId, updated);
+    setGame(updated);
+  } catch(e) {}
+};
+const iv = setInterval(checkHeartbeats, 8000);
+return () => clearInterval(iv);
+}, [gameId, isHost, game?.phase, game?.players?.length]);
 
 // ── TIMER ──────────────────────────────────────────────────────────────────
 const startTimer = useCallback((seconds) => {
