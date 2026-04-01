@@ -29,6 +29,7 @@ import { TutorialScreen }    from "./components/TutorialScreen.jsx";
 import { DemoScreen }        from "./components/DemoScreen.jsx";
 import { GameElementToggle } from "./components/GameElementToggle.jsx";
 import { AvatarCapture }     from "./components/AvatarCapture.jsx";
+import { GoldFrame }         from "./components/GoldFrame.jsx";
 import { MsgLog }            from "./components/MsgLog.jsx";
 import { GhostChat }         from "./components/GhostChat.jsx";
 
