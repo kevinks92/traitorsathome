@@ -47,6 +47,7 @@ const [isHost, setIsHost] = useState(false);
 const [error, setError] = useState("");
 const [loading, setLoading] = useState(false);
 const [copied, setCopied] = useState(false);
+const [recentGames, setRecentGames] = useState([]); // [{gId, name, host, playerCount, ts}]
 
 // Host settings
 const [traitorCount, setTraitorCount] = useState(2);
@@ -172,11 +173,15 @@ const canJoinTraitorChat = isTraitor || (isSecretTraitor && secretTraitorReveale
 useEffect(() => {
 const tryRejoin = async () => {
 try {
+// Load recent games list for recall UI
+const recent = await load("traitors-recent-games");
+if (recent) setRecentGames(recent);
+
 const sess = await load("traitors-session");
 if (!sess) return;
 const { gId, pId, host, name } = JSON.parse(sess.value);
 const g = await load(gId);
-if (!g || g.phase === PHASES.LOBBY) return;
+if (!g) return;
 setGame(g); setGameId(gId); setMyId(pId); setIsHost(!!host);
 setPlayerName(name || ""); setScreen("game");
 } catch(e) {}
@@ -369,7 +374,14 @@ await save(gId + "-traitor-chat", []);
 await save(gId + "-ghost-chat", []);
 setGame(g); setGameId(gId); setMyId(hId);
 setIsHost(true); setScreen("game"); setLoading(false); setError("");
-try { await save("traitors-session", JSON.stringify({ gId, pId: hId, host: true, name: playerName.trim() })); } catch(e) {}
+try {
+  await save("traitors-session", JSON.stringify({ gId, pId: hId, host: true, name: playerName.trim() }));
+  const prev = (await load("traitors-recent-games")) || [];
+  const entry = { gId, pId: hId, name: playerName.trim(), host: true, playerCount: 1, ts: Date.now() };
+  const updated = [entry, ...prev.filter(r => r.gId !== gId)].slice(0, 5);
+  await save("traitors-recent-games", updated);
+  setRecentGames(updated);
+} catch(e) {}
 };
 
 const joinGame = async () => {
@@ -1431,6 +1443,37 @@ marginTop: 8,
       <div style={{ textAlign: "center" }}>
         <button className="btn btn-outline btn-sm" onClick={() => setScreen("history")}>📋 Past Games</button>
       </div>
+      {recentGames.length > 0 && (
+        <div style={{ marginTop: 20 }}>
+          <div style={{ fontFamily: "'Cinzel',serif", fontSize: ".6rem", letterSpacing: ".16em", textTransform: "uppercase", color: "var(--dim)", textAlign: "center", marginBottom: 10 }}>↩ Rejoin a Recent Game</div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+            {recentGames.map(r => (
+              <button key={r.gId} className="btn btn-outline btn-sm" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 14px", textAlign: "left" }}
+                onClick={async () => {
+                  setLoading(true); setError("");
+                  try {
+                    const g = await load(r.gId);
+                    if (!g) { setLoading(false); return setError("Game not found — it may have expired."); }
+                    setGame(g); setGameId(r.gId); setMyId(r.pId || r.gId);
+                    setIsHost(!!r.host); setPlayerName(r.name || ""); setScreen("game");
+                    await save("traitors-session", JSON.stringify({ gId: r.gId, pId: r.pId || r.gId, host: r.host, name: r.name }));
+                  } catch(e) { setError("Could not rejoin game."); }
+                  setLoading(false);
+                }}>
+                <div>
+                  <div style={{ fontFamily: "'Cinzel',serif", fontSize: ".7rem", color: "var(--gold)", letterSpacing: ".08em" }}>{r.gId}</div>
+                  <div style={{ fontSize: ".72rem", color: "var(--dim)", fontStyle: "italic", marginTop: 2 }}>{r.host ? "⚜ You hosted" : "🎭 You played"} · {r.name}</div>
+                </div>
+                <div style={{ fontSize: ".65rem", color: "var(--dim2)", flexShrink: 0 }}>
+                  {Math.round((Date.now() - r.ts) / 60000) < 60
+                    ? `${Math.round((Date.now() - r.ts) / 60000)}m ago`
+                    : `${Math.round((Date.now() - r.ts) / 3600000)}h ago`}
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   </div>
 </div>
@@ -2131,9 +2174,25 @@ if (game.phase === PHASES.LOBBY) return (
               marginTop: 8,
             }}>a party game of deception and murder</div>
           </div>
-        <div className="logo-sub">The castle gathers its guests…</div>
+        <div style={{
+          fontFamily: "'Cinzel Decorative',cursive",
+          fontSize: "clamp(1rem,3.5vw,1.6rem)",
+          fontWeight: 700,
+          color: "var(--gold)",
+          letterSpacing: ".08em",
+          textAlign: "center",
+          marginTop: 14,
+          textShadow: "0 0 30px rgba(201,168,76,.35)",
+          lineHeight: 1.3,
+        }}>The castle gathers its guests…</div>
       </div>
       <div className="main">
+        <div style={{ display: "flex", justifyContent: "flex-start", marginBottom: 8 }}>
+          <button className="btn btn-outline btn-sm" onClick={async () => {
+            setGame(null); setGameId(""); setMyId(""); setIsHost(false); setScreen("start");
+            try { await save("traitors-session", null); } catch(e) {}
+          }}>← Back</button>
+        </div>
         <AnimatedCandles count={6} style={{ marginBottom:4, marginTop:-8 }} />
         <div className="card">
           <div className="ctitle">Share This Game</div>
@@ -2323,7 +2382,14 @@ if (game.phase === PHASES.LOBBY) return (
         )}
         {!isHost && (
           <div className="col">
-            <AnimatedCandles count={4} style={{ marginBottom:4 }} />
+            <div style={{ display: "flex", justifyContent: "flex-start", marginBottom: 8 }}>
+              <button className="btn btn-outline btn-sm" onClick={async () => {
+                const updated = { ...game, players: game.players.filter(p => p.id !== myId) };
+                await save(gameId, updated);
+                setGame(null); setGameId(""); setMyId(""); setIsHost(false); setScreen("start");
+                try { await save("traitors-session", null); } catch(e) {}
+              }}>← Leave Lobby</button>
+            </div>
             <div className="info-box" style={{ textAlign: "center" }}>Waiting for the host to start the game and seal your fate.<br /><span style={{ fontSize: ".85rem" }}>({game.players.length} unsuspecting souls in the castle)</span></div>
             {/* Avatar capture in lobby */}
             <div className="card" style={{ textAlign: "center", padding: "18px 20px", border: myAvatar ? "1px solid rgba(201,168,76,.25)" : "1px solid rgba(139,26,26,.3)", background: myAvatar ? "rgba(201,168,76,.03)" : "rgba(139,26,26,.04)" }}>

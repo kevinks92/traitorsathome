@@ -8,18 +8,18 @@ export default defineConfig({
     VitePWA({
       registerType: "autoUpdate",
       manifest: {
-        name: "The Traitors at Home",
-        short_name: "Traitors",
+        name: "Traitors at Home",
+        short_name: "Traitors at Home",
         description: "A real-life social deduction party game",
-        theme_color: "#1a0a00",
-        background_color: "#1a0a00",
+        theme_color: "#1e082d",
+        background_color: "#07050a",
         display: "standalone",
         orientation: "portrait",
         scope: "/",
         start_url: "/",
         icons: [
-          { src: "/icon-192.png", sizes: "192x192", type: "image/png" },
-          { src: "/icon-512.png", sizes: "512x512", type: "image/png" }
+          { src: "/icon-192.png", sizes: "192x192", type: "image/png", purpose: "any" },
+          { src: "/icon-512.png", sizes: "512x512", type: "image/png", purpose: "any maskable" }
         ]
       },
       workbox: {
