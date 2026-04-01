@@ -1315,16 +1315,19 @@ await save(gameId, updated); setGame(updated);
 await addMsg(gameId, { type: "system", text: `🪄 ${target.name} has been returned to the game by the host.` });
 };
 
-const saveAvatar = async (dataUrl) => {
+const saveAvatar = (dataUrl) => {
+// Update local state immediately so the UI responds without waiting for Convex
 setMyAvatar(dataUrl);
-try {
-const avKey = gameId + "-avatars";
-const avR = await load(avKey).catch(() => null);
-const avMap = avR || {};
-avMap[myId] = dataUrl;
-await save(avKey, avMap);
-setAvatars(avMap);
-} catch(e) {}
+setAvatars(prev => ({ ...prev, [myId]: dataUrl }));
+// Persist to Convex in the background — never block the render path
+(async () => {
+  try {
+    const avKey = gameId + "-avatars";
+    const avR = await load(avKey).catch(() => null);
+    const avMap = { ...(avR || {}), [myId]: dataUrl };
+    await save(avKey, avMap);
+  } catch(e) {}
+})();
 };
 
 const resetGame = async () => {
@@ -2172,7 +2175,7 @@ return (
 if (game.phase === PHASES.LOBBY) return (
 <div className="app"><style>{CSS}</style><div className="noise" /><div className="z1">
 {showAvatarCapture && (
-  <AvatarCapture onSave={async (dataUrl) => { await saveAvatar(dataUrl); setShowAvatarCapture(false); setMyAvatar(dataUrl); }} onClose={() => setShowAvatarCapture(false)} />
+  <AvatarCapture onSave={(dataUrl) => { saveAvatar(dataUrl); setShowAvatarCapture(false); }} onClose={() => setShowAvatarCapture(false)} />
 )}
 <div className="hdr">
 
@@ -2455,7 +2458,7 @@ return (
 
   {/* AVATAR CAPTURE MODAL */}
   {showAvatarCapture && (
-    <AvatarCapture onSave={async (dataUrl) => { await saveAvatar(dataUrl); setShowAvatarCapture(false); setMyAvatar(dataUrl); }} onClose={() => setShowAvatarCapture(false)} />
+    <AvatarCapture onSave={(dataUrl) => { saveAvatar(dataUrl); setShowAvatarCapture(false); }} onClose={() => setShowAvatarCapture(false)} />
   )}
 
   {/* PHASE TRANSITION OVERLAY */}
