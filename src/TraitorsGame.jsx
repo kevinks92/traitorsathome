@@ -411,11 +411,9 @@ setGame(g); setGameId(gId); setMyId(hId);
 setIsHost(true); setScreen("game"); setLoading(false); setError("");
 try {
   await save("traitors-session", { gId, pId: hId, host: true, name: playerName.trim() });
-  const prev = JSON.parse(localStorage.getItem("traitors-recent-games") || "[]");
   const entry = { gId, pId: hId, name: playerName.trim(), host: true, ts: Date.now() };
-  const updated = [entry, ...prev.filter(r => r.gId !== gId)].slice(0, 5);
-  localStorage.setItem("traitors-recent-games", JSON.stringify(updated));
-  setRecentGames(updated);
+  localStorage.setItem("traitors-recent-games", JSON.stringify([entry]));
+  setRecentGames([entry]);
 } catch(e) {}
 };
 
@@ -442,11 +440,9 @@ setGame(updated); setGameId(key); setMyId(pId);
 setIsHost(false); setScreen("game"); setLoading(false); setError("");
 try {
   await save("traitors-session", { gId: key, pId, host: false, name: playerName.trim() });
-  const prev = JSON.parse(localStorage.getItem("traitors-recent-games") || "[]");
   const entry = { gId: key, pId, name: playerName.trim(), host: false, ts: Date.now() };
-  const upd = [entry, ...prev.filter(r => r.gId !== key)].slice(0, 5);
-  localStorage.setItem("traitors-recent-games", JSON.stringify(upd));
-  setRecentGames(upd);
+  localStorage.setItem("traitors-recent-games", JSON.stringify([entry]));
+  setRecentGames([entry]);
 } catch(e) {}
 };
 
@@ -529,6 +525,9 @@ const updated = {
 await save(gameId, updated);
 await addMsg(gameId, { type: "system", text: `⚔️ The castle doors close. ${tc} Traitor${tc > 1 ? "s" : ""} walk among you. Good luck. You'll need it.` });
 setGame(updated);
+// Clear lobby rejoin entry — game has started, auto-reconnect takes over
+localStorage.removeItem("traitors-recent-games");
+setRecentGames([]);
 
 };
 
@@ -1489,20 +1488,19 @@ marginTop: 8,
         <button className="btn btn-outline btn-sm" onClick={() => setScreen("history")}>📋 Past Games</button>
       </div>
       {recentGames.length > 0 && (
-        <div style={{ marginTop: 20 }}>
-          <div style={{ fontFamily: "'Cinzel',serif", fontSize: ".6rem", letterSpacing: ".16em", textTransform: "uppercase", color: "var(--dim)", textAlign: "center", marginBottom: 10 }}>↩ Rejoin a Lobby</div>
-          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-            {recentGames.map(r => (
-              <button key={r.gId} className="btn btn-outline btn-sm" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 14px", textAlign: "left" }}
+        {(() => {
+          const r = recentGames[0];
+          return (
+            <div style={{ marginTop: 20 }}>
+              <div style={{ fontFamily: "'Cinzel',serif", fontSize: ".6rem", letterSpacing: ".16em", textTransform: "uppercase", color: "var(--dim)", textAlign: "center", marginBottom: 10 }}>↩ Rejoin Lobby</div>
+              <button className="btn btn-outline btn-sm" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 14px", textAlign: "left", width: "100%" }}
                 onClick={async () => {
                   setLoading(true); setError("");
                   try {
                     const g = await load(r.gId);
                     if (!g) { setLoading(false); return setError("Game not found — it may have expired."); }
                     if (g.phase !== PHASES.LOBBY) { setLoading(false); return setError("This game has already started. Close and reopen the app to reconnect automatically."); }
-                    const inGame = r.host
-                      ? g.hostId === r.pId
-                      : g.players?.some(p => p.id === r.pId);
+                    const inGame = r.host ? g.hostId === r.pId : g.players?.some(p => p.id === r.pId);
                     if (!inGame) { setLoading(false); return setError("You are no longer in this game."); }
                     setGame(g); setGameId(r.gId); setMyId(r.pId);
                     setIsHost(!!r.host); setPlayerName(r.name || ""); setScreen("game");
@@ -1514,13 +1512,11 @@ marginTop: 8,
                   <div style={{ fontFamily: "'Cinzel',serif", fontSize: ".7rem", color: "var(--gold)", letterSpacing: ".08em" }}>{r.gId}</div>
                   <div style={{ fontSize: ".72rem", color: "var(--dim)", fontStyle: "italic", marginTop: 2 }}>{r.host ? "⚜ You hosted" : "🎭 You played as"} {r.name}</div>
                 </div>
-                <div style={{ fontSize: ".65rem", color: "var(--gold2)", flexShrink: 0, fontFamily: "'Cinzel',serif" }}>
-                  Rejoin Lobby →
-                </div>
+                <div style={{ fontSize: ".65rem", color: "var(--gold2)", flexShrink: 0, fontFamily: "'Cinzel',serif" }}>Rejoin Lobby →</div>
               </button>
-            ))}
-          </div>
-        </div>
+            </div>
+          );
+        })()}
       )}
     </div>
   </div>
