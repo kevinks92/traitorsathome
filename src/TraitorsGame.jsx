@@ -1490,7 +1490,7 @@ marginTop: 8,
       </div>
       {recentGames.length > 0 && (
         <div style={{ marginTop: 20 }}>
-          <div style={{ fontFamily: "'Cinzel',serif", fontSize: ".6rem", letterSpacing: ".16em", textTransform: "uppercase", color: "var(--dim)", textAlign: "center", marginBottom: 10 }}>↩ Rejoin a Recent Game</div>
+          <div style={{ fontFamily: "'Cinzel',serif", fontSize: ".6rem", letterSpacing: ".16em", textTransform: "uppercase", color: "var(--dim)", textAlign: "center", marginBottom: 10 }}>↩ Rejoin a Lobby</div>
           <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
             {recentGames.map(r => (
               <button key={r.gId} className="btn btn-outline btn-sm" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 14px", textAlign: "left" }}
@@ -1499,6 +1499,7 @@ marginTop: 8,
                   try {
                     const g = await load(r.gId);
                     if (!g) { setLoading(false); return setError("Game not found — it may have expired."); }
+                    if (g.phase !== PHASES.LOBBY) { setLoading(false); return setError("This game has already started. Close and reopen the app to reconnect automatically."); }
                     const inGame = r.host
                       ? g.hostId === r.pId
                       : g.players?.some(p => p.id === r.pId);
@@ -1511,12 +1512,10 @@ marginTop: 8,
                 }}>
                 <div>
                   <div style={{ fontFamily: "'Cinzel',serif", fontSize: ".7rem", color: "var(--gold)", letterSpacing: ".08em" }}>{r.gId}</div>
-                  <div style={{ fontSize: ".72rem", color: "var(--dim)", fontStyle: "italic", marginTop: 2 }}>{r.host ? "⚜ You hosted" : "🎭 You played"} · {r.name}</div>
+                  <div style={{ fontSize: ".72rem", color: "var(--dim)", fontStyle: "italic", marginTop: 2 }}>{r.host ? "⚜ You hosted" : "🎭 You played as"} {r.name}</div>
                 </div>
-                <div style={{ fontSize: ".65rem", color: "var(--dim2)", flexShrink: 0 }}>
-                  {Math.round((Date.now() - r.ts) / 60000) < 60
-                    ? `${Math.round((Date.now() - r.ts) / 60000)}m ago`
-                    : `${Math.round((Date.now() - r.ts) / 3600000)}h ago`}
+                <div style={{ fontSize: ".65rem", color: "var(--gold2)", flexShrink: 0, fontFamily: "'Cinzel',serif" }}>
+                  Rejoin Lobby →
                 </div>
               </button>
             ))}
