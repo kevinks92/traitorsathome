@@ -961,7 +961,7 @@ render: () => (
 <div className="col" style={{ gap: 8 }}>
 {/* Monologue order list */}
 <div style={{ background: "rgba(201,168,76,.06)", border: "1px solid rgba(201,168,76,.2)", borderRadius: 4, padding: 12 }}>
-<div style={{ fontFamily: "'Cinzel',serif", fontSize: ".62rem", letterSpacing: ".12em", color: "var(--gold2)", textTransform: "uppercase", marginBottom: 8 }}>🎤 The Unmasking — Remaining Players</div>
+<div style={{ fontFamily: "'Cinzel',serif", fontSize: ".62rem", letterSpacing: ".12em", color: "var(--gold2)", textTransform: "uppercase", marginBottom: 8 }}>🎭 The Unmasking — Remaining Players</div>
 <div style={{ background: "rgba(201,168,76,.08)", border: "1px solid rgba(201,168,76,.25)", borderRadius: 3, padding: "10px 12px", marginBottom: 10, textAlign: "center" }}>
 <div style={{ fontFamily: "'Crimson Text',serif", fontSize: ".95rem", color: "var(--gold)", fontStyle: "italic" }}>"Reveal to us — are you a Traitor, or are you Faithful?"</div>
 </div>
@@ -1414,6 +1414,7 @@ render: () => (
 <div style={{ fontFamily:"'Cinzel',serif",fontSize:".58rem",letterSpacing:".25em",textTransform:"uppercase",color:"rgba(220,50,50,.95)",textShadow:"0 0 20px rgba(180,20,20,.6)",marginBottom:14,textAlign:"center" }}>By Order of the Traitors</div>
 <div style={{ borderTop:"1px solid rgba(139,26,26,.2)",borderBottom:"1px solid rgba(139,26,26,.2)",padding:"14px 0",margin:"0 0 14px",textAlign:"center" }}>
 <div style={{ fontFamily:"'Cinzel Decorative',cursive",fontSize:"1.3rem",color:"var(--crim3)",lineHeight:1.3 }}>You Have Been<br />Murdered</div>
+<div style={{ fontFamily:"'Cinzel',serif",fontSize:".6rem",letterSpacing:".15em",color:"rgba(200,80,80,.5)",marginTop:8 }}>— Signed, The Traitors —</div>
 </div>
 <div style={{ fontFamily:"'Crimson Text',serif",fontSize:".95rem",lineHeight:1.8,color:"rgba(220,190,160,.8)",textAlign:"center",fontStyle:"italic" }}>
 The Turret convened in the darkness and reached unanimous verdict. Your seat at breakfast is empty.

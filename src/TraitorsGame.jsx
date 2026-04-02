@@ -1628,7 +1628,7 @@ const currentPlayer = calledIdx >= 0 ? revealOrder[calledIdx] : null;
         return (
           <div className="card" style={{ padding: "28px 20px" }}>
             <div style={{ textAlign: "center", marginBottom: 20 }}>
-              <div style={{ fontSize: "2.5rem", marginBottom: 10 }}>🎤</div>
+              <div style={{ fontSize: "2.5rem", marginBottom: 10 }}>🎭</div>
               <div style={{ fontFamily: "'Cinzel Decorative',cursive", fontSize: "1.3rem", color: "var(--gold)", marginBottom: 8 }}>The Unmasking</div>
               <div style={{ fontStyle: "italic", color: "var(--dim)", fontSize: ".92rem", lineHeight: 1.7 }}>
                 Ask each remaining player one at a time:
@@ -1705,7 +1705,7 @@ const currentPlayer = calledIdx >= 0 ? revealOrder[calledIdx] : null;
             The host will call on you one at a time.
           </div>
           <div style={{ background: "rgba(201,168,76,.06)", border: "1px solid rgba(201,168,76,.25)", borderRadius: 3, padding: "16px 18px", textAlign: "left" }}>
-            <div style={{ fontFamily: "'Cinzel',serif", fontSize: ".65rem", letterSpacing: ".15em", color: "var(--gold2)", textTransform: "uppercase", marginBottom: 10 }}>🎤 When the host calls your name</div>
+            <div style={{ fontFamily: "'Cinzel',serif", fontSize: ".65rem", letterSpacing: ".15em", color: "var(--gold2)", textTransform: "uppercase", marginBottom: 10 }}>🎭 When the host calls your name</div>
             <div style={{ fontSize: ".95rem", color: "var(--text)", lineHeight: 1.8 }}>
               Stand up. Give a short dramatic monologue. Who did you suspect? Who did you trust? What did you see that nobody else did?<br /><br />
               <strong style={{ color: "var(--gold)" }}>Then reveal your role.</strong>
