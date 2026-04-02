@@ -911,7 +911,7 @@ newPlayers = g.players.map(p => p.id === targetId ? { ...p, shield: false } : p)
 } else {
 newPlayers = g.players.map(p => p.id === targetId ? { ...p, alive: false, isGhost: true } : p);
 }
-const aliveAfter = dagStripped.filter(p => p.alive).length;
+const aliveAfter = newPlayers.filter(p => p.alive).length;
 // Always go to Turret so Traitors can debrief — even if no further murder is possible
 // Flag declineNoTurretMurder if 5 alive (Turret meets but cannot murder)
 const shieldBlocked = !!target?.shield;
@@ -1092,15 +1092,20 @@ if (isTie) {
     // Third tie — tied targets are SAFE, random draw from everyone else
     const safeIds = tiedIds;
     const drawPool = g.players.filter(p => p.alive && !safeIds.includes(p.id));
-    const randomId = drawPool[Math.floor(Math.random() * drawPool.length)]?.id;
-    const ban = g.players.find(p => p.id === randomId);
     const safeNames = safeIds.map(id => g.players.find(p=>p.id===id)?.name).filter(Boolean).join(" & ");
+    if (!drawPool.length) {
+      // Everyone is tied — no safe draw pool, restart the vote entirely
+      await addMsg(gameId, { type: "system", text: `⚖️ Unprecedented — every player tied. The vote restarts fresh.` });
+      await advanceTo(PHASES.VOTING, { dayVotes: {}, daggerActivePlayerId: null, tieBreakRound: 0, tieLockedIds: [] });
+      return;
+    }
+    const randomId = drawPool[Math.floor(Math.random() * drawPool.length)].id;
+    const ban = g.players.find(p => p.id === randomId);
     await addMsg(gameId, { type: "system", text: `🎲 Three ties. ${safeNames} are safe — the draw falls on everyone else. ${ban?.emoji} ${ban?.name} drawn at random.` });
     const newPlayers = g.players.map(p => p.id === randomId ? { ...p, alive: false, isGhost: true, dagger: false } : p);
     const aliveAfter = newPlayers.filter(p => p.alive).length;
     const suppressRoleReveal = aliveAfter <= 4;
     const lastBanished = { name: ban.name, role: ban.role, emoji: ban.emoji, suppressRoleReveal };
-const tieReset = { tieBreakRound: 0, tieLockedIds: [] };
     const updated = { ...g, players: newPlayers, lastBanished, phase: PHASES.BANISHMENT, tieBreakRound: 0, tieLockedIds: [] };
     await save(gameId, updated); setGame(updated);
     await addMsg(gameId, { type: "ban", text: `🔥 ${ban.name} has been banished by random draw.` });
@@ -1368,7 +1373,29 @@ setAvatars(prev => ({ ...prev, [myId]: dataUrl }));
 
 const resetGame = async () => {
 const g = await load(gameId);
-const fresh = { ...g, phase: PHASES.LOBBY, players: g.players.map(p => ({ ...p, role: null, alive: true, shield: false, dagger: false, seerRole: false })), round: 0, currentRound: 0, nightVotes: {}, dayVotes: {}, endgameVotes: {}, currentMission: null, winner: null, lastKilled: null, lastBanished: null, breakfastGroups: [], breakfastGroupIdx: 0, secretTraitorRevealedInChat: false, monologueIdx: -1 };
+const fresh = {
+  ...g,
+  phase: PHASES.LOBBY,
+  players: g.players.map(p => ({ ...p, role: null, alive: true, shield: false, dagger: false, seerRole: false, isGhost: false })),
+  round: 0, currentRound: 0,
+  nightVotes: {}, dayVotes: {}, endgameVotes: {},
+  currentMission: null, winner: null,
+  lastKilled: null, lastBanished: null,
+  breakfastGroups: [], breakfastGroupIdx: 0, breakfastGroupHistory: [],
+  breakfastRevealed: false,
+  secretTraitorRevealedInChat: false,
+  monologueIdx: -1, rolesRevealed: false, endgameRevealIdx: -1,
+  tieBreakRound: 0, tieLockedIds: [],
+  stShortlist: [], stShortlistSubmitted: false, stBeingRevealedThisNight: false,
+  recruitTargetId: null, recruitDeclined: false, recruitDeclinedName: null, recruitDeclinedEmoji: null,
+  recruitedThisNight: false, declineNoMurder: false,
+  seerUsed: false, seerInvestigated: null,
+  banishLog: [], killLog: [], shieldLog: [], timeline: [],
+  twoTraitorRecruitUsed: false, twoTraitorRecruitMode: false,
+  twoTraitorRecruitTarget: null, twoTraitorRecruitVotes: {}, twoTraitorTargetVotes: {},
+  canTwoTraitorRecruit: false,
+  seerAwarded: false, daggerAwarded: false,
+};
 await save(gameId, fresh);
 await save(gameId + "-msgs", []);
 await save(gameId + "-traitor-chat", []);
