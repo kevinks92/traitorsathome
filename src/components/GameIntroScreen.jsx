@@ -166,17 +166,18 @@ marginTop: 8,
 const newSlide = slide - 1;
 setSlide(newSlide);
 const g = await load(gameId);
-await save(gameId, { ...g, introSlide: newSlide });
+if (g) await save(gameId, { ...g, introSlide: newSlide });
 }}>← Back</button>}
 {!current.isLast
 ? <button className="btn btn-gold btn-lg" onClick={async()=>{
 const newSlide = slide + 1;
 setSlide(newSlide);
 const g = await load(gameId);
-await save(gameId, { ...g, introSlide: newSlide });
+if (g) await save(gameId, { ...g, introSlide: newSlide });
 }}>Next →</button>
 : <button className="btn btn-gold btn-lg" onClick={async()=>{
 const g = await load(gameId);
+if (!g) return;
 const nextPhase = g.secretTraitorEnabled ? PHASES.SECRET_TRAITOR_SELECTION : PHASES.ROLE_REVEAL;
 await advanceTo(nextPhase);
 }}>

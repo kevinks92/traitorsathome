@@ -112,8 +112,8 @@ Now Standing: Player {idx + 1} of {players.length}
 {/* Phase-specific host controls */}
 {p === PHASES.ROLE_REVEAL && (() => {
 const step = game.roleRevealStep || "tapping";
-const traitors = game.players.filter(pl => pl.role === "traitor");
-const secretTraitor = game.players.find(pl => pl.role === "secret_traitor");
+const traitors = (game.players || []).filter(pl => pl.role === "traitor");
+const secretTraitor = (game.players || []).find(pl => pl.role === "secret_traitor");
 return (
 <>
 {/* STEP 1: TAPPING */}
@@ -1254,7 +1254,7 @@ Tapping Done — Release Roles →
             const isCurrentGroup = i === breakfastGroupIdx;
             const isPast = i < breakfastGroupIdx;
             const isLast = i === breakfastGroups.length - 1;
-            const groupPlayers = group.map(id => game.players.find(p => p.id === id)).filter(Boolean);
+            const groupPlayers = group.map(id => (game.players || []).find(p => p.id === id)).filter(Boolean);
             return (
               <div key={i} className={`bk-group ${isCurrentGroup ? "current" : isPast ? "" : "waiting"}`}>
                 <div className="bk-group-label">Group {i + 1}{isLast ? " — Final (murder reveal)" : ""}{isCurrentGroup ? " — At Breakfast Now" : ""}</div>

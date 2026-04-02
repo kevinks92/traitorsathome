@@ -323,8 +323,9 @@ const checkHeartbeats = async () => {
     const now = Date.now();
     const stale = [];
     for (const p of game.players) {
+      if (p.id === game.hostId) continue; // never evict the host
       const ts = await load(gameId + "-hb-" + p.id);
-      if (ts && now - ts > 15000) stale.push(p.id);
+      if (ts && now - ts > 15000) stale.push(p.id); // stale ping = evict (no ping = new joiner, give grace)
     }
     if (stale.length === 0) return;
     const g = await load(gameId);
@@ -1860,7 +1861,7 @@ return (
           const rooms = game.rooms || {};
           const roomMap = { living: "🛋️ Living Area", kitchen: "🍳 Kitchen", dining: "🪑 Dining Room", terrace: "🌿 Upper Terrace", patio: "☀️ Patio", lounge: "🎲 Upstairs Lounge" };
           const byRoom = {};
-          game.players.filter(p => p.alive).forEach(p => {
+          (game.players || []).filter(p => p.alive).forEach(p => {
             const r = rooms[p.id] || "living";
             if (!byRoom[r]) byRoom[r] = [];
             byRoom[r].push(p);
@@ -1908,7 +1909,7 @@ return (
               {sorted.length > 0 ? (
                 <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
                   {sorted.map(([tid, count]) => {
-                    const target = game.players.find(p => p.id === tid);
+                    const target = (game.players || []).find(p => p.id === tid);
                     return target ? (
                       <div key={tid} style={{ display: "flex", alignItems: "center", gap: 10, padding: "7px 10px", background: "rgba(139,26,26,.08)", border: "1px solid rgba(139,26,26,.2)", borderRadius: 3 }}>
                         <span style={{ fontSize: ".9rem" }}>{target.emoji} {target.name}</span>
@@ -1972,7 +1973,7 @@ return (
                     {game.stShortlist?.length > 0 && (
                       <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
                         {game.stShortlist.map(id => {
-                          const p = game.players.find(x => x.id === id);
+                          const p = (game.players || []).find(x => x.id === id);
                           return p ? <span key={id} style={{ background: "rgba(80,0,80,.3)", border: "1px solid rgba(120,0,120,.4)", borderRadius: 20, padding: "3px 10px", fontSize: ".78rem", color: "#d088ff" }}>{p.emoji} {p.name}</span> : null;
                         })}
                       </div>
@@ -1990,7 +1991,7 @@ return (
                 <div style={{ fontFamily: "'Cinzel',serif", fontSize: ".62rem", color: "#d0a0ff", letterSpacing: ".1em", textTransform: "uppercase", marginBottom: 6 }}>🤝 Recruitment</div>
                 {game.recruitTargetId ? (
                   <div style={{ fontSize: ".85rem", color: "var(--dim)" }}>
-                    A Faithful has been approached: <strong style={{ color: "#d0a0ff" }}>{game.players.find(p => p.id === game.recruitTargetId)?.emoji} {game.players.find(p => p.id === game.recruitTargetId)?.name}</strong>
+                    A Faithful has been approached: <strong style={{ color: "#d0a0ff" }}>{(game.players || []).find(p => p.id === game.recruitTargetId)?.emoji} {(game.players || []).find(p => p.id === game.recruitTargetId)?.name}</strong>
                     <div style={{ marginTop: 4, fontStyle: "italic" }}>{game.phase === PHASES.NIGHT_RECRUIT_RESPONSE ? "Awaiting their response…" : ""}</div>
                   </div>
                 ) : (
@@ -2005,7 +2006,7 @@ return (
                 <div style={{ fontFamily: "'Cinzel',serif", fontSize: ".62rem", color: "#c090ff", letterSpacing: ".1em", textTransform: "uppercase", marginBottom: 6 }}>🎯 The Turret</div>
                 {game.stShortlist?.length > 0 && (
                   <div style={{ marginBottom: 8, fontSize: ".78rem", color: "var(--dim)" }}>
-                    Shortlist: {game.stShortlist.map(id => { const p = game.players.find(x => x.id === id); return p ? `${p.emoji} ${p.name}` : null; }).filter(Boolean).join(", ")}
+                    Shortlist: {game.stShortlist.map(id => { const p = (game.players || []).find(x => x.id === id); return p ? `${p.emoji} ${p.name}` : null; }).filter(Boolean).join(", ")}
                   </div>
                 )}
                 {traitorChats.length > 0 ? (
@@ -2025,12 +2026,12 @@ return (
                 {/* Night vote tally */}
                 {(() => {
                   const votes = game.nightVotes || {};
-                  const traitors = game.players.filter(p => (p.role === "traitor" || p.role === "secret_traitor") && p.alive);
+                  const traitors = (game.players || []).filter(p => (p.role === "traitor" || p.role === "secret_traitor") && p.alive);
                   return traitors.length > 0 && (
                     <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
                       {traitors.map(t => {
                         const targetId = votes[t.id];
-                        const target = game.players.find(p => p.id === targetId);
+                        const target = (game.players || []).find(p => p.id === targetId);
                         return (
                           <div key={t.id} style={{ display: "flex", justifyContent: "space-between", padding: "5px 8px", background: "rgba(60,20,80,.2)", border: "1px solid rgba(80,20,100,.25)", borderRadius: 3, fontSize: ".78rem" }}>
                             <span style={{ color: "#c090ff" }}>{t.emoji} {t.name}</span>
@@ -2076,7 +2077,7 @@ return (
         {/* FIRE OF TRUTH — live votes */}
         {game.phase === PHASES.ENDGAME && (() => {
           const votes = game.endgameVotes || {};
-          const alive = game.players.filter(p => p.alive);
+          const alive = (game.players || []).filter(p => p.alive);
           const revealIdx = game.endgameRevealIdx ?? -1;
           return (
             <div className="card" style={{ marginBottom: 14 }}>
@@ -2102,9 +2103,9 @@ return (
         {/* Players alive/dead overview — always shown */}
         <div className="card" style={{ marginBottom: 14 }}>
           <div className="ctitle">Castle Status</div>
-          <div style={{ fontFamily: "'Cinzel',serif", fontSize: ".58rem", letterSpacing: ".1em", textTransform: "uppercase", color: "#80e080", marginBottom: 6 }}>Alive ({game.players.filter(p => p.alive).length})</div>
+          <div style={{ fontFamily: "'Cinzel',serif", fontSize: ".58rem", letterSpacing: ".1em", textTransform: "uppercase", color: "#80e080", marginBottom: 6 }}>Alive ({(game.players || []).filter(p => p.alive).length})</div>
           <div className="pgrid" style={{ marginBottom: 10 }}>
-            {game.players.filter(p => p.alive).map(p => (
+            {(game.players || []).filter(p => p.alive).map(p => (
               <div key={p.id} className="pcard" style={{ padding: "8px 4px" }}>
                 <div className="pavatar" style={{ fontSize: "1rem" }}>{p.emoji}</div>
                 <div className="pname" style={{ fontSize: ".6rem" }}>{p.name}</div>
