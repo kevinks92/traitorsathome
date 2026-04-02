@@ -1514,37 +1514,35 @@ marginTop: 8,
       <div style={{ textAlign: "center" }}>
         <button className="btn btn-outline btn-sm" onClick={() => setScreen("history")}>📋 Past Games</button>
       </div>
-      {recentGames.length > 0 && (
-        {(() => {
-          const r = recentGames[0];
-          return (
-            <div style={{ marginTop: 20 }}>
-              <div style={{ fontFamily: "'Cinzel',serif", fontSize: ".6rem", letterSpacing: ".16em", textTransform: "uppercase", color: "var(--dim)", textAlign: "center", marginBottom: 10 }}>↩ Rejoin Lobby</div>
-              <button className="btn btn-outline btn-sm" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 14px", textAlign: "left", width: "100%" }}
-                onClick={async () => {
-                  setLoading(true); setError("");
-                  try {
-                    const g = await load(r.gId);
-                    if (!g) { setLoading(false); return setError("Game not found — it may have expired."); }
-                    if (g.phase !== PHASES.LOBBY) { setLoading(false); return setError("This game has already started. Close and reopen the app to reconnect automatically."); }
-                    const inGame = r.host ? g.hostId === r.pId : g.players?.some(p => p.id === r.pId);
-                    if (!inGame) { setLoading(false); return setError("You are no longer in this game."); }
-                    setGame(g); setGameId(r.gId); setMyId(r.pId);
-                    setIsHost(!!r.host); setPlayerName(r.name || ""); setScreen("game");
-                    await save("traitors-session", { gId: r.gId, pId: r.pId, host: r.host, name: r.name });
-                  } catch(e) { setError("Could not rejoin game."); }
-                  setLoading(false);
-                }}>
-                <div>
-                  <div style={{ fontFamily: "'Cinzel',serif", fontSize: ".7rem", color: "var(--gold)", letterSpacing: ".08em" }}>{r.gId}</div>
-                  <div style={{ fontSize: ".72rem", color: "var(--dim)", fontStyle: "italic", marginTop: 2 }}>{r.host ? "⚜ You hosted" : "🎭 You played as"} {r.name}</div>
-                </div>
-                <div style={{ fontSize: ".65rem", color: "var(--gold2)", flexShrink: 0, fontFamily: "'Cinzel',serif" }}>Rejoin Lobby →</div>
-              </button>
-            </div>
-          );
-        })()}
-      )}
+      {recentGames.length > 0 && (() => {
+        const r = recentGames[0];
+        return (
+          <div style={{ marginTop: 20 }}>
+            <div style={{ fontFamily: "'Cinzel',serif", fontSize: ".6rem", letterSpacing: ".16em", textTransform: "uppercase", color: "var(--dim)", textAlign: "center", marginBottom: 10 }}>↩ Rejoin Lobby</div>
+            <button className="btn btn-outline btn-sm" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 14px", textAlign: "left", width: "100%" }}
+              onClick={async () => {
+                setLoading(true); setError("");
+                try {
+                  const g = await load(r.gId);
+                  if (!g) { setLoading(false); return setError("Game not found — it may have expired."); }
+                  if (g.phase !== PHASES.LOBBY) { setLoading(false); return setError("This game has already started. Close and reopen the app to reconnect automatically."); }
+                  const inGame = r.host ? g.hostId === r.pId : g.players?.some(p => p.id === r.pId);
+                  if (!inGame) { setLoading(false); return setError("You are no longer in this game."); }
+                  setGame(g); setGameId(r.gId); setMyId(r.pId);
+                  setIsHost(!!r.host); setPlayerName(r.name || ""); setScreen("game");
+                  await save("traitors-session", { gId: r.gId, pId: r.pId, host: r.host, name: r.name });
+                } catch(e) { setError("Could not rejoin game."); }
+                setLoading(false);
+              }}>
+              <div>
+                <div style={{ fontFamily: "'Cinzel',serif", fontSize: ".7rem", color: "var(--gold)", letterSpacing: ".08em" }}>{r.gId}</div>
+                <div style={{ fontSize: ".72rem", color: "var(--dim)", fontStyle: "italic", marginTop: 2 }}>{r.host ? "⚜ You hosted" : "🎭 You played as"} {r.name}</div>
+              </div>
+              <div style={{ fontSize: ".65rem", color: "var(--gold2)", flexShrink: 0, fontFamily: "'Cinzel',serif" }}>Rejoin Lobby →</div>
+            </button>
+          </div>
+        );
+      })()}
     </div>
   </div>
 </div>
