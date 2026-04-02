@@ -1,4 +1,17 @@
 import { useEffect, useRef, useState } from "react";
+import { GoldFrame } from "../components/GoldFrame.jsx";
+
+const DEMO_PLAYERS = [
+  { id: "p1", name: "Jamie",  emoji: "🦊", role: "faithful",       alive: true,  shield: false, dagger: false },
+  { id: "p2", name: "Alex",   emoji: "🐺", role: "traitor",        alive: true,  shield: false, dagger: false },
+  { id: "p3", name: "Sam",    emoji: "🦅", role: "faithful",       alive: true,  shield: true,  dagger: false },
+  { id: "p4", name: "Riley",  emoji: "🐉", role: "secret_traitor", alive: true,  shield: false, dagger: false },
+  { id: "p5", name: "Morgan", emoji: "🦁", role: "faithful",       alive: true,  shield: false, dagger: true  },
+  { id: "p6", name: "Casey",  emoji: "🐍", role: "faithful",       alive: true,  shield: false, dagger: false },
+  { id: "p7", name: "Drew",   emoji: "🦉", role: "faithful",       alive: false, shield: false, dagger: false },
+  { id: "p8", name: "Quinn",  emoji: "🐻", role: "faithful",       alive: false, shield: false, dagger: false },
+];
+
 const HOST_DEMO = [
 
 {
