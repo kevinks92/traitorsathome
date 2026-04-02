@@ -13,13 +13,14 @@ roam: ["free_roam"],
 const p = phase?.toLowerCase() || "";
 const isTurret = p.includes("night_traitor_chat");
 const isSeerVision = p.includes("night_seer");
+const isSecretTraitor = p.includes("night_secret_traitor");
 const isFire = PHASES_LOCAL.fire.some(x => p.includes(x));
 const isMission = PHASES_LOCAL.mission.some(x => p.includes(x));
 const isTable = PHASES_LOCAL.table.some(x => p.includes(x));
 const isBanish = p.includes("banishment");
 const isBreakfast = p.includes("breakfast");
 const isRoam = p.includes("free_roam");
-const isNight = !isTurret && !isSeerVision && (PHASES_LOCAL.night.some(x => p.includes(x.replace("night_",""))) || p.startsWith("night"));
+const isNight = !isTurret && !isSeerVision && !isSecretTraitor && (PHASES_LOCAL.night.some(x => p.includes(x.replace("night_",""))) || p.startsWith("night"));
 
 // ── NIGHT (general) — Stars, moon, candles ────────────────────────────────
 if (isNight) return (
@@ -161,6 +162,39 @@ if (isTurret) return (
   pointerEvents:"none",
 }} />
 )))}
+</div>
+);
+
+// ── SECRET TRAITOR — Parchment & quill with night sky ────────────────────
+if (isSecretTraitor) return (
+<div style={{ position:"relative", width:"100%", height:90, pointerEvents:"none", marginBottom:4, overflow:"hidden" }}>
+{/* Stars */}
+{[...Array(18)].map((_,i) => (
+<div key={i} style={{
+  position:"absolute",
+  left:`${2+i*5.5+(i%4)*2.5}%`, top:`${2+(i%6)*12}px`,
+  width:i%4===0?3:2, height:i%4===0?3:2,
+  borderRadius:"50%", background:"rgba(220,200,255,.85)",
+  animation:`starTwinkle ${1.3+i*.25}s ${i*.16}s ease-in-out infinite`,
+}} />
+))}
+{/* Moon */}
+<div style={{ position:"absolute", right:18, top:5, fontSize:"1.6rem", animation:"moonPulse 3.5s ease-in-out infinite" }}>🌙</div>
+{/* Parchment shadow */}
+<div style={{ position:"absolute", bottom:8, left:"50%", transform:"translateX(-50%)", width:70, height:8, background:"radial-gradient(ellipse,rgba(80,40,20,.45),transparent)", borderRadius:"50%" }} />
+{/* Parchment body */}
+<div style={{ position:"absolute", bottom:12, left:"50%", transform:"translateX(-50%)", width:68, height:56, background:"linear-gradient(135deg,rgba(220,190,130,.18) 0%,rgba(200,165,100,.28) 40%,rgba(180,145,80,.2) 100%)", border:"1px solid rgba(210,175,110,.35)", borderRadius:3, boxShadow:"inset 0 1px 8px rgba(220,185,110,.08)" }}>
+{[0,1,2,3,4].map(i => (<div key={i} style={{ position:"absolute", top:`${10+i*9}px`, left:10, right:10, height:1, background:`rgba(210,175,110,${.12+i*.02})`, borderRadius:1 }} />))}
+<div style={{ position:"absolute", top:52, left:10, width:"45%", height:1, background:"rgba(210,175,110,.1)", borderRadius:1 }} />
+</div>
+{/* Top rod */}
+<div style={{ position:"absolute", bottom:66, left:"50%", transform:"translateX(-50%)", width:74, height:6, background:"linear-gradient(to bottom,rgba(200,155,70,.55),rgba(160,115,45,.65))", borderRadius:"3px 3px 1px 1px", boxShadow:"0 1px 4px rgba(0,0,0,.4)" }} />
+{/* Bottom rod */}
+<div style={{ position:"absolute", bottom:10, left:"50%", transform:"translateX(-50%)", width:74, height:6, background:"linear-gradient(to top,rgba(200,155,70,.55),rgba(160,115,45,.65))", borderRadius:"1px 1px 3px 3px", boxShadow:"0 -1px 4px rgba(0,0,0,.4)" }} />
+{/* Quill */}
+<div style={{ position:"absolute", bottom:30, left:"calc(50% + 16px)", fontSize:"1.4rem", transform:"rotate(-35deg)", animation:"candleFlicker 2.2s ease-in-out infinite", filter:"drop-shadow(0 0 6px rgba(200,160,80,.3))" }}>🪶</div>
+{/* Ink glow */}
+<div style={{ position:"absolute", bottom:28, left:"calc(50% + 8px)", width:4, height:4, borderRadius:"50%", background:"rgba(160,120,200,.5)", boxShadow:"0 0 6px 3px rgba(140,80,200,.3)", animation:"orbPulse 2s ease-in-out infinite" }} />
 </div>
 );
 

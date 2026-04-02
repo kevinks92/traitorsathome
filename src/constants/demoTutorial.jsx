@@ -63,6 +63,32 @@ const CrystalBallScene = () => (
 </div>
 );
 
+const ParchmentScene = () => (
+<div style={{ position:"relative", background:"rgba(4,1,12,.97)", border:"1px solid rgba(120,40,180,.3)", borderRadius:4, overflow:"hidden", minHeight:90, marginBottom:0 }}>
+{/* Stars */}
+{[...Array(18)].map((_,i) => (<div key={i} style={{ position:"absolute", left:`${2+i*5.5+(i%4)*2.5}%`, top:`${2+(i%6)*12}px`, width:i%4===0?3:2, height:i%4===0?3:2, borderRadius:"50%", background:"rgba(220,200,255,.85)", animation:`starTwinkle ${1.3+i*.25}s ${i*.16}s ease-in-out infinite` }} />))}
+{/* Moon */}
+<div style={{ position:"absolute", right:18, top:5, fontSize:"1.6rem", animation:"moonPulse 3.5s ease-in-out infinite" }}>🌙</div>
+{/* Parchment shadow */}
+<div style={{ position:"absolute", bottom:8, left:"50%", transform:"translateX(-50%)", width:70, height:8, background:"radial-gradient(ellipse,rgba(80,40,20,.45),transparent)", borderRadius:"50%" }} />
+{/* Parchment scroll body */}
+<div style={{ position:"absolute", bottom:12, left:"50%", transform:"translateX(-50%)", width:68, height:56, background:"linear-gradient(135deg,rgba(220,190,130,.18) 0%,rgba(200,165,100,.28) 40%,rgba(180,145,80,.2) 100%)", border:"1px solid rgba(210,175,110,.35)", borderRadius:3, boxShadow:"inset 0 1px 8px rgba(220,185,110,.08)" }}>
+{/* Scroll lines */}
+{[0,1,2,3,4].map(i => (<div key={i} style={{ position:"absolute", top:`${10+i*9}px`, left:10, right:10, height:1, background:`rgba(210,175,110,${.12+i*.02})`, borderRadius:1 }} />))}
+{/* Short line — partial last entry */}
+<div style={{ position:"absolute", top:52, left:10, width:"45%", height:1, background:"rgba(210,175,110,.1)", borderRadius:1 }} />
+</div>
+{/* Top scroll rod */}
+<div style={{ position:"absolute", bottom:66, left:"50%", transform:"translateX(-50%)", width:74, height:6, background:"linear-gradient(to bottom,rgba(200,155,70,.55),rgba(160,115,45,.65))", borderRadius:"3px 3px 1px 1px", boxShadow:"0 1px 4px rgba(0,0,0,.4)" }} />
+{/* Bottom scroll rod */}
+<div style={{ position:"absolute", bottom:10, left:"50%", transform:"translateX(-50%)", width:74, height:6, background:"linear-gradient(to top,rgba(200,155,70,.55),rgba(160,115,45,.65))", borderRadius:"1px 1px 3px 3px", boxShadow:"0 -1px 4px rgba(0,0,0,.4)" }} />
+{/* Quill */}
+<div style={{ position:"absolute", bottom:30, left:"calc(50% + 16px)", fontSize:"1.4rem", transform:"rotate(-35deg)", animation:`candleFlicker 2.2s ease-in-out infinite`, filter:"drop-shadow(0 0 6px rgba(200,160,80,.3))" }}>🪶</div>
+{/* Ink glow dot */}
+<div style={{ position:"absolute", bottom:28, left:"calc(50% + 8px)", width:4, height:4, borderRadius:"50%", background:"rgba(160,120,200,.5)", boxShadow:"0 0 6px 3px rgba(140,80,200,.3)", animation:`orbPulse 2s ease-in-out infinite` }} />
+</div>
+);
+
 const HOST_DEMO = [
 
 {
@@ -759,7 +785,7 @@ desc: "On pre-reveal rounds (randomly in the first half of the game), the ST is 
 tip: "This is the most theatrical moment of the game. Watch the regular Traitors' faces when they learn who's been working alone.",
 render: () => (
 <div className="col" style={{ gap: 8 }}>
-<TurretScene />
+<ParchmentScene />
 <div style={{ background: "rgba(60,0,90,.2)", border: "1px solid rgba(140,40,220,.4)", borderRadius: 4, padding: 12 }}>
 <div style={{ fontSize: ".6rem", fontFamily: "'Cinzel',serif", letterSpacing: ".15em", color: "#d088ff", marginBottom: 8, textTransform: "uppercase" }}>🎭 Reveal Night — Special Instructions</div>
 <div style={{ fontSize: ".78rem", color: "rgba(180,130,220,.7)", lineHeight: 1.6, marginBottom: 8, fontStyle: "italic" }}>Secret Traitor has submitted shortlist. Do NOT send them back to sleep — tap below to wake the Traitors and make the introduction.</div>
