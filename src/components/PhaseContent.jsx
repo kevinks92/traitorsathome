@@ -1557,9 +1557,10 @@ Tapping Done — Release Roles →
       // Full-screen blindfold — phones face down
       return (
         <div className="card" style={{ marginTop: 16, textAlign: "center", padding: "48px 20px", background: "rgba(4,1,8,.98)", border: "1px solid rgba(40,20,60,.4)" }}>
-          <div style={{ fontSize: "4rem", marginBottom: 16 }}>🙈</div>
-          <div style={{ fontFamily: "'Cinzel Decorative',cursive", fontSize: "1.4rem", color: "rgba(80,50,110,.7)", marginBottom: 12 }}>Blindfold On</div>
-          <div style={{ fontStyle: "italic", color: "rgba(80,60,100,.5)", fontSize: "1rem", lineHeight: 1.7 }}>
+          {/* Big bright full moon */}
+          <div style={{ fontSize: "5.5rem", lineHeight: 1, marginBottom: 20, animation: "moonRise 3s ease-in-out infinite", filter: "drop-shadow(0 0 24px rgba(255,255,200,.5))" }}>🌕</div>
+          <div style={{ fontFamily: "'Cinzel Decorative',cursive", fontSize: "1.4rem", color: "rgba(200,170,240,.85)", marginBottom: 14 }}>Blindfold On</div>
+          <div style={{ fontStyle: "italic", color: "rgba(190,165,225,.7)", fontSize: "1rem", lineHeight: 1.8 }}>
             Phone face-down on the table.<br />Eyes closed or blindfolded.<br />The host will come to you.
           </div>
         </div>

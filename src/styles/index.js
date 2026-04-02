@@ -384,6 +384,11 @@ border-radius:4px;padding:13px 16px;margin-bottom:10px;transition:all .3s;}
 @keyframes fireBreath { 0%,100%{transform:scaleY(1) scaleX(1);filter:brightness(1);} 40%{transform:scaleY(1.12) scaleX(.94);filter:brightness(1.3);} 70%{transform:scaleY(.94) scaleX(1.05);filter:brightness(.9);} }
 @keyframes orbPulse { 0%,100%{transform:scale(1);opacity:.6;} 50%{transform:scale(1.15);opacity:1;} }
 @keyframes torchGlow { 0%,100%{box-shadow:0 0 18px rgba(255,140,30,.3);} 50%{box-shadow:0 0 40px rgba(255,160,50,.6);} }
+@keyframes windowGlow { 0%,100%{opacity:.55;} 50%{opacity:1;} }
+@keyframes crystalPulse { 0%,100%{opacity:.7;filter:drop-shadow(0 0 8px rgba(160,100,255,.3));} 50%{opacity:1;filter:drop-shadow(0 0 20px rgba(180,120,255,.6));} }
+@keyframes crystalSwirl { 0%,100%{transform:translate(0,0) scale(1);opacity:.18;} 33%{transform:translate(4px,-3px) scale(1.1);opacity:.28;} 66%{transform:translate(-3px,2px) scale(.94);opacity:.14;} }
+@keyframes gobletGlow { 0%,100%{filter:drop-shadow(0 0 6px rgba(201,168,76,.3));} 50%{filter:drop-shadow(0 0 16px rgba(201,168,76,.7));} }
+@keyframes moonRise { 0%,100%{filter:drop-shadow(0 0 14px rgba(255,255,220,.4));transform:scale(1);} 50%{filter:drop-shadow(0 0 32px rgba(255,255,200,.7));transform:scale(1.04);} }
 `;
 
 export { FONTS, CSS };
