@@ -12,6 +12,57 @@ const DEMO_PLAYERS = [
   { id: "p8", name: "Quinn",  emoji: "🐻", role: "faithful",       alive: false, shield: false, dagger: false },
 ];
 
+// ── Reusable atmosphere scenes for demo slides ───────────────────────────
+const GobletScene = () => (
+<div style={{ position:"relative", background:"rgba(8,2,2,.97)", border:"1px solid rgba(139,40,20,.4)", borderRadius:4, overflow:"hidden", minHeight:90, marginBottom:0 }}>
+<div style={{ position:"absolute", bottom:0, left:"50%", transform:"translateX(-50%)", width:90, height:14, background:"radial-gradient(ellipse,rgba(255,100,20,.28),transparent)", borderRadius:"50%" }} />
+<div style={{ position:"absolute", bottom:5, left:"50%", transform:"translateX(-50%)", width:52, height:7, background:"linear-gradient(to bottom,rgba(201,168,76,.65),rgba(160,120,40,.5))", borderRadius:"3px 3px 4px 4px", animation:"gobletGlow 2.5s ease-in-out infinite" }} />
+<div style={{ position:"absolute", bottom:12, left:"50%", transform:"translateX(-50%)", width:11, height:20, background:"linear-gradient(to right,rgba(170,130,40,.55),rgba(220,185,80,.8),rgba(170,130,40,.55))", borderRadius:6 }} />
+<div style={{ position:"absolute", bottom:19, left:"50%", transform:"translateX(-50%)", width:17, height:8, background:"linear-gradient(to right,rgba(180,140,50,.5),rgba(230,195,80,.75),rgba(180,140,50,.5))", borderRadius:"50%", boxShadow:"0 0 6px rgba(201,168,76,.2)" }} />
+<div style={{ position:"absolute", bottom:30, left:"50%", transform:"translateX(-50%)", width:48, height:36, background:"linear-gradient(135deg,rgba(201,168,76,.08) 0%,rgba(201,168,76,.18) 45%,rgba(201,168,76,.06) 100%)", borderRadius:"40% 40% 48% 48% / 18% 18% 50% 50%", border:"1.5px solid rgba(201,168,76,.55)", boxShadow:"inset 0 0 18px rgba(255,120,30,.1),0 0 10px rgba(201,168,76,.12)" }} />
+<div style={{ position:"absolute", bottom:66, left:"50%", transform:"translateX(-50%)", width:50, height:5, background:"rgba(201,168,76,.72)", borderRadius:"3px 3px 0 0", boxShadow:"0 0 8px rgba(201,168,76,.5)", animation:"gobletGlow 2.5s ease-in-out infinite" }} />
+<div style={{ position:"absolute", bottom:42, left:"50%", transform:"translateX(-50%)", width:32, height:26, background:"radial-gradient(ellipse at center bottom,rgba(255,100,20,.35),transparent)", borderRadius:"50%" }} />
+{[0,1,2,3,4].map(i => (<div key={i} style={{ position:"absolute", bottom:65, left:`calc(50% + ${(i-2)*9}px)`, transform:"translateX(-50%)", width:9+i%3*5, height:26+i%3*16, background:`linear-gradient(to top,${i%2?"#ff3800":"#ff6010"},#ffbb30,rgba(255,230,100,.04))`, borderRadius:"50% 50% 30% 30%/60% 60% 40% 40%", animation:`flameWaver ${1.1+i*.2}s ${i*.17}s ease-in-out infinite`, transformOrigin:"bottom center", opacity:0.8+i%2*.15 }} />))}
+{[0,1,2,3,4,5,6].map(i => (<div key={i} style={{ position:"absolute", left:`calc(50% + ${(i-3)*11}px)`, bottom:`${36+i%4*10}px`, width:3, height:3, borderRadius:"50%", background:i%2?"#ffaa40":"#ff8030", animation:`emberFloat ${1.5+i*.38}s ${i*.28}s ease-out infinite`, opacity:0.75 }} />))}
+<div style={{ position:"absolute", bottom:42, left:"calc(50% - 42px)", width:28, height:1, background:"linear-gradient(to left,rgba(201,168,76,.35),transparent)" }} />
+<div style={{ position:"absolute", bottom:42, right:"calc(50% - 42px)", width:28, height:1, background:"linear-gradient(to right,rgba(201,168,76,.35),transparent)" }} />
+</div>
+);
+
+const TurretScene = () => (
+<div style={{ position:"relative", background:"rgba(4,1,12,.97)", border:"1px solid rgba(80,40,120,.3)", borderRadius:4, overflow:"hidden", minHeight:90, marginBottom:0 }}>
+{[...Array(16)].map((_,i) => (<div key={i} style={{ position:"absolute", left:`${3+i*6.2+(i%3)*3.5}%`, top:`${3+(i%5)*13}px`, width:i%4===0?3:2, height:i%4===0?3:2, borderRadius:"50%", background:"rgba(220,200,255,.88)", animation:`starTwinkle ${1.3+i*.26}s ${i*.17}s ease-in-out infinite` }} />))}
+<div style={{ position:"absolute", left:20, top:5, fontSize:"1.7rem", animation:"moonPulse 3.5s ease-in-out infinite" }}>🌙</div>
+<div style={{ position:"absolute", bottom:0, left:0, right:0, height:10, background:"linear-gradient(to top,rgba(30,20,50,.6),transparent)" }} />
+<div style={{ position:"absolute", bottom:0, left:"calc(50% - 38px)", width:14, height:42, background:"rgba(28,20,38,.96)", border:"1px solid rgba(55,40,75,.5)", borderBottom:"none" }} />
+<div style={{ position:"absolute", bottom:0, left:"calc(50% - 26px)", width:52, height:62, background:"rgba(28,20,38,.96)", border:"1px solid rgba(55,40,75,.5)", borderBottom:"none" }} />
+<div style={{ position:"absolute", bottom:0, right:"calc(50% - 38px)", width:14, height:34, background:"rgba(28,20,38,.96)", border:"1px solid rgba(55,40,75,.5)", borderBottom:"none" }} />
+{[-22,-12,-2,8,18].map((x,i) => (<div key={i} style={{ position:"absolute", bottom:i===0||i===4?38:58, left:`calc(50% + ${x}px)`, width:9, height:i===1||i===3?12:14, background:"rgba(28,20,38,.97)", border:"1px solid rgba(55,40,75,.5)", borderBottom:"none" }} />))}
+<div style={{ position:"absolute", bottom:22, left:"50%", transform:"translateX(-50%)", width:20, height:28, background:"rgba(255,175,55,.08)", borderRadius:"50% 50% 0 0 / 40% 40% 0 0", border:"1px solid rgba(255,180,60,.25)", animation:"windowGlow 2.2s ease-in-out infinite" }} />
+<div style={{ position:"absolute", bottom:22, left:"50%", transform:"translateX(-50%)", width:14, height:22, background:"radial-gradient(ellipse at center,rgba(255,190,70,.35),rgba(255,140,30,.1),transparent)", borderRadius:"50% 50% 10% 10%", animation:"windowGlow 2.2s .3s ease-in-out infinite" }} />
+<div style={{ position:"absolute", bottom:0, left:"50%", transform:"translateX(-50%)", width:28, height:22, background:"radial-gradient(ellipse at top,rgba(255,160,40,.1),transparent)", animation:"windowGlow 2.2s ease-in-out infinite" }} />
+{[0,1,2].map(row => [0,1,2,3].map(col => (<div key={`${row}-${col}`} style={{ position:"absolute", bottom:4+row*18, left:`calc(50% - 22px + ${col*13}px)`, width:11, height:7, border:"1px solid rgba(55,40,75,.22)", borderRadius:1, pointerEvents:"none" }} />)))}
+</div>
+);
+
+const CrystalBallScene = () => (
+<div style={{ position:"relative", background:"rgba(4,1,12,.97)", border:"1px solid rgba(80,40,120,.3)", borderRadius:4, overflow:"hidden", minHeight:90, marginBottom:0 }}>
+{[...Array(16)].map((_,i) => (<div key={i} style={{ position:"absolute", left:`${2+i*6.4+(i%3)*3}%`, top:`${2+(i%5)*14}px`, width:i%4===0?3:2, height:i%4===0?3:2, borderRadius:"50%", background:"rgba(220,200,255,.88)", animation:`starTwinkle ${1.3+i*.27}s ${i*.19}s ease-in-out infinite` }} />))}
+<div style={{ position:"absolute", right:20, top:5, fontSize:"1.7rem", animation:"moonPulse 3.5s ease-in-out infinite" }}>🌙</div>
+{[0,1,2,3,4,5].map(i => { const ang=(i/6)*Math.PI*2-Math.PI/4,rx=40,ry=20; return (<div key={i} style={{ position:"absolute", left:`calc(50% + ${Math.cos(ang)*rx}px - 2px)`, top:`calc(54px + ${Math.sin(ang)*ry}px - 2px)`, width:i%2===0?4:3, height:i%2===0?4:3, background:"rgba(200,160,255,.9)", borderRadius:"50%", boxShadow:"0 0 5px 2px rgba(180,120,255,.45)", animation:`starTwinkle ${1.1+i*.32}s ${i*.22}s ease-in-out infinite` }} />); })}
+<div style={{ position:"absolute", bottom:5, left:"50%", transform:"translateX(-50%)", width:46, height:5, background:"linear-gradient(to bottom,rgba(120,80,200,.5),rgba(80,50,150,.6))", borderRadius:"2px 2px 4px 4px" }} />
+<div style={{ position:"absolute", bottom:10, left:"50%", transform:"translateX(-50%)", width:18, height:12, background:"linear-gradient(to bottom,rgba(140,90,210,.45),rgba(100,65,170,.55))", borderRadius:"3px 3px 0 0" }} />
+<div style={{ position:"absolute", bottom:22, left:"50%", transform:"translateX(-50%)", width:36, height:7, background:"linear-gradient(to bottom,rgba(150,100,220,.5),rgba(110,70,180,.55))", borderRadius:"50% 50% 10% 10% / 60% 60% 20% 20%" }} />
+<div style={{ position:"absolute", bottom:28, left:"50%", transform:"translateX(-50%)", width:46, height:7, background:"radial-gradient(ellipse,rgba(80,40,160,.45),transparent)", borderRadius:"50%" }} />
+<div style={{ position:"absolute", top:10, left:"50%", transform:"translateX(-50%)", width:58, height:58, borderRadius:"50%", background:"transparent", boxShadow:"0 0 22px 10px rgba(140,80,240,.16),0 0 50px 24px rgba(100,50,200,.07)", animation:"crystalPulse 2.6s ease-in-out infinite" }} />
+<div style={{ position:"absolute", top:12, left:"50%", transform:"translateX(-50%)", width:54, height:54, borderRadius:"50%", background:"radial-gradient(circle at 36% 30%,rgba(255,255,255,.22) 0%,rgba(190,150,255,.1) 28%,rgba(110,60,210,.09) 58%,rgba(30,8,70,.14) 100%)", border:"1.5px solid rgba(190,150,255,.32)", overflow:"hidden" }}>
+<div style={{ position:"absolute", top:"28%", left:"12%", width:"72%", height:"62%", background:"radial-gradient(ellipse,rgba(150,100,255,.22),transparent)", borderRadius:"50%", animation:"crystalSwirl 3.4s ease-in-out infinite" }} />
+<div style={{ position:"absolute", top:"12%", left:"20%", width:"32%", height:"22%", background:"rgba(255,255,255,.32)", borderRadius:"50%", transform:"rotate(-25deg)" }} />
+<div style={{ position:"absolute", top:"20%", left:"58%", width:"14%", height:"10%", background:"rgba(255,255,255,.18)", borderRadius:"50%" }} />
+</div>
+</div>
+);
+
 const HOST_DEMO = [
 
 {
@@ -604,22 +655,7 @@ desc: "If the Seer is active, they're woken first. Tap their shoulder — they l
 tip: "The Seer can share what they learn — that's their weapon. But if others know they hold the Seer power, they become a Traitor target.",
 render: () => (
 <div className="col" style={{ gap: 8 }}>
-{/* Animated night atmosphere */}
-<div style={{ position:"relative", background:"rgba(4,1,12,.97)", border:"1px solid rgba(80,40,120,.3)", borderRadius:4, padding:"10px 12px 0", overflow:"hidden", minHeight:72, marginBottom:0 }}>
-{[0,1,2,3,4,5,6,7].map(i => (
-<div key={i} style={{ position:"absolute", left:`${5+i*13}%`, bottom:0, display:"flex", flexDirection:"column", alignItems:"center", opacity:0.45+i%3*.15 }}>
-<div style={{ width:6, height:10+i%4*4, background:"linear-gradient(to top,#ff8010,#ffcc40,rgba(255,240,120,.1))", borderRadius:"50% 50% 30% 30%/60% 60% 40% 40%", animation:`candleFlicker ${1.9+i*.26}s ${i*.22}s ease-in-out infinite`, boxShadow:"0 0 7px 2px rgba(255,140,40,.25)", transformOrigin:"bottom center" }} />
-<div style={{ width:1, height:4, background:"#1a0f05" }} />
-<div style={{ width:8, height:16+i%3*5, background:"linear-gradient(to right,rgba(230,210,170,.8),rgba(255,245,220,.95),rgba(210,190,155,.8))", borderRadius:"2px 2px 1px 1px" }} />
-</div>
-))}
-{[0,1,2,3,4,5,6,7,8].map(i => (
-<div key={i} style={{ position:"absolute", left:`${4+i*11+i%3*2}%`, top:`${5+i%5*7}%`, width:i%3===0?3:2, height:i%3===0?3:2, borderRadius:"50%", background:"rgba(220,200,255,.65)", animation:`starTwinkle ${1.4+i*.28}s ${i*.18}s ease-in-out infinite` }} />
-))}
-<div style={{ position:"relative", zIndex:1, textAlign:"center", paddingBottom:10 }}>
-<div style={{ fontSize:"1.6rem", animation:"moonPulse 3s ease-in-out infinite", display:"inline-block" }}>🌙</div>
-</div>
-</div>
+<CrystalBallScene />
 <div style={{ background: "rgba(30,0,50,.2)", border: "1px solid rgba(100,0,160,.35)", borderRadius: 3, padding: 12, fontSize: ".85rem", color: "var(--dim)", lineHeight: 1.7 }}>
 <strong style={{ color: "#dd88ff", display: "block", marginBottom: 4 }}>👁️ Seer Phase — Host View</strong>
 Quietly tap Sam's shoulder. They open their phone and see this:
@@ -652,22 +688,7 @@ desc: "Recruitment triggers when exactly 1 Traitor remains and there are 6 or mo
 tip: "After a decline, the Traitor always goes to the Turret — whether to pick again (6+ alive) or just to debrief before morning (5 alive). Their Turret chat shows the declined player's name and what happens next. If no murder is possible, your panel shows a 'Debrief Only' note — resolve night as soon as they're done.",
 render: () => (
 <div className="col" style={{ gap: 8 }}>
-{/* Animated night atmosphere */}
-<div style={{ position:"relative", background:"rgba(4,1,12,.97)", border:"1px solid rgba(80,40,120,.3)", borderRadius:4, padding:"10px 12px 0", overflow:"hidden", minHeight:72, marginBottom:0 }}>
-{[0,1,2,3,4,5,6,7].map(i => (
-<div key={i} style={{ position:"absolute", left:`${5+i*13}%`, bottom:0, display:"flex", flexDirection:"column", alignItems:"center", opacity:0.45+i%3*.15 }}>
-<div style={{ width:6, height:10+i%4*4, background:"linear-gradient(to top,#ff8010,#ffcc40,rgba(255,240,120,.1))", borderRadius:"50% 50% 30% 30%/60% 60% 40% 40%", animation:`candleFlicker ${1.9+i*.26}s ${i*.22}s ease-in-out infinite`, boxShadow:"0 0 7px 2px rgba(255,140,40,.25)", transformOrigin:"bottom center" }} />
-<div style={{ width:1, height:4, background:"#1a0f05" }} />
-<div style={{ width:8, height:16+i%3*5, background:"linear-gradient(to right,rgba(230,210,170,.8),rgba(255,245,220,.95),rgba(210,190,155,.8))", borderRadius:"2px 2px 1px 1px" }} />
-</div>
-))}
-{[0,1,2,3,4,5,6,7,8].map(i => (
-<div key={i} style={{ position:"absolute", left:`${4+i*11+i%3*2}%`, top:`${5+i%5*7}%`, width:i%3===0?3:2, height:i%3===0?3:2, borderRadius:"50%", background:"rgba(220,200,255,.65)", animation:`starTwinkle ${1.4+i*.28}s ${i*.18}s ease-in-out infinite` }} />
-))}
-<div style={{ position:"relative", zIndex:1, textAlign:"center", paddingBottom:10 }}>
-<div style={{ fontSize:"1.6rem", animation:"moonPulse 3s ease-in-out infinite", display:"inline-block" }}>🌙</div>
-</div>
-</div>
+<TurretScene />
 <div className="card host" style={{ padding: 12 }}>
 <div className="host-label">⚜ Host — Recruitment Night</div>
 <div style={{ background: "rgba(139,26,26,.1)", border: "1px solid rgba(139,26,26,.3)", borderRadius: 3, padding: "8px 12px", marginBottom: 8, fontSize: ".82rem", color: "var(--dim)" }}>
@@ -699,22 +720,7 @@ desc: "Tap each Traitor's shoulder — they lift their blindfolds and open The T
 tip: "Keep it under 5 minutes. The Faithful are waiting with blindfolds on.",
 render: () => (
 <div className="col" style={{ gap: 8 }}>
-{/* Animated night atmosphere */}
-<div style={{ position:"relative", background:"rgba(4,1,12,.97)", border:"1px solid rgba(80,40,120,.3)", borderRadius:4, padding:"10px 12px 0", overflow:"hidden", minHeight:72, marginBottom:0 }}>
-{[0,1,2,3,4,5,6,7].map(i => (
-<div key={i} style={{ position:"absolute", left:`${5+i*13}%`, bottom:0, display:"flex", flexDirection:"column", alignItems:"center", opacity:0.45+i%3*.15 }}>
-<div style={{ width:6, height:10+i%4*4, background:"linear-gradient(to top,#ff8010,#ffcc40,rgba(255,240,120,.1))", borderRadius:"50% 50% 30% 30%/60% 60% 40% 40%", animation:`candleFlicker ${1.9+i*.26}s ${i*.22}s ease-in-out infinite`, boxShadow:"0 0 7px 2px rgba(255,140,40,.25)", transformOrigin:"bottom center" }} />
-<div style={{ width:1, height:4, background:"#1a0f05" }} />
-<div style={{ width:8, height:16+i%3*5, background:"linear-gradient(to right,rgba(230,210,170,.8),rgba(255,245,220,.95),rgba(210,190,155,.8))", borderRadius:"2px 2px 1px 1px" }} />
-</div>
-))}
-{[0,1,2,3,4,5,6,7,8].map(i => (
-<div key={i} style={{ position:"absolute", left:`${4+i*11+i%3*2}%`, top:`${5+i%5*7}%`, width:i%3===0?3:2, height:i%3===0?3:2, borderRadius:"50%", background:"rgba(220,200,255,.65)", animation:`starTwinkle ${1.4+i*.28}s ${i*.18}s ease-in-out infinite` }} />
-))}
-<div style={{ position:"relative", zIndex:1, textAlign:"center", paddingBottom:10 }}>
-<div style={{ fontSize:"1.6rem", animation:"moonPulse 3s ease-in-out infinite", display:"inline-block" }}>🌙</div>
-</div>
-</div>
+<TurretScene />
 <div className="card host" style={{ padding: 12 }}>
 <div className="host-label">⚜ Host — Turret Status</div>
 <div style={{ background: "rgba(20,80,20,.2)", border: "1px solid rgba(40,160,40,.3)", borderRadius: 3, padding: "9px 12px", marginBottom: 8, fontSize: ".85rem" }}>
@@ -753,22 +759,7 @@ desc: "On pre-reveal rounds (randomly in the first half of the game), the ST is 
 tip: "This is the most theatrical moment of the game. Watch the regular Traitors' faces when they learn who's been working alone.",
 render: () => (
 <div className="col" style={{ gap: 8 }}>
-{/* Animated night atmosphere with purple tint */}
-<div style={{ position:"relative", background:"rgba(8,2,16,.97)", border:"1px solid rgba(120,40,180,.3)", borderRadius:4, padding:"10px 12px 0", overflow:"hidden", minHeight:72, marginBottom:0 }}>
-{[0,1,2,3,4,5,6,7].map(i => (
-<div key={i} style={{ position:"absolute", left:`${5+i*13}%`, bottom:0, display:"flex", flexDirection:"column", alignItems:"center", opacity:0.4+i%3*.15 }}>
-<div style={{ width:6, height:10+i%4*4, background:"linear-gradient(to top,#8010ff,#cc40ff,rgba(200,120,255,.1))", borderRadius:"50% 50% 30% 30%/60% 60% 40% 40%", animation:`candleFlicker ${1.9+i*.26}s ${i*.22}s ease-in-out infinite`, boxShadow:"0 0 7px 2px rgba(140,40,255,.25)", transformOrigin:"bottom center" }} />
-<div style={{ width:1, height:4, background:"#1a0f05" }} />
-<div style={{ width:8, height:16+i%3*5, background:"linear-gradient(to right,rgba(180,150,220,.8),rgba(210,180,255,.9),rgba(160,130,200,.8))", borderRadius:"2px 2px 1px 1px" }} />
-</div>
-))}
-{[0,1,2,3,4,5,6,7,8].map(i => (
-<div key={i} style={{ position:"absolute", left:`${4+i*11}%`, top:`${5+i%5*7}%`, width:2, height:2, borderRadius:"50%", background:"rgba(200,150,255,.7)", animation:`starTwinkle ${1.4+i*.28}s ${i*.18}s ease-in-out infinite` }} />
-))}
-<div style={{ position:"relative", zIndex:1, textAlign:"center", paddingBottom:10 }}>
-<div style={{ fontSize:"1.4rem", animation:"orbPulse 2.5s ease-in-out infinite", display:"inline-block" }}>🎭</div>
-</div>
-</div>
+<TurretScene />
 <div style={{ background: "rgba(60,0,90,.2)", border: "1px solid rgba(140,40,220,.4)", borderRadius: 4, padding: 12 }}>
 <div style={{ fontSize: ".6rem", fontFamily: "'Cinzel',serif", letterSpacing: ".15em", color: "#d088ff", marginBottom: 8, textTransform: "uppercase" }}>🎭 Reveal Night — Special Instructions</div>
 <div style={{ fontSize: ".78rem", color: "rgba(180,130,220,.7)", lineHeight: 1.6, marginBottom: 8, fontStyle: "italic" }}>Secret Traitor has submitted shortlist. Do NOT send them back to sleep — tap below to wake the Traitors and make the introduction.</div>
@@ -850,19 +841,7 @@ desc: "4 players remain. One final free roam before the Fire of Truth. Players s
 tip: "Watch the pairings during this roam. Who seeks out whom tells you everything about who's in a last-minute alliance.",
 render: () => (
 <div className="col" style={{ gap: 8 }}>
-{/* Animated fire scene */}
-<div style={{ position:"relative", background:"rgba(8,2,2,.97)", border:"1px solid rgba(139,40,20,.4)", borderRadius:4, padding:"12px 10px 4px", overflow:"hidden", minHeight:72 }}>
-{[0,1,2,3,4,5,6].map(i => (
-<div key={i} style={{ position:"absolute", left:`${6+i*13}%`, bottom:0, width:8+i%3*5, height:18+i%4*8, background:`linear-gradient(to top,${i%2?"#ff3800":"#ff5c10"},#ffaa30,rgba(255,220,80,.05))`, borderRadius:"50% 50% 30% 30%/60% 60% 40% 40%", animation:`flameWaver ${1.2+i*.2}s ${i*.15}s ease-in-out infinite`, opacity:0.7+i%2*.15, transformOrigin:"bottom center" }} />
-))}
-{[0,1,2,3,4,5].map(i => (
-<div key={i} style={{ position:"absolute", left:`${10+i*15}%`, bottom:`${i%3*5}px`, width:i%2?4:3, height:i%2?4:3, borderRadius:"50%", background:i%2?"#ffaa30":"#ff6820", animation:`emberFloat ${1.6+i*.3}s ${i*.22}s ease-out infinite` }} />
-))}
-<div style={{ position:"relative", zIndex:1, textAlign:"center", paddingBottom:10 }}>
-<div style={{ fontSize:"1.6rem", animation:"fireBreath 1.8s ease-in-out infinite", display:"inline-block" }}>🔥</div>
-<div style={{ fontFamily:"'Cinzel',serif", fontSize:".6rem", letterSpacing:".15em", textTransform:"uppercase", color:"rgba(255,150,50,.7)", marginTop:2 }}>Final Free Roam</div>
-</div>
-</div>
+<GobletScene />
 <div className="card host" style={{ padding: 12 }}>
 <div className="host-label">⚜ Remaining Players</div>
 <div className="pgrid">
@@ -898,19 +877,7 @@ desc: "All remaining players vote privately — End the Game or Banish Again. As
 tip: "Not unanimous → Banish Again, back to the Round Table. This continues until unanimous End or only 2 remain. Monologue order: Faithful first, Traitors last, Secret Traitor absolutely last.",
 render: () => (
 <div className="col" style={{ gap: 8 }}>
-{/* Animated fire scene */}
-<div style={{ position:"relative", background:"rgba(8,2,2,.97)", border:"1px solid rgba(139,40,20,.4)", borderRadius:4, padding:"14px 12px 4px", overflow:"hidden", minHeight:80 }}>
-{[0,1,2,3,4,5,6,7,8].map(i => (
-<div key={i} style={{ position:"absolute", left:`${5+i*11}%`, bottom:0, width:10+i%3*5, height:22+i%4*10, background:`linear-gradient(to top,${i%2?"#ff3800":"#ff5c10"},#ffaa30,rgba(255,220,80,.05))`, borderRadius:"50% 50% 30% 30%/60% 60% 40% 40%", animation:`flameWaver ${1.2+i*.18}s ${i*.14}s ease-in-out infinite`, opacity:0.7+i%3*.1, transformOrigin:"bottom center" }} />
-))}
-{[0,1,2,3,4,5,6,7].map(i => (
-<div key={i} style={{ position:"absolute", left:`${8+i*11}%`, bottom:`${i%3*6}px`, width:i%2?4:3, height:i%2?4:3, borderRadius:"50%", background:i%3?"#ff5010":i%2?"#ffaa30":"#ff7020", animation:`emberFloat ${1.5+i*.3}s ${i*.2}s ease-out infinite` }} />
-))}
-<div style={{ position:"relative", zIndex:1, textAlign:"center", paddingBottom:12 }}>
-<div style={{ fontSize:"2rem", animation:"fireBreath 1.8s ease-in-out infinite", display:"inline-block" }}>🔥</div>
-<div style={{ fontFamily:"'Cinzel Decorative',cursive", fontSize:".75rem", color:"var(--gold)", letterSpacing:".1em" }}>Fire of Truth</div>
-</div>
-</div>
+<GobletScene />
 <div style={{ background: "rgba(20,8,4,.9)", border: "1px solid rgba(201,168,76,.2)", borderRadius: 4, padding: 12 }}>
 <div style={{ fontFamily: "'Cinzel',serif", fontSize: ".6rem", letterSpacing: ".15em", color: "var(--gold)", marginBottom: 8, textTransform: "uppercase" }}>🔥 Fire of Truth — Votes</div>
 <div style={{ fontSize: ".78rem", color: "var(--dim)", fontStyle: "italic", marginBottom: 10 }}>Ask each player: "Have you chosen to end the game, or banish again?"</div>
@@ -1446,21 +1413,7 @@ desc: "You're a Traitor. The host taps your shoulder — lift your blindfold. At
 tip: "At the very first Turret, Traitors meet each other for the first time — introduce yourselves quietly. If the timer runs out without a unanimous vote, nothing happens. Pick someone and commit.",
 render: () => (
 <div className="card night" style={{ border: "1px solid rgba(80,20,120,.4)", background: "rgba(10,2,18,.9)" }}>
-<div style={{ position:"relative", background:"rgba(4,1,12,.97)", border:"1px solid rgba(80,40,120,.3)", borderRadius:4, padding:"10px 12px 0", overflow:"hidden", minHeight:72, marginBottom:0 }}>
-{[0,1,2,3,4,5,6,7].map(i => (
-<div key={i} style={{ position:"absolute", left:`${5+i*13}%`, bottom:0, display:"flex", flexDirection:"column", alignItems:"center", opacity:0.45+i%3*.15 }}>
-<div style={{ width:6, height:10+i%4*4, background:"linear-gradient(to top,#ff8010,#ffcc40,rgba(255,240,120,.1))", borderRadius:"50% 50% 30% 30%/60% 60% 40% 40%", animation:`candleFlicker ${1.9+i*.26}s ${i*.22}s ease-in-out infinite`, boxShadow:"0 0 7px 2px rgba(255,140,40,.25)", transformOrigin:"bottom center" }} />
-<div style={{ width:1, height:4, background:"#1a0f05" }} />
-<div style={{ width:8, height:16+i%3*5, background:"linear-gradient(to right,rgba(230,210,170,.8),rgba(255,245,220,.95),rgba(210,190,155,.8))", borderRadius:"2px 2px 1px 1px" }} />
-</div>
-))}
-{[0,1,2,3,4,5,6,7,8].map(i => (
-<div key={i} style={{ position:"absolute", left:`${4+i*11+i%3*2}%`, top:`${5+i%5*7}%`, width:i%3===0?3:2, height:i%3===0?3:2, borderRadius:"50%", background:"rgba(220,200,255,.65)", animation:`starTwinkle ${1.4+i*.28}s ${i*.18}s ease-in-out infinite` }} />
-))}
-<div style={{ position:"relative", zIndex:1, textAlign:"center", paddingBottom:10 }}>
-<div style={{ fontSize:"1.6rem", animation:"moonPulse 3s ease-in-out infinite", display:"inline-block" }}>🌙</div>
-</div>
-</div>
+<TurretScene />
 <div className="ctitle purple">🎯 The Turret</div>
 <div className="info-box purple" style={{ marginBottom: 12, fontSize: ".85rem" }}>
 Chat and agree on one target. <strong style={{ color: "#d0a0ff" }}>All Traitors must vote the same name — unanimity required.</strong>
@@ -1539,21 +1492,7 @@ desc: "You hold the Seer power. Tap a player's name, then tap Reveal to see thei
 tip: "You can share what you've learned with anyone — that's your power. But the moment the Traitors know you're the Seer, you're next.",
 render: () => (
 <div className="card night" style={{ border: "1px solid rgba(100,0,160,.4)", background: "rgba(20,0,35,.9)" }}>
-<div style={{ position:"relative", background:"rgba(4,1,12,.97)", border:"1px solid rgba(80,40,120,.3)", borderRadius:4, padding:"10px 12px 0", overflow:"hidden", minHeight:72, marginBottom:0 }}>
-{[0,1,2,3,4,5,6,7].map(i => (
-<div key={i} style={{ position:"absolute", left:`${5+i*13}%`, bottom:0, display:"flex", flexDirection:"column", alignItems:"center", opacity:0.45+i%3*.15 }}>
-<div style={{ width:6, height:10+i%4*4, background:"linear-gradient(to top,#ff8010,#ffcc40,rgba(255,240,120,.1))", borderRadius:"50% 50% 30% 30%/60% 60% 40% 40%", animation:`candleFlicker ${1.9+i*.26}s ${i*.22}s ease-in-out infinite`, boxShadow:"0 0 7px 2px rgba(255,140,40,.25)", transformOrigin:"bottom center" }} />
-<div style={{ width:1, height:4, background:"#1a0f05" }} />
-<div style={{ width:8, height:16+i%3*5, background:"linear-gradient(to right,rgba(230,210,170,.8),rgba(255,245,220,.95),rgba(210,190,155,.8))", borderRadius:"2px 2px 1px 1px" }} />
-</div>
-))}
-{[0,1,2,3,4,5,6,7,8].map(i => (
-<div key={i} style={{ position:"absolute", left:`${4+i*11+i%3*2}%`, top:`${5+i%5*7}%`, width:i%3===0?3:2, height:i%3===0?3:2, borderRadius:"50%", background:"rgba(220,200,255,.65)", animation:`starTwinkle ${1.4+i*.28}s ${i*.18}s ease-in-out infinite` }} />
-))}
-<div style={{ position:"relative", zIndex:1, textAlign:"center", paddingBottom:10 }}>
-<div style={{ fontSize:"1.6rem", animation:"moonPulse 3s ease-in-out infinite", display:"inline-block" }}>🌙</div>
-</div>
-</div>
+<CrystalBallScene />
 <div className="ctitle purple">👁️ The Seer's Vision</div>
 <div className="info-box purple" style={{ marginBottom: 12, fontSize: ".85rem" }}>
 Tap a player to select them, then choose to reveal or save your power.
@@ -1630,18 +1569,8 @@ desc: "4 players remain. One last roam with a countdown timer. Use this time wis
 tip: "One of the 4 remaining players is a Traitor. Possibly two. Your vote in the next phase could end the game.",
 render: () => (
 <div className="card" style={{ textAlign: "center", padding: "28px 20px" }}>
-<div style={{ position:"relative", background:"rgba(8,2,2,.97)", border:"1px solid rgba(139,40,20,.4)", borderRadius:4, padding:"12px 10px 4px", overflow:"hidden", minHeight:76 }}>
-{[0,1,2,3,4,5,6,7,8].map(i => (
-<div key={i} style={{ position:"absolute", left:`${5+i*11}%`, bottom:0, width:10+i%3*5, height:22+i%4*10, background:`linear-gradient(to top,${i%2?"#ff3800":"#ff5c10"},#ffaa30,rgba(255,220,80,.05))`, borderRadius:"50% 50% 30% 30%/60% 60% 40% 40%", animation:`flameWaver ${1.2+i*.18}s ${i*.14}s ease-in-out infinite`, opacity:0.7+i%3*.1, transformOrigin:"bottom center" }} />
-))}
-{[0,1,2,3,4,5,6,7].map(i => (
-<div key={i} style={{ position:"absolute", left:`${8+i*11}%`, bottom:`${i%3*6}px`, width:i%2?4:3, height:i%2?4:3, borderRadius:"50%", background:i%3?"#ff5010":i%2?"#ffaa30":"#ff7020", animation:`emberFloat ${1.5+i*.3}s ${i*.2}s ease-out infinite` }} />
-))}
-<div style={{ position:"relative", zIndex:1, textAlign:"center", paddingBottom:10 }}>
-<div style={{ fontSize:"1.8rem", animation:"fireBreath 1.8s ease-in-out infinite", display:"inline-block" }}>🔥</div>
-</div>
-</div>
-<div style={{ fontSize: "2.5rem", marginBottom: 12 }}>🔥</div>
+<GobletScene />
+<div style={{ fontSize: "2.5rem", marginBottom: 12, marginTop: 12 }}>🔥</div>
 <div style={{ fontFamily: "'Cinzel Decorative',cursive", fontSize: "1.3rem", color: "var(--gold)", marginBottom: 12 }}>Final Free Roam</div>
 <div style={{ background: "rgba(0,0,0,.3)", borderRadius: 6, height: 5, marginBottom: 14, overflow: "hidden" }}>
 <div style={{ width: "35%", height: "100%", background: "linear-gradient(90deg,#8b1a1a,var(--crim2))", borderRadius: 6 }} />
@@ -1661,17 +1590,7 @@ desc: "Vote privately — End the Game or Banish Again. After all votes are cast
 tip: "If you're a Traitor at the Fire of Truth — this is your last performance. One convincing Banish Again vote sends everyone back.",
 render: () => (
 <div className="col" style={{ gap: 8 }}>
-<div style={{ position:"relative", background:"rgba(8,2,2,.97)", border:"1px solid rgba(139,40,20,.4)", borderRadius:4, padding:"12px 10px 4px", overflow:"hidden", minHeight:76 }}>
-{[0,1,2,3,4,5,6,7,8].map(i => (
-<div key={i} style={{ position:"absolute", left:`${5+i*11}%`, bottom:0, width:10+i%3*5, height:22+i%4*10, background:`linear-gradient(to top,${i%2?"#ff3800":"#ff5c10"},#ffaa30,rgba(255,220,80,.05))`, borderRadius:"50% 50% 30% 30%/60% 60% 40% 40%", animation:`flameWaver ${1.2+i*.18}s ${i*.14}s ease-in-out infinite`, opacity:0.7+i%3*.1, transformOrigin:"bottom center" }} />
-))}
-{[0,1,2,3,4,5,6,7].map(i => (
-<div key={i} style={{ position:"absolute", left:`${8+i*11}%`, bottom:`${i%3*6}px`, width:i%2?4:3, height:i%2?4:3, borderRadius:"50%", background:i%3?"#ff5010":i%2?"#ffaa30":"#ff7020", animation:`emberFloat ${1.5+i*.3}s ${i*.2}s ease-out infinite` }} />
-))}
-<div style={{ position:"relative", zIndex:1, textAlign:"center", paddingBottom:10 }}>
-<div style={{ fontSize:"1.8rem", animation:"fireBreath 1.8s ease-in-out infinite", display:"inline-block" }}>🔥</div>
-</div>
-</div>
+<GobletScene />
 {/* Voting buttons */}
 <div style={{ background: "rgba(20,8,4,.9)", border: "1px solid rgba(201,168,76,.25)", borderRadius: 4, padding: 14, textAlign: "center" }}>
 <div style={{ fontSize: "1.6rem", marginBottom: 6 }}>🔥</div>
