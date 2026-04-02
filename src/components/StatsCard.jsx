@@ -1,8 +1,7 @@
 import { useState, useEffect } from "react";
-// storage.js load not needed here — StatsCard uses its own internal fetch
+import { load, save } from "../storage.js";
 
 function StatsCard({ game, gameId, myId, me }) {
-if (!game?.rolesRevealed) return null;
 const [confessionDraft, setConfessionDraft] = useState("");
 const [confessionSubmitted, setConfessionSubmitted] = useState(false);
 const [confessionUnlocked, setConfessionUnlocked] = useState(false);
@@ -13,7 +12,7 @@ const [turretArchive, setTurretArchive] = useState([]);
 const [showTimeline, setShowTimeline] = useState(false);
 
 useEffect(() => {
-if (!gameId) return;
+if (!gameId || !game?.rolesRevealed) return;
 const loadStats = async () => {
 try {
 const r = await load(gameId + "-confessions");
@@ -21,11 +20,11 @@ if (r) setConfessions(r);
 } catch(e) {}
 try {
 const r2 = await load(gameId + "-traitor-chat-archive");
-if (r2) setTurretArchive(JSON.parse(r2.value));
+if (r2) setTurretArchive(r2);
 } catch(e) {}
 };
 loadStats();
-const interval = setInterval(load, 3000);
+const interval = setInterval(loadStats, 3000);
 return () => clearInterval(interval);
 }, [gameId]);
 
@@ -41,6 +40,8 @@ setConfessionDraft("");
 setConfessionSubmitted(true);
 } catch(e) {}
 };
+
+if (!game?.rolesRevealed) return null;
 
 const players = game.players || [];
 const banishLog = game.banishLog || [];

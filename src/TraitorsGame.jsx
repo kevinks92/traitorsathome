@@ -2845,6 +2845,8 @@ return (
         revealBreakfast={revealBreakfast}
         submitDayVote={submitDayVote}
         submitNightVote={submitNightVote}
+        submitTwoTraitorRecruitChoice={submitTwoTraitorRecruitChoice}
+        submitTwoTraitorTarget={submitTwoTraitorTarget}
         submitShortlist={submitShortlist}
         sendChat={sendChat}
         submitEndgameVote={submitEndgameVote}
