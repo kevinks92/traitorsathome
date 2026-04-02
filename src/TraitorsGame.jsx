@@ -49,6 +49,7 @@ const [error, setError] = useState("");
 const [loading, setLoading] = useState(false);
 const [copied, setCopied] = useState(false);
 const [recentGames, setRecentGames] = useState([]); // [{gId, name, host, playerCount, ts}]
+const [pendingRemoval, setPendingRemoval] = useState(null); // {players: [{id,name,emoji}], remaining: number}
 
 // Host settings
 const [traitorCount, setTraitorCount] = useState(2);
@@ -447,17 +448,42 @@ try {
 };
 
 // ── START GAME ─────────────────────────────────────────────────────────────
-const startGame = async () => {
-// Require all players to have submitted avatars
-const avKey = gameId + "-avatars";
-const avRaw = await load(avKey).catch(()=>null);
-const avMap = avRaw || {};
-const missingAvatars = game.players.filter(p => !avMap[p.id] && p.id !== myId && !myAvatar);
+const startGame = async (confirmedActivePlayers) => {
+if (!game) return;
+
+// If not yet confirmed, check heartbeats for inactive players first
+if (!confirmedActivePlayers) {
+  const now = Date.now();
+  const stale = [];
+  for (const p of game.players) {
+    if (p.id === myId) continue; // host is always present
+    const ts = await load(gameId + "-hb-" + p.id).catch(() => null);
+    // No heartbeat at all, or last ping > 15s ago = inactive
+    if (!ts || now - ts > 15000) stale.push(p);
+  }
+  if (stale.length > 0) {
+    const remaining = game.players.length - stale.length;
+    setPendingRemoval({ players: stale, remaining });
+    return;
+  }
+}
+
+const activePlayers = confirmedActivePlayers || game.players;
+
 // Just check the count — host can override if needed
-if (!game || game.players.length < 10) return setError("Need at least 10 players to start");
+if (activePlayers.length < 10) return setError(`Need at least 10 players to start (${activePlayers.length} active)`);
+
+// Remove stale players from game before starting
+if (confirmedActivePlayers && confirmedActivePlayers.length !== game.players.length) {
+  const g = await load(gameId);
+  const pruned = { ...g, players: confirmedActivePlayers };
+  await save(gameId, pruned);
+  setGame(pruned);
+}
+
 const cleanManual = manualTraitorIds.filter(id => id !== 'select');
-const tc = cleanManual.length > 0 ? cleanManual.length : Math.min(traitorCount, Math.floor(game.players.length / 3));
-const n = game.players.length;
+const tc = cleanManual.length > 0 ? cleanManual.length : Math.min(traitorCount, Math.floor(activePlayers.length / 3));
+const n = activePlayers.length;
 
 // Each round removes ~2 players (1 banishment + 1 murder).
 // We need (n - 4) eliminations to reach the final 4.
@@ -469,7 +495,7 @@ const maxRevealRound = Math.max(1, Math.floor(totalRounds / 2));
 const revealCycle = Math.floor(Math.random() * maxRevealRound) + 1;
 
 // Assign traitor/faithful roles — ST pending, assigned during ceremony
-let shuffled = shuffleArray(game.players);
+let shuffled = shuffleArray(activePlayers);
 let withRoles;
 if (cleanManual.length > 0) {
   withRoles = shuffled.map(p => ({ ...p, role: cleanManual.includes(p.id) ? "traitor" : "faithful" }));
@@ -2421,9 +2447,43 @@ if (game.phase === PHASES.LOBBY) return (
                 );
                 return null;
               })()}
-              <button className="btn btn-gold btn-lg" onClick={startGame} disabled={game.players.length < 4}>
-                {game.players.length < 10 ? `Need ${10 - game.players.length} more player${10 - game.players.length === 1 ? "" : "s"} (${game.players.length}/10 min)` : "Lock In & Begin →"}
-              </button>
+              {pendingRemoval ? (
+                <div style={{ background:"rgba(139,26,26,.12)",border:"1px solid rgba(139,26,26,.4)",borderRadius:6,padding:"14px 16px" }}>
+                  <div style={{ fontFamily:"'Cinzel',serif",fontSize:".65rem",letterSpacing:".12em",textTransform:"uppercase",color:"var(--crim3)",marginBottom:8 }}>⚠ Inactive Players Detected</div>
+                  <div style={{ fontSize:".82rem",color:"var(--text)",marginBottom:10,lineHeight:1.6 }}>
+                    The following players are no longer in the lobby and will be removed before the game starts:
+                  </div>
+                  <div style={{ display:"flex",flexDirection:"column",gap:4,marginBottom:10 }}>
+                    {pendingRemoval.players.map(p => (
+                      <div key={p.id} style={{ fontSize:".82rem",color:"var(--crim3)",fontFamily:"'Cinzel',serif" }}>{p.emoji} {p.name}</div>
+                    ))}
+                  </div>
+                  {pendingRemoval.remaining < 10 ? (
+                    <div style={{ fontSize:".78rem",color:"var(--crim3)",fontStyle:"italic",marginBottom:10 }}>
+                      Only {pendingRemoval.remaining} active player{pendingRemoval.remaining !== 1 ? "s" : ""} remaining — need at least 10 to start. Ask players to rejoin.
+                    </div>
+                  ) : (
+                    <div style={{ fontSize:".78rem",color:"var(--dim)",fontStyle:"italic",marginBottom:10 }}>
+                      {pendingRemoval.remaining} players will remain. Proceed?
+                    </div>
+                  )}
+                  <div style={{ display:"flex",gap:8 }}>
+                    <button className="btn btn-outline btn-sm" onClick={() => setPendingRemoval(null)}>← Cancel</button>
+                    {pendingRemoval.remaining >= 10 && (
+                      <button className="btn btn-gold btn-sm" onClick={() => {
+                        const activeIds = new Set(pendingRemoval.players.map(p => p.id));
+                        const activePlayers = game.players.filter(p => !activeIds.has(p.id));
+                        setPendingRemoval(null);
+                        startGame(activePlayers);
+                      }}>Remove & Start →</button>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <button className="btn btn-gold btn-lg" onClick={() => startGame()} disabled={game.players.length < 4}>
+                  {game.players.length < 10 ? `Need ${10 - game.players.length} more player${10 - game.players.length === 1 ? "" : "s"} (${game.players.length}/10 min)` : "Lock In & Begin →"}
+                </button>
+              )}
             </div>
           </div>
         )}
