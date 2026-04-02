@@ -48,55 +48,47 @@ animation:`starTwinkle ${1.4+i*.3}s ${i*.2}s ease-in-out infinite`,
 
 // ── FIRE OF TRUTH — Ornate goblet with animated fire ─────────────────────
 if (isFire) return (
-<div style={{ position:"relative", width:"100%", height:90, pointerEvents:"none", marginBottom:4, overflow:"hidden", display:"flex", justifyContent:"center", alignItems:"flex-end" }}>
+<div style={{ position:"relative", width:"100%", height:110, pointerEvents:"none", marginBottom:4, overflow:"hidden" }}>
 {/* Ground glow */}
-<div style={{ position:"absolute", bottom:0, left:"50%", transform:"translateX(-50%)", width:90, height:14, background:"radial-gradient(ellipse,rgba(255,100,20,.28),transparent)", borderRadius:"50%" }} />
-{/* Goblet base plate */}
-<div style={{ position:"absolute", bottom:5, left:"50%", transform:"translateX(-50%)", width:52, height:7, background:"linear-gradient(to bottom,rgba(201,168,76,.65),rgba(160,120,40,.5))", borderRadius:"3px 3px 4px 4px", boxShadow:"0 0 10px rgba(201,168,76,.25)", animation:"gobletGlow 2.5s ease-in-out infinite" }} />
-{/* Goblet stem */}
-<div style={{ position:"absolute", bottom:12, left:"50%", transform:"translateX(-50%)", width:11, height:20, background:"linear-gradient(to right,rgba(170,130,40,.55),rgba(220,185,80,.8),rgba(170,130,40,.55))", borderRadius:6 }} />
-{/* Stem knop (middle bulge) */}
-<div style={{ position:"absolute", bottom:19, left:"50%", transform:"translateX(-50%)", width:17, height:8, background:"linear-gradient(to right,rgba(180,140,50,.5),rgba(230,195,80,.75),rgba(180,140,50,.5))", borderRadius:"50%", boxShadow:"0 0 6px rgba(201,168,76,.2)" }} />
-{/* Cup bowl */}
-<div style={{ position:"absolute", bottom:30, left:"50%", transform:"translateX(-50%)", width:48, height:36,
-  background:"linear-gradient(135deg,rgba(201,168,76,.08) 0%,rgba(201,168,76,.18) 45%,rgba(201,168,76,.06) 100%)",
-  borderRadius:"40% 40% 48% 48% / 18% 18% 50% 50%",
-  border:"1.5px solid rgba(201,168,76,.55)",
-  boxShadow:"inset 0 0 18px rgba(255,120,30,.1),0 0 10px rgba(201,168,76,.12)" }} />
+<div style={{ position:"absolute", bottom:0, left:"50%", transform:"translateX(-50%)", width:120, height:16, background:"radial-gradient(ellipse,rgba(255,80,10,.22),transparent)", borderRadius:"50%" }} />
+{/* Outer flame aura */}
+{[-28,-16,0,16,28].map((x,i) => (
+<div key={`aura-${i}`} style={{ position:"absolute", bottom:56, left:`calc(50% + ${x}px)`, transform:"translateX(-50%)", width:14+i%2*10, height:38+i%3*22, background:`linear-gradient(to top,rgba(139,20,0,.7),rgba(200,60,0,.4),transparent)`, borderRadius:"50% 50% 30% 30%/60% 60% 40% 40%", animation:`flameWaver ${1.4+i*.22}s ${i*.2}s ease-in-out infinite`, transformOrigin:"bottom center", opacity:0.5 }} />
+))}
+{/* Base plate */}
+<div style={{ position:"absolute", bottom:4, left:"50%", transform:"translateX(-50%)", width:68, height:8, background:"linear-gradient(to bottom,rgba(160,100,50,.7),rgba(100,55,20,.8))", borderRadius:"2px 2px 6px 6px", boxShadow:"0 2px 8px rgba(0,0,0,.6)" }} />
+{/* Base foot */}
+<div style={{ position:"absolute", bottom:10, left:"50%", transform:"translateX(-50%)", width:52, height:10, background:"linear-gradient(to bottom,rgba(140,85,35,.65),rgba(100,55,20,.7))", borderRadius:"40% 40% 0 0 / 80% 80% 0 0" }} />
+{/* Stem */}
+<div style={{ position:"absolute", bottom:20, left:"50%", transform:"translateX(-50%)", width:10, height:18, background:"linear-gradient(to right,rgba(100,55,20,.7),rgba(170,100,40,.85),rgba(100,55,20,.7))", borderRadius:4 }} />
+{/* Stem knop */}
+<div style={{ position:"absolute", bottom:30, left:"50%", transform:"translateX(-50%)", width:20, height:9, background:"linear-gradient(to right,rgba(110,60,20,.65),rgba(180,110,45,.8),rgba(110,60,20,.65))", borderRadius:"50%", boxShadow:"0 0 8px rgba(180,80,20,.3)" }} />
+{/* Cup body */}
+<div style={{ position:"absolute", bottom:38, left:"50%", transform:"translateX(-50%)", width:72, height:46,
+  background:"linear-gradient(160deg,rgba(80,100,120,.15) 0%,rgba(60,80,110,.22) 35%,rgba(40,60,90,.18) 65%,rgba(80,100,130,.12) 100%)",
+  borderRadius:"38% 38% 50% 50% / 15% 15% 55% 55%",
+  border:"1.5px solid rgba(100,130,160,.45)",
+  boxShadow:"inset 2px 4px 12px rgba(120,160,200,.08),inset -2px 0 8px rgba(60,30,10,.3),0 0 14px rgba(180,80,20,.2)" }}>
+  <div style={{ position:"absolute", top:"22%", left:"12%", width:"30%", height:"55%", borderRadius:"50%", border:"1px solid rgba(100,130,160,.25)", transform:"rotate(-20deg)" }} />
+  <div style={{ position:"absolute", top:"15%", left:"30%", width:"40%", height:"65%", borderRadius:"50%", border:"1px solid rgba(100,130,160,.18)" }} />
+  <div style={{ position:"absolute", top:"8%", left:"18%", width:"22%", height:"38%", background:"rgba(180,210,240,.1)", borderRadius:"50%", transform:"rotate(-15deg)" }} />
+</div>
+{/* Left handle */}
+<div style={{ position:"absolute", bottom:52, left:"calc(50% - 46px)", width:18, height:28, borderRadius:"50% 0 0 50% / 50% 0 0 50%", border:"1.5px solid rgba(100,130,160,.5)", borderRight:"none", background:"linear-gradient(to left,transparent,rgba(60,80,110,.12))" }} />
+{/* Right handle */}
+<div style={{ position:"absolute", bottom:52, right:"calc(50% - 46px)", width:18, height:28, borderRadius:"0 50% 50% 0 / 0 50% 50% 0", border:"1.5px solid rgba(100,130,160,.5)", borderLeft:"none", background:"linear-gradient(to right,transparent,rgba(60,80,110,.12))" }} />
 {/* Cup rim */}
-<div style={{ position:"absolute", bottom:66, left:"50%", transform:"translateX(-50%)", width:50, height:5, background:"rgba(201,168,76,.72)", borderRadius:"3px 3px 0 0", boxShadow:"0 0 8px rgba(201,168,76,.5)", animation:"gobletGlow 2.5s ease-in-out infinite" }} />
-{/* Inner fire glow inside cup */}
-<div style={{ position:"absolute", bottom:42, left:"50%", transform:"translateX(-50%)", width:32, height:26, background:"radial-gradient(ellipse at center bottom,rgba(255,100,20,.35),transparent)", borderRadius:"50%" }} />
-{/* Flames emerging from goblet */}
-{[...Array(5)].map((_,i) => (
-<div key={i} style={{
-  position:"absolute",
-  bottom: 65,
-  left:`calc(50% + ${(i-2)*9}px)`,
-  transform:"translateX(-50%)",
-  width: 9+i%3*5, height: 26+i%3*16,
-  background:`linear-gradient(to top,${i%2?"#ff3800":"#ff6010"},#ffbb30,rgba(255,230,100,.04))`,
-  borderRadius:"50% 50% 30% 30%/60% 60% 40% 40%",
-  animation:`flameWaver ${1.1+i*.2}s ${i*.17}s ease-in-out infinite`,
-  transformOrigin:"bottom center",
-  opacity: 0.8+i%2*.15,
-}} />
+<div style={{ position:"absolute", bottom:84, left:"50%", transform:"translateX(-50%)", width:74, height:6, background:"linear-gradient(to bottom,rgba(130,160,190,.6),rgba(90,115,145,.7))", borderRadius:"3px 3px 0 0", boxShadow:"0 0 10px rgba(180,100,20,.35),0 -2px 6px rgba(255,120,40,.2)", animation:"gobletGlow 2.5s ease-in-out infinite" }} />
+{/* Inner fire glow */}
+<div style={{ position:"absolute", bottom:54, left:"50%", transform:"translateX(-50%)", width:50, height:32, background:"radial-gradient(ellipse at center bottom,rgba(255,100,20,.28),transparent)", borderRadius:"50%" }} />
+{/* Main flames */}
+{[-18,-9,0,9,18].map((x,i) => (
+<div key={`f-${i}`} style={{ position:"absolute", bottom:88, left:`calc(50% + ${x}px)`, transform:"translateX(-50%)", width:11+i%3*6, height:32+i%3*20, background:`linear-gradient(to top,${i%2?"#cc2800":"#ff5010"},#ffaa20,rgba(255,230,80,.03))`, borderRadius:"50% 50% 25% 25%/65% 65% 35% 35%", animation:`flameWaver ${1.0+i*.19}s ${i*.16}s ease-in-out infinite`, transformOrigin:"bottom center", opacity:0.9 }} />
 ))}
-{/* Embers floating up */}
-{[...Array(7)].map((_,i) => (
-<div key={i} style={{
-  position:"absolute",
-  left:`calc(50% + ${(i-3)*11}px)`,
-  bottom:`${36+i%4*10}px`,
-  width:3, height:3, borderRadius:"50%",
-  background: i%2 ? "#ffaa40" : "#ff8030",
-  animation:`emberFloat ${1.5+i*.38}s ${i*.28}s ease-out infinite`,
-  opacity:0.75,
-}} />
+{/* Embers */}
+{[0,1,2,3,4,5,6,7].map(i => (
+<div key={`e-${i}`} style={{ position:"absolute", left:`calc(50% + ${(i-3.5)*13}px)`, bottom:`${60+i%4*14}px`, width:i%2?4:3, height:i%2?4:3, borderRadius:"50%", background:i%3?"#ffcc40":i%2?"#ff8020":"#ff5010", animation:`emberFloat ${1.3+i*.32}s ${i*.22}s ease-out infinite`, opacity:0.85 }} />
 ))}
-{/* Decorative side lines */}
-<div style={{ position:"absolute", bottom:42, left:"calc(50% - 42px)", width:28, height:1, background:"linear-gradient(to left,rgba(201,168,76,.35),transparent)" }} />
-<div style={{ position:"absolute", bottom:42, right:"calc(50% - 42px)", width:28, height:1, background:"linear-gradient(to right,rgba(201,168,76,.35),transparent)" }} />
 </div>
 );
 
