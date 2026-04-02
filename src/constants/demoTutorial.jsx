@@ -14,57 +14,54 @@ const DEMO_PLAYERS = [
 
 // ── Reusable atmosphere scenes for demo slides ───────────────────────────
 const GobletScene = () => (
-<div style={{ position:"relative", background:"rgba(6,1,1,.98)", border:"1px solid rgba(120,30,10,.5)", borderRadius:4, overflow:"hidden", minHeight:110, marginBottom:0 }}>
+<div style={{ position:"relative", background:"rgba(6,1,1,.98)", border:"1px solid rgba(120,30,10,.5)", borderRadius:4, overflow:"hidden", minHeight:130, marginBottom:0 }}>
 {/* Ground glow */}
-<div style={{ position:"absolute", bottom:0, left:"50%", transform:"translateX(-50%)", width:120, height:16, background:"radial-gradient(ellipse,rgba(255,80,10,.22),transparent)", borderRadius:"50%" }} />
-{/* Outer flame aura — large background flames behind cup */}
-{[-28,-16,0,16,28].map((x,i) => (
-<div key={`aura-${i}`} style={{ position:"absolute", bottom:56, left:`calc(50% + ${x}px)`, transform:"translateX(-50%)", width:14+i%2*10, height:38+i%3*22, background:`linear-gradient(to top,rgba(139,20,0,.7),rgba(200,60,0,.4),transparent)`, borderRadius:"50% 50% 30% 30%/60% 60% 40% 40%", animation:`flameWaver ${1.4+i*.22}s ${i*.2}s ease-in-out infinite`, transformOrigin:"bottom center", opacity:0.5 }} />
-))}
-{/* Base plate — wide decorative foot */}
-<div style={{ position:"absolute", bottom:4, left:"50%", transform:"translateX(-50%)", width:68, height:8, background:"linear-gradient(to bottom,rgba(160,100,50,.7),rgba(100,55,20,.8))", borderRadius:"2px 2px 6px 6px", boxShadow:"0 2px 8px rgba(0,0,0,.6)" }} />
-{/* Base foot curve */}
-<div style={{ position:"absolute", bottom:10, left:"50%", transform:"translateX(-50%)", width:52, height:10, background:"linear-gradient(to bottom,rgba(140,85,35,.65),rgba(100,55,20,.7))", borderRadius:"40% 40% 0 0 / 80% 80% 0 0" }} />
+<div style={{ position:"absolute", bottom:0, left:"50%", transform:"translateX(-50%)", width:120, height:16, background:"radial-gradient(ellipse,rgba(255,80,10,.3),transparent)", borderRadius:"50%" }} />
+{/* Base plate */}
+<div style={{ position:"absolute", bottom:4, left:"50%", transform:"translateX(-50%)", width:70, height:8, background:"linear-gradient(to bottom,#8b5a2b,#5c3210)", borderRadius:"2px 2px 6px 6px", boxShadow:"0 2px 8px rgba(0,0,0,.7)" }} />
+{/* Base foot */}
+<div style={{ position:"absolute", bottom:10, left:"50%", transform:"translateX(-50%)", width:54, height:11, background:"linear-gradient(to bottom,#9a6230,#5c3210)", borderRadius:"40% 40% 0 0 / 80% 80% 0 0" }} />
 {/* Stem */}
-<div style={{ position:"absolute", bottom:20, left:"50%", transform:"translateX(-50%)", width:10, height:18, background:"linear-gradient(to right,rgba(100,55,20,.7),rgba(170,100,40,.85),rgba(100,55,20,.7))", borderRadius:4 }} />
+<div style={{ position:"absolute", bottom:21, left:"50%", transform:"translateX(-50%)", width:11, height:18, background:"linear-gradient(to right,#5c3210,#a06828,#5c3210)", borderRadius:4 }} />
 {/* Stem knop */}
-<div style={{ position:"absolute", bottom:30, left:"50%", transform:"translateX(-50%)", width:20, height:9, background:"linear-gradient(to right,rgba(110,60,20,.65),rgba(180,110,45,.8),rgba(110,60,20,.65))", borderRadius:"50%", boxShadow:"0 0 8px rgba(180,80,20,.3)" }} />
-{/* Cup body — wide rounded chalice */}
-<div style={{ position:"absolute", bottom:38, left:"50%", transform:"translateX(-50%)", width:72, height:46,
-  background:"linear-gradient(160deg,rgba(80,100,120,.15) 0%,rgba(60,80,110,.22) 35%,rgba(40,60,90,.18) 65%,rgba(80,100,130,.12) 100%)",
+<div style={{ position:"absolute", bottom:31, left:"50%", transform:"translateX(-50%)", width:22, height:10, background:"linear-gradient(to right,#6a3a14,#c07838,#6a3a14)", borderRadius:"50%", boxShadow:"0 0 8px rgba(180,80,20,.4)" }} />
+{/* Cup body — opaque steel-blue */}
+<div style={{ position:"absolute", bottom:40, left:"50%", transform:"translateX(-50%)", width:74, height:48,
+  background:"linear-gradient(160deg,#4a6070 0%,#3a5060 35%,#2e4050 65%,#3a5568 100%)",
   borderRadius:"38% 38% 50% 50% / 15% 15% 55% 55%",
-  border:"1.5px solid rgba(100,130,160,.45)",
-  boxShadow:"inset 2px 4px 12px rgba(120,160,200,.08),inset -2px 0 8px rgba(60,30,10,.3),0 0 14px rgba(180,80,20,.15)" }}>
-  {/* Swirl engraving left */}
-  <div style={{ position:"absolute", top:"22%", left:"12%", width:"30%", height:"55%", borderRadius:"50%", border:"1px solid rgba(100,130,160,.25)", transform:"rotate(-20deg)" }} />
-  {/* Swirl engraving center */}
-  <div style={{ position:"absolute", top:"15%", left:"30%", width:"40%", height:"65%", borderRadius:"50%", border:"1px solid rgba(100,130,160,.18)" }} />
-  {/* Highlight sheen */}
-  <div style={{ position:"absolute", top:"8%", left:"18%", width:"22%", height:"38%", background:"rgba(180,210,240,.12)", borderRadius:"50%", transform:"rotate(-15deg)" }} />
+  border:"2px solid rgba(110,145,170,.7)",
+  boxShadow:"inset 3px 5px 14px rgba(140,180,210,.15),inset -3px -2px 10px rgba(10,20,30,.6),0 0 16px rgba(180,80,20,.25)" }}>
+  <div style={{ position:"absolute", top:"20%", left:"10%", width:"32%", height:"58%", borderRadius:"50%", border:"1.5px solid rgba(120,160,190,.4)", transform:"rotate(-20deg)" }} />
+  <div style={{ position:"absolute", top:"12%", left:"28%", width:"42%", height:"68%", borderRadius:"50%", border:"1.5px solid rgba(120,160,190,.3)" }} />
+  <div style={{ position:"absolute", top:"6%", left:"16%", width:"24%", height:"40%", background:"rgba(200,230,255,.18)", borderRadius:"50%", transform:"rotate(-15deg)" }} />
 </div>
 {/* Left handle */}
-<div style={{ position:"absolute", bottom:52, left:"calc(50% - 46px)", width:18, height:28,
-  borderRadius:"50% 0 0 50% / 50% 0 0 50%",
-  border:"1.5px solid rgba(100,130,160,.5)",
-  borderRight:"none",
-  background:"linear-gradient(to left,transparent,rgba(60,80,110,.12))" }} />
+<div style={{ position:"absolute", bottom:54, left:"calc(50% - 48px)", width:20, height:30, borderRadius:"50% 0 0 50% / 50% 0 0 50%", border:"2px solid rgba(110,145,170,.7)", borderRight:"none", background:"linear-gradient(to left,rgba(42,58,72,.8),rgba(30,44,56,.6))" }} />
 {/* Right handle */}
-<div style={{ position:"absolute", bottom:52, right:"calc(50% - 46px)", width:18, height:28,
-  borderRadius:"0 50% 50% 0 / 0 50% 50% 0",
-  border:"1.5px solid rgba(100,130,160,.5)",
-  borderLeft:"none",
-  background:"linear-gradient(to right,transparent,rgba(60,80,110,.12))" }} />
+<div style={{ position:"absolute", bottom:54, right:"calc(50% - 48px)", width:20, height:30, borderRadius:"0 50% 50% 0 / 0 50% 50% 0", border:"2px solid rgba(110,145,170,.7)", borderLeft:"none", background:"linear-gradient(to right,rgba(42,58,72,.8),rgba(30,44,56,.6))" }} />
 {/* Cup rim */}
-<div style={{ position:"absolute", bottom:84, left:"50%", transform:"translateX(-50%)", width:74, height:6, background:"linear-gradient(to bottom,rgba(130,160,190,.6),rgba(90,115,145,.7))", borderRadius:"3px 3px 0 0", boxShadow:"0 0 10px rgba(180,100,20,.35),0 -2px 6px rgba(255,120,40,.2)", animation:"gobletGlow 2.5s ease-in-out infinite" }} />
-{/* Inner cup fire glow */}
-<div style={{ position:"absolute", bottom:54, left:"50%", transform:"translateX(-50%)", width:50, height:32, background:"radial-gradient(ellipse at center bottom,rgba(255,100,20,.28),transparent)", borderRadius:"50%" }} />
-{/* Main flames — tall and dramatic */}
-{[-18,-9,0,9,18].map((x,i) => (
-<div key={`flame-${i}`} style={{ position:"absolute", bottom:88, left:`calc(50% + ${x}px)`, transform:"translateX(-50%)", width:11+i%3*6, height:32+i%3*20, background:`linear-gradient(to top,${i%2?"#cc2800":"#ff5010"},#ffaa20,rgba(255,230,80,.03))`, borderRadius:"50% 50% 25% 25%/65% 65% 35% 35%", animation:`flameWaver ${1.0+i*.19}s ${i*.16}s ease-in-out infinite`, transformOrigin:"bottom center", opacity:0.9 }} />
+<div style={{ position:"absolute", bottom:88, left:"50%", transform:"translateX(-50%)", width:76, height:7, background:"linear-gradient(to bottom,#7090a8,#4a6a80)", borderRadius:"3px 3px 0 0", boxShadow:"0 0 12px rgba(200,120,30,.5),0 -2px 8px rgba(255,140,50,.3)", animation:"gobletGlow 2.5s ease-in-out infinite" }} />
+{/* Inner fire glow */}
+<div style={{ position:"absolute", bottom:56, left:"50%", transform:"translateX(-50%)", width:54, height:34, background:"radial-gradient(ellipse at center bottom,rgba(255,120,20,.4),transparent)", borderRadius:"50%" }} />
+{/* Outer aura flames */}
+{[-30,-16,0,16,30].map((x,i) => (
+<div key={`aura-${i}`} style={{ position:"absolute", bottom:88, left:`calc(50% + ${x}px)`, transform:"translateX(-50%)", width:16+i%2*12, height:50+i%3*18, background:`linear-gradient(to top,rgba(160,30,0,.6),rgba(220,70,0,.3),transparent)`, borderRadius:"45% 45% 20% 20% / 70% 70% 30% 30%", animation:`flameWaver ${1.5+i*.2}s ${i*.18}s ease-in-out infinite`, transformOrigin:"bottom center", opacity:0.55 }} />
 ))}
-{/* Ember sparks */}
+{/* Main flames — tall tapered */}
+{[-20,-11,0,11,20].map((x,i) => (
+<div key={`flame-${i}`} style={{
+  position:"absolute", bottom:93, left:`calc(50% + ${x}px)`, transform:"translateX(-50%)",
+  width: i===2?18:i===1||i===3?14:10,
+  height: i===2?62:i===1||i===3?50:36,
+  background:`linear-gradient(to top,${i%2?"#dd2200":"#ff5500"} 0%,#ff9900 45%,#ffdd40 75%,rgba(255,240,100,.05) 100%)`,
+  borderRadius:"50% 50% 20% 20% / 80% 80% 20% 20%",
+  animation:`flameWaver ${0.9+i*.18}s ${i*.14}s ease-in-out infinite`,
+  transformOrigin:"bottom center", opacity:1,
+}} />
+))}
+{/* Embers */}
 {[0,1,2,3,4,5,6,7].map(i => (
-<div key={`ember-${i}`} style={{ position:"absolute", left:`calc(50% + ${(i-3.5)*13}px)`, bottom:`${60+i%4*14}px`, width:i%2?4:3, height:i%2?4:3, borderRadius:"50%", background:i%3?"#ffcc40":i%2?"#ff8020":"#ff5010", animation:`emberFloat ${1.3+i*.32}s ${i*.22}s ease-out infinite`, opacity:0.85 }} />
+<div key={`ember-${i}`} style={{ position:"absolute", left:`calc(50% + ${(i-3.5)*14}px)`, bottom:`${70+i%4*16}px`, width:i%2?4:3, height:i%2?4:3, borderRadius:"50%", background:i%3?"#ffcc40":i%2?"#ff8020":"#ff5010", animation:`emberFloat ${1.2+i*.3}s ${i*.2}s ease-out infinite`, opacity:0.9 }} />
 ))}
 </div>
 );
