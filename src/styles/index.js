@@ -389,6 +389,9 @@ border-radius:4px;padding:13px 16px;margin-bottom:10px;transition:all .3s;}
 @keyframes crystalSwirl { 0%,100%{transform:translate(0,0) scale(1);opacity:.18;} 33%{transform:translate(4px,-3px) scale(1.1);opacity:.28;} 66%{transform:translate(-3px,2px) scale(.94);opacity:.14;} }
 @keyframes gobletGlow { 0%,100%{filter:drop-shadow(0 0 6px rgba(201,168,76,.3));} 50%{filter:drop-shadow(0 0 16px rgba(201,168,76,.7));} }
 @keyframes moonRise { 0%,100%{filter:drop-shadow(0 0 14px rgba(255,255,220,.4));transform:scale(1);} 50%{filter:drop-shadow(0 0 32px rgba(255,255,200,.7));transform:scale(1.04);} }
+@keyframes gavelSwing { 0%,18%,100%{transform:rotate(-50deg);} 42%,60%{transform:rotate(13deg);} 50%{transform:rotate(8deg);} }
+@keyframes gavelImpact { 0%,33%,67%,100%{opacity:0;transform:scaleY(0);} 45%,55%{opacity:1;transform:scaleY(1);} }
+@keyframes pathStep { 0%,100%{opacity:.25;transform:translateY(-50%) scale(.65);} 50%{opacity:1;transform:translateY(-50%) scale(1.3);} }
 `;
 
 export { FONTS, CSS };

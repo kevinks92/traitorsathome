@@ -14,7 +14,7 @@ const DEMO_PLAYERS = [
 
 // ── Reusable atmosphere scenes for demo slides ───────────────────────────
 const GobletScene = () => (
-<div style={{ position:"relative", background:"rgba(6,1,1,.98)", border:"1px solid rgba(120,30,10,.5)", borderRadius:4, overflow:"hidden", minHeight:130, marginBottom:0 }}>
+<div style={{ position:"relative", background:"rgba(6,1,1,.98)", border:"1px solid rgba(120,30,10,.5)", borderRadius:4, overflow:"visible", minHeight:165, marginBottom:0 }}>
 {/* Ground glow */}
 <div style={{ position:"absolute", bottom:0, left:"50%", transform:"translateX(-50%)", width:120, height:16, background:"radial-gradient(ellipse,rgba(255,80,10,.3),transparent)", borderRadius:"50%" }} />
 {/* Base plate */}
@@ -25,43 +25,42 @@ const GobletScene = () => (
 <div style={{ position:"absolute", bottom:21, left:"50%", transform:"translateX(-50%)", width:11, height:18, background:"linear-gradient(to right,#5c3210,#a06828,#5c3210)", borderRadius:4 }} />
 {/* Stem knop */}
 <div style={{ position:"absolute", bottom:31, left:"50%", transform:"translateX(-50%)", width:22, height:10, background:"linear-gradient(to right,#6a3a14,#c07838,#6a3a14)", borderRadius:"50%", boxShadow:"0 0 8px rgba(180,80,20,.4)" }} />
-{/* Cup body — opaque steel-blue */}
+{/* Cup body — solid steel-blue */}
 <div style={{ position:"absolute", bottom:40, left:"50%", transform:"translateX(-50%)", width:74, height:48,
-  background:"linear-gradient(160deg,#4a6070 0%,#3a5060 35%,#2e4050 65%,#3a5568 100%)",
+  background:"linear-gradient(160deg,#506878 0%,#3e5868 35%,#304858 65%,#3e5d70 100%)",
   borderRadius:"38% 38% 50% 50% / 15% 15% 55% 55%",
-  border:"2px solid rgba(110,145,170,.7)",
-  boxShadow:"inset 3px 5px 14px rgba(140,180,210,.15),inset -3px -2px 10px rgba(10,20,30,.6),0 0 16px rgba(180,80,20,.25)" }}>
-  <div style={{ position:"absolute", top:"20%", left:"10%", width:"32%", height:"58%", borderRadius:"50%", border:"1.5px solid rgba(120,160,190,.4)", transform:"rotate(-20deg)" }} />
-  <div style={{ position:"absolute", top:"12%", left:"28%", width:"42%", height:"68%", borderRadius:"50%", border:"1.5px solid rgba(120,160,190,.3)" }} />
-  <div style={{ position:"absolute", top:"6%", left:"16%", width:"24%", height:"40%", background:"rgba(200,230,255,.18)", borderRadius:"50%", transform:"rotate(-15deg)" }} />
+  border:"2px solid rgba(120,158,185,.8)",
+  boxShadow:"inset 2px 4px 10px rgba(160,200,230,.12),inset -2px -2px 8px rgba(5,12,20,.7),0 0 18px rgba(180,80,20,.3)" }}>
+  <div style={{ position:"absolute", top:"18%", left:"12%", width:"30%", height:"55%", borderRadius:"50%", border:"1px solid rgba(140,180,210,.2)", transform:"rotate(-20deg)" }} />
+  <div style={{ position:"absolute", top:"8%", left:"18%", width:"20%", height:"34%", background:"rgba(210,240,255,.1)", borderRadius:"50%", transform:"rotate(-15deg)" }} />
 </div>
 {/* Left handle */}
-<div style={{ position:"absolute", bottom:54, left:"calc(50% - 48px)", width:20, height:30, borderRadius:"50% 0 0 50% / 50% 0 0 50%", border:"2px solid rgba(110,145,170,.7)", borderRight:"none", background:"linear-gradient(to left,rgba(42,58,72,.8),rgba(30,44,56,.6))" }} />
+<div style={{ position:"absolute", bottom:54, left:"calc(50% - 48px)", width:20, height:30, borderRadius:"50% 0 0 50% / 50% 0 0 50%", border:"2px solid rgba(110,145,170,.7)", borderRight:"none", background:"linear-gradient(to left,rgba(50,68,82,.95),rgba(36,52,66,.9))" }} />
 {/* Right handle */}
-<div style={{ position:"absolute", bottom:54, right:"calc(50% - 48px)", width:20, height:30, borderRadius:"0 50% 50% 0 / 0 50% 50% 0", border:"2px solid rgba(110,145,170,.7)", borderLeft:"none", background:"linear-gradient(to right,rgba(42,58,72,.8),rgba(30,44,56,.6))" }} />
+<div style={{ position:"absolute", bottom:54, right:"calc(50% - 48px)", width:20, height:30, borderRadius:"0 50% 50% 0 / 0 50% 50% 0", border:"2px solid rgba(110,145,170,.7)", borderLeft:"none", background:"linear-gradient(to right,rgba(50,68,82,.95),rgba(36,52,66,.9))" }} />
 {/* Cup rim */}
 <div style={{ position:"absolute", bottom:88, left:"50%", transform:"translateX(-50%)", width:76, height:7, background:"linear-gradient(to bottom,#7090a8,#4a6a80)", borderRadius:"3px 3px 0 0", boxShadow:"0 0 12px rgba(200,120,30,.5),0 -2px 8px rgba(255,140,50,.3)", animation:"gobletGlow 2.5s ease-in-out infinite" }} />
-{/* Inner fire glow */}
+{/* Inner fire glow inside cup */}
 <div style={{ position:"absolute", bottom:56, left:"50%", transform:"translateX(-50%)", width:54, height:34, background:"radial-gradient(ellipse at center bottom,rgba(255,120,20,.4),transparent)", borderRadius:"50%" }} />
-{/* Outer aura flames */}
-{[-30,-16,0,16,30].map((x,i) => (
-<div key={`aura-${i}`} style={{ position:"absolute", bottom:88, left:`calc(50% + ${x}px)`, transform:"translateX(-50%)", width:16+i%2*12, height:50+i%3*18, background:`linear-gradient(to top,rgba(160,30,0,.6),rgba(220,70,0,.3),transparent)`, borderRadius:"45% 45% 20% 20% / 70% 70% 30% 30%", animation:`flameWaver ${1.5+i*.2}s ${i*.18}s ease-in-out infinite`, transformOrigin:"bottom center", opacity:0.55 }} />
+{/* Outer aura flames behind cup */}
+{[-38,-26,-14,0,14,26,38].map((x,i) => (
+<div key={`aura-${i}`} style={{ position:"absolute", bottom:88, left:`calc(50% + ${x}px)`, transform:"translateX(-50%)", width:14+i%2*10, height:44+i%3*16, background:`linear-gradient(to top,rgba(160,30,0,.55),rgba(220,70,0,.28),transparent)`, borderRadius:"45% 45% 20% 20% / 70% 70% 30% 30%", animation:`flameWaver ${1.4+i*.18}s ${i*.15}s ease-in-out infinite`, transformOrigin:"bottom center", opacity:0.5 }} />
 ))}
-{/* Main flames — tall tapered */}
-{[-20,-11,0,11,20].map((x,i) => (
+{/* Main flames — tall tapered, full coverage */}
+{[-34,-24,-14,0,14,24,34].map((x,i) => (
 <div key={`flame-${i}`} style={{
   position:"absolute", bottom:93, left:`calc(50% + ${x}px)`, transform:"translateX(-50%)",
-  width: i===2?18:i===1||i===3?14:10,
-  height: i===2?62:i===1||i===3?50:36,
+  width: i===3?18:i===2||i===4?15:i===1||i===5?12:9,
+  height: i===3?64:i===2||i===4?52:i===1||i===5?40:30,
   background:`linear-gradient(to top,${i%2?"#dd2200":"#ff5500"} 0%,#ff9900 45%,#ffdd40 75%,rgba(255,240,100,.05) 100%)`,
   borderRadius:"50% 50% 20% 20% / 80% 80% 20% 20%",
-  animation:`flameWaver ${0.9+i*.18}s ${i*.14}s ease-in-out infinite`,
+  animation:`flameWaver ${0.85+i*.17}s ${i*.13}s ease-in-out infinite`,
   transformOrigin:"bottom center", opacity:1,
 }} />
 ))}
 {/* Embers */}
 {[0,1,2,3,4,5,6,7].map(i => (
-<div key={`ember-${i}`} style={{ position:"absolute", left:`calc(50% + ${(i-3.5)*14}px)`, bottom:`${70+i%4*16}px`, width:i%2?4:3, height:i%2?4:3, borderRadius:"50%", background:i%3?"#ffcc40":i%2?"#ff8020":"#ff5010", animation:`emberFloat ${1.2+i*.3}s ${i*.2}s ease-out infinite`, opacity:0.9 }} />
+<div key={`ember-${i}`} style={{ position:"absolute", left:`calc(50% + ${(i-3.5)*14}px)`, bottom:`${72+i%4*18}px`, width:i%2?4:3, height:i%2?4:3, borderRadius:"50%", background:i%3?"#ffcc40":i%2?"#ff8020":"#ff5010", animation:`emberFloat ${1.2+i*.3}s ${i*.2}s ease-out infinite`, opacity:0.9 }} />
 ))}
 </div>
 );
@@ -123,6 +122,62 @@ const ParchmentScene = () => (
 <div style={{ position:"absolute", bottom:30, left:"calc(50% + 16px)", fontSize:"1.4rem", transform:"rotate(-35deg)", animation:`candleFlicker 2.2s ease-in-out infinite`, filter:"drop-shadow(0 0 6px rgba(200,160,80,.3))" }}>🪶</div>
 {/* Ink glow dot */}
 <div style={{ position:"absolute", bottom:28, left:"calc(50% + 8px)", width:4, height:4, borderRadius:"50%", background:"rgba(160,120,200,.5)", boxShadow:"0 0 6px 3px rgba(140,80,200,.3)", animation:`orbPulse 2s ease-in-out infinite` }} />
+</div>
+);
+
+const BanishScene = () => (
+<div style={{ position:"relative", background:"rgba(6,2,2,.98)", border:"1px solid rgba(100,20,10,.4)", borderRadius:4, overflow:"visible", minHeight:72, marginBottom:0 }}>
+{/* Block shadow */}
+<div style={{ position:"absolute", bottom:4, left:"50%", transform:"translateX(-50%)", width:56, height:6, background:"radial-gradient(ellipse,rgba(0,0,0,.3),transparent)", borderRadius:"50%" }} />
+{/* Wooden block */}
+<div style={{ position:"absolute", bottom:10, left:"50%", transform:"translateX(-50%)", width:44, height:13, background:"linear-gradient(to bottom,#7a4a18,#4a2808)", borderRadius:"3px 3px 2px 2px", boxShadow:"0 2px 6px rgba(0,0,0,.5)" }}>
+  <div style={{ position:"absolute", top:"35%", left:6, right:6, height:1, background:"rgba(255,200,100,.1)" }} />
+</div>
+{/* Impact flash */}
+<div style={{ position:"absolute", bottom:22, left:"50%", transform:"translateX(-50%)", width:40, height:5, background:"radial-gradient(ellipse,rgba(255,190,60,.7),transparent)", borderRadius:"50%", animation:"gavelImpact 2s .45s ease-in-out infinite" }} />
+{/* Gavel */}
+<div style={{ position:"absolute", bottom:22, left:"calc(50% - 10px)", transformOrigin:"bottom center", animation:"gavelSwing 2s ease-in-out infinite" }}>
+  <div style={{ position:"absolute", top:0, left:-12, width:28, height:11, background:"linear-gradient(to bottom,#9a6230,#4a2808)", borderRadius:3, boxShadow:"0 2px 6px rgba(0,0,0,.5)" }} />
+  <div style={{ position:"absolute", top:8, left:1, width:5, height:38, background:"linear-gradient(to right,#6a3a10,#a06828,#6a3a10)", borderRadius:3 }} />
+</div>
+{/* Impact embers */}
+{[0,1,2,3].map(i => (
+<div key={`ge-${i}`} style={{ position:"absolute", bottom:`${18+i%2*7}px`, left:`calc(50% + ${(i-1.5)*14}px)`, width:3, height:3, borderRadius:"50%", background:i%2?"#ffaa30":"#ff7020", animation:`emberFloat ${0.9+i*.18}s ${i*.12+0.45}s ease-out infinite`, opacity:0.85 }} />
+))}
+</div>
+);
+
+const FinalRoamScene = () => (
+<div style={{ position:"relative", background:"rgba(4,3,8,.98)", border:"1px solid rgba(100,80,20,.3)", borderRadius:4, overflow:"hidden", minHeight:48, marginBottom:0 }}>
+{/* Walking figure */}
+<div style={{ position:"absolute", top:"50%", left:"6%", transform:"translateY(-60%)", fontSize:".9rem", animation:"roamDrift 2.4s ease-in-out infinite" }}>🚶</div>
+{/* Weaving path dots */}
+{[0,1,2,3,4,5,6].map(i => (
+<div key={`pd-${i}`} style={{
+  position:"absolute",
+  top:`calc(50% + ${[0,-8,0,8,0,-8,0][i]}px)`,
+  left:`${10+i*10}%`,
+  transform:"translateY(-50%)",
+  width:5, height:5, borderRadius:"50%",
+  background:"rgba(201,168,76,.6)",
+  animation:`pathStep 1.4s ${i*0.18}s ease-in-out infinite`,
+}} />
+))}
+{/* Mini fire at end */}
+<div style={{ position:"absolute", right:"8%", top:"50%", transform:"translateY(-65%)" }}>
+{[-5,0,5].map((x,i) => (
+<div key={`mf-${i}`} style={{
+  position:"absolute", bottom:0,
+  left:`calc(50% + ${x}px)`, transform:"translateX(-50%)",
+  width:i===1?7:4, height:i===1?16:10,
+  background:"linear-gradient(to top,#dd3300 0%,#ff8800 50%,#ffcc40 80%,transparent 100%)",
+  borderRadius:"50% 50% 20% 20% / 80% 80% 20% 20%",
+  animation:`flameWaver ${0.9+i*.25}s ${i*.15}s ease-in-out infinite`,
+  transformOrigin:"bottom center",
+}} />
+))}
+<div style={{ position:"absolute", bottom:-5, left:"50%", transform:"translateX(-50%)", width:20, height:5, background:"radial-gradient(ellipse,rgba(255,80,20,.35),transparent)", borderRadius:"50%" }} />
+</div>
 </div>
 );
 
@@ -691,7 +746,7 @@ render: () => (
 <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
 {[
 {icon:"👁️",label:"Seer (if active)",desc:"Tap once → lift blindfold, interrogate a player, blindfold back on",color:"#dd88ff"},
-{icon:"🤝",label:"Recruitment (solo Traitor, 6+ total alive)",desc:"Triggers when 1 Traitor + 5 Faithful remain (6 total). Traitor picks recruit → accept or die. If decline drops to 5 total, night ends immediately.",color:"#d088ff"},
+{icon:"🤝",label:"Recruitment (solo Traitor, 6+ total alive)",desc:"Triggers when exactly 1 Traitor and 6+ players remain. Traitor picks a recruit → accept joins the Turret with no murder tonight; decline means murder then Turret. If 5 players remain after the decline, Turret debriefs only — no murder. If 6+ remain, Turret proceeds with a normal murder vote. Repeats each night until 1T + 4F (5 total) — then no recruitment and no Turret.",color:"#d088ff"},
 {icon:"🎭",label:"Secret Traitor (if applicable, pre-reveal)",desc:"Must select exactly 5 targets — mandatory shortlist. Traitors vote from this list only. Blindfold back on when done.",color:"#c090ff"},
 {icon:"🗡️",label:"All Traitors — The Turret",desc:"Tap each → unanimous vote required, blindfolds back on",color:"var(--crim3)"},
 ].map((s,i) => (
@@ -747,21 +802,21 @@ Quietly tap Sam's shoulder. They open their phone and see this:
 {
 label: "Night — Recruitment",
 icon: "🤝",
-desc: "Recruitment triggers when exactly 1 Traitor remains and there are 6 or more players alive in total (1 Traitor + 5 Faithful). The Traitor selects a Faithful. Accept → both go to Turret, no murder that night. Decline → murdered, then the Traitor always goes to the Turret to debrief — even if no murder is possible. If the decline drops to 5 alive, the Turret meets but cannot murder, and the host resolves night immediately after.",
-tip: "After a decline, the Traitor always goes to the Turret — whether to pick again (6+ alive) or just to debrief before morning (5 alive). Their Turret chat shows the declined player's name and what happens next. If no murder is possible, your panel shows a 'Debrief Only' note — resolve night as soon as they're done.",
+desc: "Recruitment triggers when exactly 1 Traitor remains and 6+ players are alive. The Traitor selects a Faithful and the host presents the offer privately. Accept → both go to the Turret, no murder this night. Decline → target murdered immediately, Traitor goes to the Turret to debrief. If 5 alive remain after a decline, the Turret debriefs only — no murder vote. If 6+ remain, the Turret proceeds with a normal murder vote that night. Recruitment repeats on subsequent nights as long as 1 solo Traitor and 6+ alive remain — it stops when only 1T + 4F (5 total) are left.",
+tip: "After a decline, the Traitor always goes to the Turret. If 6+ alive remain, treat it as a normal Turret night — resolve the murder vote when they're done. If 5 alive remain, your panel shows a 'No Murder' note — resolve night immediately. The declined player's name appears in the Turret chat automatically.",
 render: () => (
 <div className="col" style={{ gap: 8 }}>
 <TurretScene />
 <div className="card host" style={{ padding: 12 }}>
 <div className="host-label">⚜ Host — Recruitment Night</div>
 <div style={{ background: "rgba(139,26,26,.1)", border: "1px solid rgba(139,26,26,.3)", borderRadius: 3, padding: "8px 12px", marginBottom: 8, fontSize: ".82rem", color: "var(--dim)" }}>
-<strong style={{ color: "var(--crim3)" }}>🦉 Drew</strong> declined and was murdered. The Traitor must recruit again.
+<strong style={{ color: "var(--crim3)" }}>🦉 Drew</strong> declined and was murdered. The Traitor convenes in the Turret.
 </div>
-<div style={{ background: "rgba(80,0,120,.1)", border: "1px solid rgba(120,0,180,.3)", borderRadius: 3, padding: "8px 12px", marginBottom: 8, fontSize: ".82rem", color: "var(--dim)" }}>
-✓ New target selected: <strong style={{ color: "#d088ff" }}>Morgan</strong>. Tap below to wake them.
+<div style={{ background: "rgba(80,0,120,.1)", border: "1px solid rgba(120,0,180,.3)", borderRadius: 3, padding: "8px 12px", marginBottom: 8, fontSize: ".78rem", color: "var(--dim)", fontStyle:"italic" }}>
+6 players remain — Turret proceeds with a normal murder vote.
 </div>
-<div style={{ background: "linear-gradient(135deg,#2a0840,#180328)", borderRadius: 3, padding: "9px 14px", textAlign: "center", fontSize: ".7rem", fontFamily: "'Cinzel',serif", color: "#d0a8ff", border: "1px solid rgba(120,40,180,.4)" }}>
-Wake Morgan — Show Them the Offer →
+<div style={{ background: "linear-gradient(135deg,#8b1a1a,#5a0e0e)", borderRadius: 3, padding: "9px 14px", textAlign: "center", fontSize: ".7rem", fontFamily: "'Cinzel',serif", color: "var(--text)", fontWeight: 700 }}>
+Resolve Night →
 </div>
 </div>
 <div style={{ background: "rgba(20,0,40,.95)", border: "2px solid rgba(140,0,220,.5)", borderRadius: 4, padding: "16px", textAlign: "center" }}>
@@ -904,7 +959,7 @@ desc: "4 players remain. One final free roam before the Fire of Truth. Players s
 tip: "Watch the pairings during this roam. Who seeks out whom tells you everything about who's in a last-minute alliance.",
 render: () => (
 <div className="col" style={{ gap: 8 }}>
-<GobletScene />
+<FinalRoamScene />
 <div className="card host" style={{ padding: 12 }}>
 <div className="host-label">⚜ Remaining Players</div>
 <div className="pgrid">
@@ -1357,14 +1412,7 @@ desc: "The banished player's name appears in large text on the host's screen —
 tip: "The Circle of Truth is your chance. If you're a Traitor, this is your greatest performance. If you're Faithful — the frustration is real.",
 render: () => (
 <div className="col" style={{ gap: 8 }}>
-<div style={{ position:"relative", background:"rgba(12,3,3,.97)", border:"1px solid rgba(139,26,26,.3)", borderRadius:4, padding:"10px", overflow:"hidden", minHeight:56 }}>
-{[0,1,2,3,4,5,6,7,8,9].map(i => (
-<div key={i} style={{ position:"absolute", left:`${4+i*10}%`, bottom:`${i%4*6}px`, width:i%2?4:3, height:i%2?4:3, borderRadius:"50%", background:i%3?"#ff5010":i%2?"#ffaa30":"#ff7020", animation:`emberFloat ${1.4+i*.3}s ${i*.18}s ease-out infinite` }} />
-))}
-<div style={{ position:"relative", zIndex:1, textAlign:"center" }}>
-<div style={{ fontSize:"1.4rem", animation:"fireBreath 2s ease-in-out infinite", display:"inline-block" }}>🔥</div>
-</div>
-</div>
+<BanishScene />
 <div style={{ background: "rgba(139,26,26,.15)", border: "2px solid rgba(139,26,26,.5)", borderRadius: 4, padding: "20px 16px", textAlign: "center" }}>
 <div style={{ fontSize: "2rem", marginBottom: 8 }}>{DEMO_PLAYERS[0].emoji}</div>
 <div style={{ fontFamily: "'Cinzel Decorative',cursive", fontSize: "2rem", fontWeight: 900, color: "var(--crim2)", marginBottom: 6 }}>{DEMO_PLAYERS[0].name}</div>
@@ -1458,8 +1506,8 @@ Stay seated. Nobody leaves the room.<br />Blindfold on. Eyes down. Phone face-do
 {
 label: "Night — The Turret",
 icon: "🎯",
-desc: "You're a Traitor. The host taps your shoulder — lift your blindfold. At the very first Turret, you will see your fellow Traitors for the first time. Chat, agree on a target, and vote unanimously. No unanimity = no murder. Blindfold back on when done.",
-tip: "At the very first Turret, Traitors meet each other for the first time — introduce yourselves quietly. If the timer runs out without a unanimous vote, nothing happens. Pick someone and commit.",
+desc: "You're a Traitor. The host taps your shoulder — lift your blindfold. At the very first Turret, you will see your fellow Traitors for the first time. Chat, agree on a target, and vote unanimously. No unanimity = no murder. If the game started with 4+ Traitors and exactly 2 Turret Traitors remain, you'll see a one-time option to recruit a Faithful instead of murdering — vote unanimously to trigger it. Blindfold back on when done.",
+tip: "At the very first Turret, Traitors meet each other for the first time — introduce yourselves quietly. If the timer runs out without a unanimous vote, nothing happens. Pick someone and commit. The 2-Traitor recruit option only appears once per game and only if the game started with 4 or more Traitors.",
 render: () => (
 <div className="card night" style={{ border: "1px solid rgba(80,20,120,.4)", background: "rgba(10,2,18,.9)" }}>
 <TurretScene />
@@ -1497,9 +1545,36 @@ Chat and agree on one target. <strong style={{ color: "#d0a0ff" }}>All Traitors 
 },
 
 {
+label: "Night — Secret Traitor",
+icon: "🎭",
+desc: "You are the Secret Traitor. On pre-reveal nights, the host taps your shoulder before the Turret. Lift your blindfold and submit a mandatory shortlist of exactly 5 murder candidates. The Traitors can only vote from your 5 names — they will never know who compiled the list. On your reveal night, skip the shortlist and go straight to the Turret to meet your allies for the first time.",
+tip: "Submitting yourself keeps you safer — the Traitors won't accidentally target you. But leaving yourself off signals independence. You decide.",
+render: () => (
+<div className="card night" style={{ border:"1px solid rgba(120,40,200,.4)", background:"rgba(12,2,24,.9)" }}>
+<ParchmentScene />
+<div className="ctitle purple">🎭 Your Secret Shortlist</div>
+<div style={{ fontSize:".78rem", color:"rgba(180,130,220,.7)", textAlign:"center", fontStyle:"italic", marginBottom:10, lineHeight:1.6 }}>
+Select exactly 5 candidates. The Traitors vote from your list only — they'll never know it came from you.
+</div>
+<div className="pgrid" style={{ gridTemplateColumns:"repeat(3,1fr)", marginBottom:8 }}>
+{DEMO_PLAYERS.filter(p=>p.alive && p.role!=="secret_traitor").map(p => (
+<div key={p.id} className="pcard sel" style={{ borderColor:"rgba(140,40,220,.6)" }}>
+<div className="pavatar">{p.emoji}</div>
+<div className="pname" style={{ fontSize:".6rem" }}>{p.name}</div>
+<div style={{ fontSize:".5rem", color:"#c090ff", marginTop:1 }}>✓</div>
+</div>
+))}
+</div>
+<div style={{ fontSize:".62rem", color:"rgba(160,100,230,.55)", textAlign:"center", marginBottom:8, fontFamily:"'Cinzel',serif" }}>5 of 5 selected</div>
+<div style={{ background:"linear-gradient(135deg,#3a006a,#220042)", borderRadius:3, padding:"10px", textAlign:"center", fontSize:".72rem", fontFamily:"'Cinzel',serif", color:"#d088ff", border:"1px solid rgba(120,40,200,.4)", fontWeight:700 }}>Submit Shortlist →</div>
+</div>
+),
+},
+
+{
 label: "Night — Recruited!",
 icon: "🤝",
-desc: "Recruitment triggers when 1 Traitor + 5 Faithful remain (6 alive total). The host taps you awake privately. You're shown which Traitor is approaching you, and given a clear choice: accept and join the Turret, or decline and be murdered. If you accept, the Traitor wakes you both in the Turret to meet — no murder that night. If you decline, you are eliminated and the Traitor still convenes in the Turret to debrief before morning. One chance. No second offer. Ever. The host taps your shoulder, you lift your blindfold. Accept to join the Turret as a Traitor. Decline to be murdered — if 6+ still remain after your death, the Traitor recruits again; if only 5 remain, the night ends.",
+desc: "Recruitment triggers when exactly 1 Traitor remains and 6+ players are alive. The host taps your shoulder privately — lift your blindfold and see the offer on your phone. Accept and you join the Turret as a Traitor, meeting your allies with no murder this night. Decline and you are murdered immediately. After a decline: if 6+ players remain the Traitor goes to the Turret and can still vote to murder someone that same night. If only 5 remain (1T + 4F), the Traitor debriefs only — no murder is possible, and morning comes. Recruitment can happen on subsequent nights too, repeating as long as the lone Traitor has 6+ alive to recruit from.",
 tip: "Accepting gives you survival and insider knowledge. Declining is fatal — but your silence keeps your cover until morning.",
 render: () => (
 <div className="card" style={{ background: "rgba(20,0,40,.98)", border: "2px solid rgba(140,0,220,.5)", textAlign: "center", padding: "28px 20px" }}>
@@ -1618,9 +1693,8 @@ desc: "4 players remain. One last roam with a countdown timer. Use this time wis
 tip: "One of the 4 remaining players is a Traitor. Possibly two. Your vote in the next phase could end the game.",
 render: () => (
 <div className="card" style={{ textAlign: "center", padding: "28px 20px" }}>
-<GobletScene />
-<div style={{ fontSize: "2.5rem", marginBottom: 12, marginTop: 12 }}>🔥</div>
-<div style={{ fontFamily: "'Cinzel Decorative',cursive", fontSize: "1.3rem", color: "var(--gold)", marginBottom: 12 }}>Final Free Roam</div>
+<FinalRoamScene />
+<div style={{ fontFamily: "'Cinzel Decorative',cursive", fontSize: "1.3rem", color: "var(--gold)", marginBottom: 12, marginTop: 14 }}>Final Free Roam</div>
 <div style={{ background: "rgba(0,0,0,.3)", borderRadius: 6, height: 5, marginBottom: 14, overflow: "hidden" }}>
 <div style={{ width: "35%", height: "100%", background: "linear-gradient(90deg,#8b1a1a,var(--crim2))", borderRadius: 6 }} />
 </div>
@@ -1891,15 +1965,15 @@ screen: () => (
 },
 {
 phase: "The Night", icon: "🌙", title: "Murder in the Dark",
-body: "Everyone stays in the same room — blindfolds on, nobody leaves. Order: Seer (if active), Recruitment (if 1 Traitor + 5 Faithful alive = 6 total), Secret Traitor shortlist (pre-reveal rounds only — they have a private chat with the host during this phase), then all Traitors for the Turret. Each lifts their blindfold when tapped, uses their phone, then blindfold back on. Turret requires unanimous vote. On a recruitment night, no murder happens. Shields expire at breakfast whether used or not.",
+body: "Everyone stays in the same room — blindfolds on, nobody leaves. Order: Seer (if active), Recruitment (if 1 solo Traitor + 6+ alive), Secret Traitor shortlist (pre-reveal rounds only), then all Traitors for the Turret. Each lifts their blindfold when tapped, uses their phone, then blindfold back on. If a recruit accepts, no murder happens that night — Turret meets for debrief only. If they decline, the target is murdered and the Turret still meets: if 5 players remain, no murder vote; if 6+ remain, the Turret can still murder as normal. Recruitment repeats each night while 1 solo Traitor and 6+ alive remain — it ends when 1T + 4F (5 total) are left, at which point no recruitment or murder is possible. Shields expire at breakfast whether used or not.",
 tip: "The whole ceremony should take 5--8 minutes. The Faithful are sitting there blindfolded.",
 screen: () => (
 <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
 {[
 { icon: "👁️", label: "Seer", desc: "Woken first — interrogates one player privately.", color: "#dd88ff" },
-{ icon: "🤝", label: "Recruitment (solo Traitor + 6+ alive)", desc: "Traitor picks recruit → accept or die → repeats. No murder on recruitment night.", color: "#d088ff" },
+{ icon: "🤝", label: "Recruitment (solo Traitor + 6+ alive)", desc: "Triggers each night while 1T + 6+ alive. Accept: no murder tonight, Turret debriefs only. Decline: target murdered; Turret can still murder if 6+ remain, debrief-only if 5 remain. Ends at 1T + 4F.", color: "#d088ff" },
 { icon: "🎭", label: "Secret Traitor", desc: "Selects exactly 5 targets — mandatory shortlist. Traitors can only vote from this list.", color: "#c090ff" },
-{ icon: "🗡️", label: "The Turret", desc: "All Traitors vote — must be unanimous or no murder.", color: "var(--crim3)" },
+{ icon: "🗡️", label: "The Turret", desc: "All Traitors vote unanimously — no unanimity, no murder. If game started with 4+ Traitors and exactly 2 Turret Traitors remain, they see a one-time option to recruit instead of murder.", color: "var(--crim3)" },
 ].map((s,i) => (
 <div key={i} style={{ display: "flex", gap: 10, padding: "8px 10px", background: "rgba(10,2,18,.7)", border: "1px solid rgba(80,20,120,.3)", borderRadius: 3 }}>
 <div style={{ fontSize: "1.1rem" }}>{s.icon}</div>
