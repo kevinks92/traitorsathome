@@ -80,16 +80,16 @@ if (isFire) return (
 {/* Inner fire glow inside cup */}
 <div style={{ position:"absolute", bottom:56, left:"50%", transform:"translateX(-50%)", width:54, height:34, background:"radial-gradient(ellipse at center bottom,rgba(255,120,20,.4),transparent)", borderRadius:"50%" }} />
 {/* Outer aura flames behind cup */}
-{[-38,-26,-14,0,14,26,38].map((x,i) => (
-<div key={`aura-${i}`} style={{ position:"absolute", bottom:88, left:`calc(50% + ${x}px)`, transform:"translateX(-50%)", width:14+i%2*10, height:44+i%3*16, background:`linear-gradient(to top,rgba(160,30,0,.55),rgba(220,70,0,.28),transparent)`, borderRadius:"45% 45% 20% 20% / 70% 70% 30% 30%", animation:`flameWaver ${1.4+i*.18}s ${i*.15}s ease-in-out infinite`, transformOrigin:"bottom center", opacity:0.5 }} />
+{[-30,-20,-10,0,10,20,30].map((x,i) => (
+<div key={`aura-${i}`} style={{ position:"absolute", bottom:88, left:`calc(50% + ${x}px)`, marginLeft:-(7+i%2*5), width:14+i%2*10, height:44+i%3*16, background:`linear-gradient(to top,rgba(160,30,0,.55),rgba(220,70,0,.28),transparent)`, borderRadius:"45% 45% 20% 20% / 70% 70% 30% 30%", animation:`flameWaver ${1.4+i*.18}s ${i*.15}s ease-in-out infinite`, transformOrigin:"bottom center", opacity:0.5 }} />
 ))}
 {/* Main flames — tall tapered, full left coverage */}
-{[-34,-24,-14,0,14,24,34].map((x,i) => (
+{[-30,-24,-14,0,14,24,30].map((x,i) => (
 <div key={`f-${i}`} style={{
   position:"absolute",
   bottom:93,
   left:`calc(50% + ${x}px)`,
-  transform:"translateX(-50%)",
+  marginLeft: i===3?-9:i===2||i===4?-7.5:i===1||i===5?-6:-4.5,
   width: i===3 ? 18 : i===2||i===4 ? 15 : i===1||i===5 ? 12 : 9,
   height: i===3 ? 64 : i===2||i===4 ? 52 : i===1||i===5 ? 40 : 30,
   background:`linear-gradient(to top,${i%2?"#dd2200":"#ff5500"} 0%,#ff9900 45%,#ffdd40 75%,rgba(255,240,100,.05) 100%)`,
@@ -304,11 +304,11 @@ if (isBanish) return (
   <div style={{ position:"absolute", top:"35%", left:6, right:6, height:1, background:"rgba(255,200,100,.1)" }} />
 </div>
 {/* Impact flash */}
-<div style={{ position:"absolute", bottom:22, left:"50%", transform:"translateX(-50%)", width:40, height:5, background:"radial-gradient(ellipse,rgba(255,190,60,.7),transparent)", borderRadius:"50%", animation:"gavelImpact 2s .45s ease-in-out infinite" }} />
-{/* Gavel — rotates from raised to strike */}
-<div style={{ position:"absolute", bottom:22, left:"calc(50% - 10px)", transformOrigin:"bottom center", animation:"gavelSwing 2s ease-in-out infinite" }}>
-  <div style={{ position:"absolute", top:0, left:-12, width:28, height:11, background:"linear-gradient(to bottom,#9a6230,#4a2808)", borderRadius:3, boxShadow:"0 2px 6px rgba(0,0,0,.5)" }} />
-  <div style={{ position:"absolute", top:8, left:1, width:5, height:38, background:"linear-gradient(to right,#6a3a10,#a06828,#6a3a10)", borderRadius:3 }} />
+<div style={{ position:"absolute", bottom:22, left:"calc(50% - 9px)", transform:"translateX(-50%)", width:40, height:5, background:"radial-gradient(ellipse,rgba(255,190,60,.7),transparent)", borderRadius:"50%", animation:"gavelImpact 2s ease-in-out infinite" }} />
+{/* Gavel — pivot IS the handle end, placed at right of base; gavel extends upward */}
+<div style={{ position:"absolute", bottom:23, left:"calc(50% + 26px)", transformOrigin:"0 0", animation:"gavelSwing 2s ease-in-out infinite" }}>
+  <div style={{ position:"absolute", top:-30, left:-2, width:5, height:30, background:"linear-gradient(to right,#6a3a10,#a06828,#6a3a10)", borderRadius:3 }} />
+  <div style={{ position:"absolute", top:-39, left:-14, width:22, height:9, background:"linear-gradient(to bottom,#9a6230,#4a2808)", borderRadius:3, boxShadow:"0 2px 6px rgba(0,0,0,.5)" }} />
 </div>
 {/* Impact embers */}
 {[0,1,2,3].map(i => (
