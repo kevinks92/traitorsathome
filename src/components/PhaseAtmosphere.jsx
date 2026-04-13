@@ -306,7 +306,7 @@ if (isBanish) return (
 {/* Impact flash */}
 <div style={{ position:"absolute", bottom:22, left:"calc(50% - 9px)", transform:"translateX(-50%)", width:40, height:5, background:"radial-gradient(ellipse,rgba(255,190,60,.7),transparent)", borderRadius:"50%", animation:"gavelImpact 2s ease-in-out infinite" }} />
 {/* Gavel — pivot IS the handle end, placed at right of base; gavel extends upward */}
-<div style={{ position:"absolute", bottom:23, left:"calc(50% + 36px)", transformOrigin:"0 0", animation:"gavelSwing 2s ease-in-out infinite" }}>
+<div style={{ position:"absolute", bottom:23, left:"calc(50% + 40px)", transformOrigin:"0 0", animation:"gavelSwing 2s ease-in-out infinite" }}>
   <div style={{ position:"absolute", top:-30, left:-2, width:5, height:30, background:"linear-gradient(to right,#6a3a10,#a06828,#6a3a10)", borderRadius:3 }} />
   <div style={{ position:"absolute", top:-39, left:-14, width:22, height:9, background:"linear-gradient(to bottom,#9a6230,#4a2808)", borderRadius:3, boxShadow:"0 2px 6px rgba(0,0,0,.5)" }} />
 </div>
