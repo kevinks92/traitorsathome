@@ -231,7 +231,7 @@ if (rC) setRecruitChats(rC);
 setRecruitChats([]);
 }
 const seerR = await load(gameId + "-seer-" + myId);
-if (seerR && !seerResult) setSeerResult(seerR);
+if (seerR && g.phase === PHASES.NIGHT_SEER) setSeerResult(seerR);
 const seerEx = await load(gameId + "-seer-explain-" + myId);
 if (seerEx && !seerExplain) setSeerExplain(seerEx);
 // Poll for ST reveal result during ST selection phase
@@ -1068,6 +1068,7 @@ const tieBreakRound = g.tieBreakRound || 0;
 const tieLockedIds = g.tieLockedIds || [];
 const tally = {};
 Object.entries(votes).forEach(([vId, tId]) => {
+if (tieLockedIds.length > 0 && !tieLockedIds.includes(tId)) return; // ignore out-of-scope votes during revote
 const w = (daggerPid && vId === daggerPid) ? 2 : 1;
 tally[tId] = (tally[tId] || 0) + w;
 });
@@ -1194,6 +1195,8 @@ startTimer((timers.breakfast_convo || 3) * 60);
 const submitDayVote = async () => {
 if (!selectedTarget || !me?.alive) return;
 const g = await load(gameId);
+const tieLockedIds = g.tieLockedIds || [];
+if (tieLockedIds.length > 0 && !tieLockedIds.includes(selectedTarget)) return;
 await save(gameId, { ...g, dayVotes: { ...(g.dayVotes || {}), [myId]: selectedTarget } });
 setSelectedTarget(null);
 };
@@ -1285,6 +1288,7 @@ return;
 if (!seerTarget || !me?.seerRole) return;
 const g = await load(gameId);
 const target = g.players.find(p => p.id === seerTarget);
+if (!target) return;
 const isTraitorTarget = target.role === "traitor" || target.role === "secret_traitor";
 const seerResultData = { name: target.name, emoji: target.emoji, isTraitor: isTraitorTarget };
 setSeerResult(seerResultData);
@@ -1313,6 +1317,7 @@ const winner = checkWinner(g) || "faithful";
 const final = { ...updated, phase: PHASES.ENDED, winner };
 await addMsg(gameId, { type: "win", text: "✅ A unanimous vote to end it. The masks come off. The truth comes out. Someone is about to feel very, very vindicated — and someone else very, very exposed." });
 await save(gameId, final);
+setGame(final);
 } else {
 await advanceTo(PHASES.ROUND_TABLE);
 }
@@ -1440,7 +1445,9 @@ await save('game-history', trimmed);
 const revealEndgameVote = async (idx) => {
 const g = await load(gameId);
 if (idx !== (g.endgameRevealIdx ?? -1) + 1) return;
-await save(gameId, { ...g, endgameRevealIdx: idx });
+const updated = { ...g, endgameRevealIdx: idx };
+await save(gameId, updated);
+setGame(updated);
 };
 
 const endGameFinal = async () => {
@@ -1448,6 +1455,7 @@ const g = await load(gameId);
 const final = { ...g, phase: PHASES.ENDED, winner: checkWinner(g) || "faithful", rolesRevealed: false };
 await addMsg(gameId, { type: "win", text: "✅ A unanimous vote to end it. The masks come off. The truth comes out. Someone is about to feel very, very vindicated — and someone else very, very exposed." });
 await save(gameId, final);
+setGame(final);
 };
 
 const copyId = () => { navigator.clipboard.writeText(gameId); setCopied(true); setTimeout(() => setCopied(false), 2000); };

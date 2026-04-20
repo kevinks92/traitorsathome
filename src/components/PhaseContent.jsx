@@ -1966,13 +1966,22 @@ Tapping Done — Release Roles →
             <div className="info-box" style={{ marginBottom: 14 }}>
               Pick your suspect. Once locked in, your phone shows a large name card to reveal when the host calls on you.{me?.dagger && <strong style={{ color: "#ff9999" }}> You hold the Dagger — your vote counts double.</strong>}
             </div>
+            {game.tieBreakRound > 0 && game.tieLockedIds?.length > 0 && (
+              <div className="info-box" style={{ marginBottom: 10, fontSize: ".82rem" }}>
+                ⚖️ Revote — you may only vote for the tied players shown below.
+              </div>
+            )}
             <div className="pgrid" style={{ marginBottom: 14 }}>
-              {alivePlayers.filter(pl => pl.id !== myId).map(pl => (
-                <div key={pl.id} className={`pcard click ${selectedTarget === pl.id ? "sel" : ""}`} onClick={() => setSelectedTarget(pl.id)}>
-                  <div className="pavatar">{pl.emoji}</div>
-                  <div className="pname">{pl.name}</div>
-                </div>
-              ))}
+              {alivePlayers
+                .filter(pl => pl.id !== myId)
+                .filter(pl => !game.tieLockedIds?.length || game.tieLockedIds.includes(pl.id))
+                .map(pl => (
+                  <div key={pl.id} className={`pcard click ${selectedTarget === pl.id ? "sel" : ""}`} onClick={() => setSelectedTarget(pl.id)}>
+                    <div className="pavatar">{pl.emoji}</div>
+                    <div className="pname">{pl.name}</div>
+                  </div>
+                ))
+              }
             </div>
             <button className="btn btn-gold btn-lg" onClick={submitDayVote} disabled={!selectedTarget}>🗳️ Lock In My Vote</button>
           </>
