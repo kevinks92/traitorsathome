@@ -2876,6 +2876,8 @@ return (
         submitShortlist={submitShortlist}
         sendChat={sendChat}
         submitEndgameVote={submitEndgameVote}
+        revealEndgameVote={revealEndgameVote}
+        endGameFinal={endGameFinal}
         resetGame={resetGame}
         goBackPhase={goBackPhase}
         manualKillPlayer={manualKillPlayer}
