@@ -1286,7 +1286,9 @@ if (!seerTarget || !me?.seerRole) return;
 const g = await load(gameId);
 const target = g.players.find(p => p.id === seerTarget);
 const isTraitorTarget = target.role === "traitor" || target.role === "secret_traitor";
-setSeerResult({ name: target.name, emoji: target.emoji, isTraitor: isTraitorTarget });
+const seerResultData = { name: target.name, emoji: target.emoji, isTraitor: isTraitorTarget };
+setSeerResult(seerResultData);
+await save(gameId + "-seer-" + myId, seerResultData);
 setSeerLocked(false);
 const updated = { ...g, seerUsed: true, seerInvestigated: { targetId: seerTarget, targetName: target.name, targetEmoji: target.emoji, isTraitor: isTraitorTarget } };
 await save(gameId, updated); setGame(updated);
@@ -2605,9 +2607,9 @@ return (
       <div className="modal seer-result-modal" style={{ borderColor: "rgba(120,40,200,.5)" }} onClick={e => e.stopPropagation()}>
         <div style={{ fontSize: "2.5rem", marginBottom: 12 }}>👁️</div>
         <div className="label" style={{ color: "#dd88ff", textAlign: "center" }}>The Seer's Vision</div>
-        <div style={{ fontSize: "1.1rem", marginBottom: 6, color: "var(--text)", textAlign: "center" }}><strong>{seerResult.target}</strong> is…</div>
-        <div style={{ fontFamily: "'Cinzel Decorative',cursive", fontSize: "1.6rem", textAlign: "center", color: seerResult.role === "traitor" || seerResult.role === "secret_traitor" ? "var(--crim2)" : "var(--gold)" }}>
-          {seerResult.role === "traitor" || seerResult.role === "secret_traitor" ? "A TRAITOR" : "FAITHFUL"}
+        <div style={{ fontSize: "1.1rem", marginBottom: 6, color: "var(--text)", textAlign: "center" }}><strong>{seerResult.name}</strong> is…</div>
+        <div style={{ fontFamily: "'Cinzel Decorative',cursive", fontSize: "1.6rem", textAlign: "center", color: seerResult.isTraitor ? "var(--crim2)" : "var(--gold)" }}>
+          {seerResult.isTraitor ? "A TRAITOR" : "FAITHFUL"}
         </div>
         <div className="info-box red" style={{ marginTop: 14, fontSize: ".85rem" }}>You now know something no one else does. Don't blow it by immediately telling everyone at breakfast. Sit with it. Weaponise it.</div>
         <button className="btn btn-outline btn-sm" style={{ marginTop: 14 }} onClick={() => setSeerResult(null)}>Understood</button>
@@ -2916,6 +2918,7 @@ return (
         dmLastWordCat={dmLastWordCat} setDmLastWordCat={setDmLastWordCat}
         dmLastWordElim={dmLastWordElim} setDmLastWordElim={setDmLastWordElim}
         dmRelicObject={dmRelicObject} setDmRelicObject={setDmRelicObject}
+        setGame={setGame} addMsg={addMsg} castleMsg={castleMsg}
       />
 
       {/* DEAD PLAYERS */}

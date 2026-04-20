@@ -14,6 +14,260 @@ import { MISSIONS, TRIVIA_BANK, NAME5_CATEGORIES, EMOJI_CIPHERS,
 import { SHIELD_MODE_LABELS, EMOJIS, genId, getEmoji, shuffleArray, shuffle } from "../utils/gameUtils.js";
 import { generateWitnessQuestions } from "../utils/gameUtils.js";
 
+function ForbiddenWordPlayerView({ gameId, myId }) {
+  const [myWord, setMyWord] = useState("loading…");
+  useEffect(() => {
+    load(gameId + "-fw-" + myId).then(w => { if (w) setMyWord(w); });
+  }, []);
+  return (
+    <div className="card" style={{ marginTop: 16, textAlign: "center", padding: "24px 20px" }}>
+      <div style={{ fontSize: "2.5rem", marginBottom: 10 }}>🚫</div>
+      <div style={{ fontFamily: "'Cinzel Decorative',cursive", fontSize: "1.1rem", color: "var(--gold)", marginBottom: 8 }}>Forbidden Word</div>
+      <div style={{ fontSize: ".9rem", color: "var(--dim)", fontStyle: "italic", marginBottom: 14 }}>You must NOT say this word. Try to make others say theirs.</div>
+      <div style={{ background: "rgba(139,26,26,.15)", border: "2px solid rgba(139,26,26,.4)", borderRadius: 6, padding: "14px 20px", display: "inline-block" }}>
+        <div style={{ fontFamily: "'Cinzel',serif", fontSize: ".6rem", color: "var(--crim3)", letterSpacing: ".15em", textTransform: "uppercase", marginBottom: 6 }}>Your Secret Word</div>
+        <div style={{ fontFamily: "'Cinzel Decorative',cursive", fontSize: "1.8rem", color: "var(--text)", letterSpacing: ".05em" }}>{myWord}</div>
+      </div>
+    </div>
+  );
+}
+
+function SecretBallotPlayerView({ gameId, myId, alivePlayers }) {
+  const [voted, setVoted] = useState(null);
+  return (
+    <div className="card" style={{ marginTop: 16 }}>
+      <div className="ctitle">🗳️ Secret Ballot</div>
+      <div className="info-box" style={{ marginBottom: 14, textAlign: "center" }}>Who would you most want to protect? Your vote is completely private.</div>
+      {!voted ? (
+        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+          {alivePlayers.filter(pl=>pl.id!==myId).map(pl => (
+            <button key={pl.id} className="btn btn-outline" onClick={async()=>{ await save(gameId+"-ballot-"+myId, pl.id); setVoted(pl.id); }}
+              style={{ textAlign:"left",padding:"10px 14px",display:"flex",alignItems:"center",gap:10 }}>
+              <span style={{ fontSize:"1.2rem" }}>{pl.emoji}</span>
+              <span style={{ fontFamily:"'Cinzel',serif",fontSize:".82rem" }}>{pl.name}</span>
+            </button>
+          ))}
+        </div>
+      ) : (
+        <div style={{ textAlign:"center",padding:"20px 0",color:"var(--gold)",fontFamily:"'Cinzel',serif",fontSize:".85rem" }}>
+          ✓ Vote cast. Wait for the host to reveal results.
+        </div>
+      )}
+    </div>
+  );
+}
+
+function AuctionPlayerView({ gameId, myId }) {
+  const [bid, setBid] = useState("");
+  const [submitted, setSubmitted] = useState(false);
+  return (
+    <div className="card" style={{ marginTop: 16, textAlign: "center", padding: "24px 20px" }}>
+      <div style={{ fontSize: "2.5rem", marginBottom: 10 }}>🏺</div>
+      <div style={{ fontFamily: "'Cinzel Decorative',cursive", fontSize: "1.1rem", color: "var(--gold)", marginBottom: 8 }}>Midnight Auction</div>
+      <div style={{ fontSize: ".9rem", color: "var(--dim)", fontStyle: "italic", marginBottom: 16 }}>Enter a number from 1 to 10. Highest unique bid wins. Nobody sees your bid until all are revealed.</div>
+      {!submitted ? (
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 10 }}>
+          <input type="number" min="1" max="10" value={bid} onChange={e=>setBid(e.target.value)}
+            style={{ width:80,padding:"12px",fontSize:"1.5rem",textAlign:"center",background:"rgba(255,255,255,.05)",border:"1px solid rgba(201,168,76,.3)",borderRadius:4,color:"var(--gold)",fontFamily:"'Cinzel',serif" }} />
+          <button className="btn btn-gold" disabled={!bid||bid<1||bid>10} onClick={async()=>{ await save(gameId+"-auction-bid-"+myId, Number(bid)); setSubmitted(true); }}>
+            Submit Bid
+          </button>
+        </div>
+      ) : (
+        <div style={{ color:"var(--gold)",fontFamily:"'Cinzel',serif" }}>✓ Bid of {bid} submitted. Sit tight.</div>
+      )}
+    </div>
+  );
+}
+
+function HotTakePlayerView({ gameId, myId }) {
+  const [voted, setVoted] = useState(null);
+  const [takeText, setTakeText] = useState("Loading…");
+  useEffect(() => { load(gameId+"-hot-take").then(t=>{ if(t) setTakeText(t); }); }, []);
+  return (
+    <div className="card" style={{ marginTop: 16, textAlign: "center", padding: "24px 20px" }}>
+      <div style={{ fontSize: "2.5rem", marginBottom: 10 }}>🔥</div>
+      <div style={{ fontFamily: "'Cinzel Decorative',cursive", fontSize: "1.1rem", color: "var(--gold)", marginBottom: 14 }}>Hot Take</div>
+      <div style={{ background:"rgba(201,168,76,.08)",border:"1px solid rgba(201,168,76,.2)",borderRadius:4,padding:"14px 16px",marginBottom:16,fontSize:".95rem",color:"var(--text)",fontStyle:"italic",lineHeight:1.6 }}>"{takeText}"</div>
+      {!voted ? (
+        <div style={{ display:"flex",gap:10,justifyContent:"center" }}>
+          <button className="btn btn-sm" style={{ background:"rgba(40,100,40,.4)",border:"1px solid rgba(60,160,60,.5)",color:"#80e080",padding:"12px 20px",fontSize:".85rem" }}
+            onClick={async()=>{ await save(gameId+"-hottake-"+myId,"agree"); setVoted("agree"); }}>✓ Agree</button>
+          <button className="btn btn-sm" style={{ background:"rgba(100,20,20,.4)",border:"1px solid rgba(160,40,40,.5)",color:"var(--crim3)",padding:"12px 20px",fontSize:".85rem" }}
+            onClick={async()=>{ await save(gameId+"-hottake-"+myId,"disagree"); setVoted("disagree"); }}>✗ Disagree</button>
+        </div>
+      ) : (
+        <div style={{ color:"var(--gold)",fontFamily:"'Cinzel',serif" }}>✓ Voted {voted}. Waiting for others.</div>
+      )}
+    </div>
+  );
+}
+
+function WitnessPlayerView({ gameId, myId }) {
+  const [qs, setQs] = useState([]);
+  const [qIdx, setQIdx] = useState(0);
+  const [answers, setAnswers] = useState({});
+  const [done, setDone] = useState(false);
+  useEffect(() => { load(gameId+"-witness-qs").then(q=>{ if(q) setQs(q); }); }, []);
+  const q = qs[qIdx];
+  const submit = async (opt) => {
+    const newAnswers = {...answers, [qIdx]: opt};
+    setAnswers(newAnswers);
+    await save(gameId+"-witness-ans-"+myId, newAnswers);
+    if (qIdx >= Math.min(qs.length,5)-1) setDone(true);
+    else setQIdx(i=>i+1);
+  };
+  return (
+    <div className="card" style={{ marginTop: 16 }}>
+      <div style={{ fontFamily:"'Cinzel Decorative',cursive",fontSize:".9rem",color:"#dd88ff",textAlign:"center",marginBottom:14 }}>👁️ The Witness</div>
+      {done ? (
+        <div style={{ textAlign:"center",padding:"20px 0",color:"var(--gold)",fontFamily:"'Cinzel',serif",fontSize:".85rem" }}>
+          ✓ Your answers are in. The host is tallying scores.
+        </div>
+      ) : !q ? (
+        <div style={{ textAlign:"center",color:"var(--dim)",fontStyle:"italic" }}>Loading questions…</div>
+      ) : (
+        <>
+          <div style={{ fontFamily:"'Cinzel',serif",fontSize:".58rem",color:"var(--dim)",marginBottom:8 }}>Question {qIdx+1} of {Math.min(qs.length,5)}</div>
+          <div style={{ fontSize:".95rem",color:"var(--text)",lineHeight:1.6,marginBottom:14,fontWeight:600 }}>{q.q}</div>
+          <div style={{ display:"flex",flexDirection:"column",gap:8 }}>
+            {(q.opts || [q.a]).map((opt,i) => (
+              <button key={i} className="btn btn-outline" onClick={()=>submit(opt)}
+                style={{ textAlign:"left",padding:"10px 14px",borderColor:"rgba(120,0,180,.3)",color:"var(--text)" }}>
+                {opt}
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+function DrawPlayerView({ gameId, myId }) {
+  const [isWinner, setIsWinner] = useState(false);
+  useEffect(() => {
+    load(gameId + "-draw-winner").then(wid => { if (wid === myId) setIsWinner(true); });
+  }, []);
+  return (
+    <div className="card" style={{ marginTop: 16, textAlign: "center", padding: "28px 20px" }}>
+      <div style={{ fontSize: "2.5rem", marginBottom: 10 }}>🎴</div>
+      <div style={{ fontFamily: "'Cinzel Decorative',cursive", fontSize: "1.1rem", color: "var(--gold)", marginBottom: 12 }}>The Draw</div>
+      {isWinner ? (
+        <div style={{ background: "rgba(201,168,76,.1)", border: "2px solid rgba(201,168,76,.4)", borderRadius: 6, padding: "16px 20px" }}>
+          <div style={{ fontFamily: "'Cinzel',serif", fontSize: ".65rem", letterSpacing: ".15em", textTransform: "uppercase", color: "var(--gold2)", marginBottom: 8 }}>You have been chosen</div>
+          <div style={{ fontSize: "2rem", marginBottom: 6 }}>🛡️</div>
+          <div style={{ fontFamily: "'Cinzel',serif", fontSize: ".82rem", color: "var(--dim)", fontStyle: "italic" }}>Tell no one. The host will award your shield silently.</div>
+        </div>
+      ) : (
+        <div style={{ color: "var(--dim)", fontStyle: "italic", fontSize: ".9rem", lineHeight: 1.7 }}>
+          The castle chooses one player at random. Sit quietly. If it's you — you'll know.
+        </div>
+      )}
+    </div>
+  );
+}
+
+function EmojiCipherPlayerView({ gameId }) {
+  const [emojiDisplay, setEmojiDisplay] = useState("…");
+  useEffect(() => {
+    load(gameId + "-emoji-cipher").then(e => { if (e) setEmojiDisplay(e); });
+  }, []);
+  return (
+    <div className="card" style={{ marginTop: 16, textAlign: "center", padding: "28px 20px" }}>
+      <div style={{ fontFamily: "'Cinzel Decorative',cursive", fontSize: "1rem", color: "var(--gold)", marginBottom: 16 }}>📱 Emoji Cipher</div>
+      <div style={{ fontSize: "3rem", letterSpacing: ".3em", margin: "0 auto 20px", padding: "16px", background: "rgba(255,255,255,.03)", border: "1px solid rgba(201,168,76,.15)", borderRadius: 6 }}>{emojiDisplay}</div>
+      <div style={{ color: "var(--dim)", fontStyle: "italic", fontSize: ".9rem", lineHeight: 1.7 }}>
+        Decode the emojis. If you know the answer —<br />whisper it to the host <em>immediately</em>.
+      </div>
+    </div>
+  );
+}
+
+function Name5PlayerView({ gameId }) {
+  const [cat, setCat] = useState("…");
+  useEffect(() => {
+    const poll = () => load(gameId + "-name5-cat").then(c => { if (c) setCat(c); });
+    poll();
+    const t = setInterval(poll, 2000);
+    return () => clearInterval(t);
+  }, []);
+  return (
+    <div className="card" style={{ marginTop: 16, textAlign: "center", padding: "28px 20px" }}>
+      <div style={{ fontFamily: "'Cinzel Decorative',cursive", fontSize: "1rem", color: "var(--gold)", marginBottom: 16 }}>⏱️ Name 5 in 30</div>
+      <div style={{ background: "rgba(201,168,76,.08)", border: "1px solid rgba(201,168,76,.25)", borderRadius: 6, padding: "18px 20px", marginBottom: 16 }}>
+        <div style={{ fontFamily: "'Cinzel',serif", fontSize: ".62rem", letterSpacing: ".15em", textTransform: "uppercase", color: "var(--gold2)", marginBottom: 8 }}>Category</div>
+        <div style={{ fontFamily: "'Cinzel Decorative',cursive", fontSize: "1.2rem", color: "var(--gold)", lineHeight: 1.4 }}>{cat}</div>
+      </div>
+      <div style={{ color: "var(--dim)", fontStyle: "italic", fontSize: ".9rem" }}>
+        First to shout 5 valid answers wins the round.
+      </div>
+    </div>
+  );
+}
+
+function RpsPlayerView({ gameId, myId, alivePlayers }) {
+  const [matchup, setMatchup] = useState(null);
+  useEffect(() => {
+    const poll = () => load(gameId + "-rps-matchup").then(m => { if (m) setMatchup(m); });
+    poll();
+    const t = setInterval(poll, 2000);
+    return () => clearInterval(t);
+  }, []);
+  return (
+    <div className="card" style={{ marginTop: 16, textAlign: "center", padding: "28px 20px" }}>
+      <div style={{ fontFamily: "'Cinzel Decorative',cursive", fontSize: "1rem", color: "var(--gold)", marginBottom: 16 }}>✊ Rock Paper Scissors</div>
+      {matchup?.p1 === myId || matchup?.p2 === myId ? (
+        <div style={{ background: "rgba(201,168,76,.1)", border: "2px solid rgba(201,168,76,.4)", borderRadius: 6, padding: "20px" }}>
+          <div style={{ fontFamily: "'Cinzel',serif", fontSize: ".65rem", letterSpacing: ".15em", textTransform: "uppercase", color: "var(--crim3)", marginBottom: 8 }}>⚔️ It's Your Turn</div>
+          <div style={{ fontSize: "1.5rem", marginBottom: 8 }}>
+            {alivePlayers.find(p=>p.id===matchup.p1)?.emoji} vs {alivePlayers.find(p=>p.id===matchup.p2)?.emoji}
+          </div>
+          <div style={{ fontFamily: "'Cinzel',serif", fontSize: ".85rem", color: "var(--text)" }}>
+            {alivePlayers.find(p=>p.id===matchup.p1)?.name} vs {alivePlayers.find(p=>p.id===matchup.p2)?.name}
+          </div>
+          <div style={{ color: "var(--dim)", fontStyle: "italic", fontSize: ".82rem", marginTop: 10 }}>Best of 3. Step forward when called.</div>
+        </div>
+      ) : (
+        <div style={{ color: "var(--dim)", fontStyle: "italic", fontSize: ".9rem", lineHeight: 1.7 }}>
+          {matchup ? `Current match: ${alivePlayers.find(p=>p.id===matchup.p1)?.name} vs ${alivePlayers.find(p=>p.id===matchup.p2)?.name}` : "Waiting for the host to call the next match…"}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function RelicPlayerView({ gameId }) {
+  const [phase, setPhase] = useState("waiting");
+  useEffect(() => {
+    const poll = () => load(gameId+"-relic-phase").then(p => { if (p) setPhase(p); });
+    poll();
+    const t = setInterval(poll, 2000);
+    return () => clearInterval(t);
+  }, []);
+  return (
+    <div className="card" style={{ marginTop:16, textAlign:"center", padding:"28px 20px" }}>
+      <div style={{ fontSize:"2.5rem",marginBottom:10 }}>🗿</div>
+      <div style={{ fontFamily:"'Cinzel Decorative',cursive",fontSize:"1rem",color:"var(--gold)",marginBottom:12 }}>The Relic</div>
+      {phase === "blindfold" || phase === "hide" ? (
+        <div style={{ background:"rgba(40,0,60,.2)",border:"1px solid rgba(120,0,180,.3)",borderRadius:6,padding:"20px" }}>
+          <div style={{ fontFamily:"'Cinzel',serif",fontSize:".65rem",letterSpacing:".15em",textTransform:"uppercase",color:"#dd88ff",marginBottom:10 }}>🙈 Blindfolds On</div>
+          <div style={{ fontSize:".9rem",color:"var(--dim)",lineHeight:1.7 }}>Eyes closed. Phone face-down. Don't move. Don't peek.<br /><em>The host is hiding something.</em></div>
+        </div>
+      ) : phase === "search" ? (
+        <div>
+          <div style={{ background:"rgba(201,168,76,.08)",border:"1px solid rgba(201,168,76,.25)",borderRadius:6,padding:"18px 20px",marginBottom:12 }}>
+            <div style={{ fontFamily:"'Cinzel Decorative',cursive",fontSize:"1rem",color:"var(--gold)",marginBottom:8 }}>Blindfolds Off — Search</div>
+            <div style={{ fontSize:".9rem",color:"var(--dim)",lineHeight:1.7 }}>Somewhere in this space, a small object is hidden. Find it.<br /><br />If you find it — <strong style={{ color:"var(--gold)" }}>pocket it silently</strong> and say nothing. Act completely normal.<br /><br />After the search ends, the group will vote on who they think found it.</div>
+          </div>
+        </div>
+      ) : (
+        <div style={{ color:"var(--dim)",fontStyle:"italic",fontSize:".9rem" }}>Waiting for the host to begin…</div>
+      )}
+    </div>
+  );
+}
+
 function PhaseContent(props) {
 const { game, me, myId, gameId, isHost, isTraitor, isSecretTraitor, isSeer, canJoinTraitorChat, hasTraitorRole, alivePlayers, aliveTraitors, selectedTarget, setSelectedTarget, selectedMission, setSelectedMission, missionFilter, setMissionFilter, myRoom, updateRoom, timerSec, timerMax, timerRunning, timerClass, fmtTime, timerPct, startTimer, chatDraft, setChatDraft, traitorChats, chatRef, stChats, stChatDraft, setStChatDraft, sendStChat, seerChats, seerDraft, setSeerDraft, sendSeerChat, recruitChats, recruitDraft, setRecruitDraft, sendRecruitChat, shortlist, setShortlist, dayTally, hasVotedDay, hasVotedNight, breakfastGroupIdx, endgameChoice, hostStartMission, awardPower, advanceTo, hostBeginNight, hostEndSeerPhase, hostEndSecretTraitorPhase, submitRecruitTarget, acceptRecruitment, declineRecruitment, recruitTarget, setRecruitTarget, resolveNight, resolveBanishment, advanceBreakfastGroup, advanceFromBreakfast, revealBreakfast, submitDayVote, submitNightVote, submitTwoTraitorRecruitChoice, submitTwoTraitorTarget, submitShortlist, sendChat, submitEndgameVote, revealEndgameVote, endGameFinal, resetGame, goBackPhase, manualKillPlayer, manualRevivePlayer, avatars, releaseRoles, finishRoleReveal, stRevealPlayer, stAdvanceToNext, stSkipSelection, stRevealResult, phaseTimers, seerTarget, setSeerTarget, seerResult, useSeerPower, seerLocked, setSeerLocked, seerExplain,
   dmTriviaQ, setDmTriviaQ, dmTriviaScores, setDmTriviaScores, dmTriviaBank,
@@ -24,7 +278,7 @@ const { game, me, myId, gameId, isHost, isTraitor, isSecretTraitor, isSeer, canJ
   dmDrawWinner, setDmDrawWinner, dmWitnessQs, dmWitnessQ, setDmWitnessQ,
   dmWitnessScores, setDmWitnessScores, dmSecretBallotVotes, setDmSecretBallotVotes,
   dmLastWordCat, setDmLastWordCat, dmLastWordElim, setDmLastWordElim,
-  dmRelicObject, setDmRelicObject, startGame, deadPlayers } = props;
+  dmRelicObject, setDmRelicObject, startGame, deadPlayers, setGame, addMsg, castleMsg } = props;
 const [showPowers, setShowPowers] = useState(false);
 const [ghostTab, setGhostTab] = useState("turret");
 const [pendingShieldId, setPendingShieldId] = useState(null);
@@ -1621,272 +1875,16 @@ Tapping Done — Release Roles →
   {p === PHASES.MISSION_ACTIVE && !isHost && game.currentMission && (() => {
     const m = MISSIONS.find(x => x.id === game.currentMission);
     if (!m) return null;
-
-    // ── Forbidden Word: show player's secret word ──
-    if (m.digitalType === "forbidden_word") {
-      const [myWord, setMyWord] = useState("loading…");
-      useEffect(() => {
-        load(gameId + "-fw-" + myId).then(w => { if (w) setMyWord(w); });
-      }, []);
-      return (
-        <div className="card" style={{ marginTop: 16, textAlign: "center", padding: "24px 20px" }}>
-          <div style={{ fontSize: "2.5rem", marginBottom: 10 }}>🚫</div>
-          <div style={{ fontFamily: "'Cinzel Decorative',cursive", fontSize: "1.1rem", color: "var(--gold)", marginBottom: 8 }}>Forbidden Word</div>
-          <div style={{ fontSize: ".9rem", color: "var(--dim)", fontStyle: "italic", marginBottom: 14 }}>You must NOT say this word. Try to make others say theirs.</div>
-          <div style={{ background: "rgba(139,26,26,.15)", border: "2px solid rgba(139,26,26,.4)", borderRadius: 6, padding: "14px 20px", display: "inline-block" }}>
-            <div style={{ fontFamily: "'Cinzel',serif", fontSize: ".6rem", color: "var(--crim3)", letterSpacing: ".15em", textTransform: "uppercase", marginBottom: 6 }}>Your Secret Word</div>
-            <div style={{ fontFamily: "'Cinzel Decorative',cursive", fontSize: "1.8rem", color: "var(--text)", letterSpacing: ".05em" }}>{myWord}</div>
-          </div>
-        </div>
-      );
-    }
-
-    // ── Secret Ballot: vote on phone ──
-    if (m.digitalType === "secret_ballot") {
-      const [voted, setVoted] = useState(null);
-      return (
-        <div className="card" style={{ marginTop: 16 }}>
-          <div className="ctitle">🗳️ Secret Ballot</div>
-          <div className="info-box" style={{ marginBottom: 14, textAlign: "center" }}>Who would you most want to protect? Your vote is completely private.</div>
-          {!voted ? (
-            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-              {alivePlayers.filter(pl=>pl.id!==myId).map(pl => (
-                <button key={pl.id} className="btn btn-outline" onClick={async()=>{ await save(gameId+"-ballot-"+myId, pl.id); setVoted(pl.id); }}
-                  style={{ textAlign:"left",padding:"10px 14px",display:"flex",alignItems:"center",gap:10 }}>
-                  <span style={{ fontSize:"1.2rem" }}>{pl.emoji}</span>
-                  <span style={{ fontFamily:"'Cinzel',serif",fontSize:".82rem" }}>{pl.name}</span>
-                </button>
-              ))}
-            </div>
-          ) : (
-            <div style={{ textAlign:"center",padding:"20px 0",color:"var(--gold)",fontFamily:"'Cinzel',serif",fontSize:".85rem" }}>
-              ✓ Vote cast. Wait for the host to reveal results.
-            </div>
-          )}
-        </div>
-      );
-    }
-
-    // ── Midnight Auction: submit bid on phone ──
-    if (m.digitalType === "auction") {
-      const [bid, setBid] = useState("");
-      const [submitted, setSubmitted] = useState(false);
-      return (
-        <div className="card" style={{ marginTop: 16, textAlign: "center", padding: "24px 20px" }}>
-          <div style={{ fontSize: "2.5rem", marginBottom: 10 }}>🏺</div>
-          <div style={{ fontFamily: "'Cinzel Decorative',cursive", fontSize: "1.1rem", color: "var(--gold)", marginBottom: 8 }}>Midnight Auction</div>
-          <div style={{ fontSize: ".9rem", color: "var(--dim)", fontStyle: "italic", marginBottom: 16 }}>Enter a number from 1 to 10. Highest unique bid wins. Nobody sees your bid until all are revealed.</div>
-          {!submitted ? (
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 10 }}>
-              <input type="number" min="1" max="10" value={bid} onChange={e=>setBid(e.target.value)}
-                style={{ width:80,padding:"12px",fontSize:"1.5rem",textAlign:"center",background:"rgba(255,255,255,.05)",border:"1px solid rgba(201,168,76,.3)",borderRadius:4,color:"var(--gold)",fontFamily:"'Cinzel',serif" }} />
-              <button className="btn btn-gold" disabled={!bid||bid<1||bid>10} onClick={async()=>{ await save(gameId+"-auction-bid-"+myId, Number(bid)); setSubmitted(true); }}>
-                Submit Bid
-              </button>
-            </div>
-          ) : (
-            <div style={{ color:"var(--gold)",fontFamily:"'Cinzel',serif" }}>✓ Bid of {bid} submitted. Sit tight.</div>
-          )}
-        </div>
-      );
-    }
-
-    // ── Hot Take: vote agree/disagree ──
-    if (m.digitalType === "hot_take") {
-      const [voted, setVoted] = useState(null);
-      const [takeText, setTakeText] = useState("Loading…");
-      useEffect(() => { load(gameId+"-hot-take").then(t=>{ if(t) setTakeText(t); }); }, []);
-      return (
-        <div className="card" style={{ marginTop: 16, textAlign: "center", padding: "24px 20px" }}>
-          <div style={{ fontSize: "2.5rem", marginBottom: 10 }}>🔥</div>
-          <div style={{ fontFamily: "'Cinzel Decorative',cursive", fontSize: "1.1rem", color: "var(--gold)", marginBottom: 14 }}>Hot Take</div>
-          <div style={{ background:"rgba(201,168,76,.08)",border:"1px solid rgba(201,168,76,.2)",borderRadius:4,padding:"14px 16px",marginBottom:16,fontSize:".95rem",color:"var(--text)",fontStyle:"italic",lineHeight:1.6 }}>"{takeText}"</div>
-          {!voted ? (
-            <div style={{ display:"flex",gap:10,justifyContent:"center" }}>
-              <button className="btn btn-sm" style={{ background:"rgba(40,100,40,.4)",border:"1px solid rgba(60,160,60,.5)",color:"#80e080",padding:"12px 20px",fontSize:".85rem" }}
-                onClick={async()=>{ await save(gameId+"-hottake-"+myId,"agree"); setVoted("agree"); }}>✓ Agree</button>
-              <button className="btn btn-sm" style={{ background:"rgba(100,20,20,.4)",border:"1px solid rgba(160,40,40,.5)",color:"var(--crim3)",padding:"12px 20px",fontSize:".85rem" }}
-                onClick={async()=>{ await save(gameId+"-hottake-"+myId,"disagree"); setVoted("disagree"); }}>✗ Disagree</button>
-            </div>
-          ) : (
-            <div style={{ color:"var(--gold)",fontFamily:"'Cinzel',serif" }}>✓ Voted {voted}. Waiting for others.</div>
-          )}
-        </div>
-      );
-    }
-
-    // ── The Witness: answer questions privately ──
-    if (m.digitalType === "the_witness") {
-      const [qs, setQs] = useState([]);
-      const [qIdx, setQIdx] = useState(0);
-      const [answers, setAnswers] = useState({});
-      const [done, setDone] = useState(false);
-      useEffect(() => { load(gameId+"-witness-qs").then(q=>{ if(q) setQs(q); }); }, []);
-      const q = qs[qIdx];
-      const submit = async (opt) => {
-        const newAnswers = {...answers, [qIdx]: opt};
-        setAnswers(newAnswers);
-        await save(gameId+"-witness-ans-"+myId, newAnswers);
-        if (qIdx >= Math.min(qs.length,5)-1) setDone(true);
-        else setQIdx(i=>i+1);
-      };
-      return (
-        <div className="card" style={{ marginTop: 16 }}>
-          <div style={{ fontFamily:"'Cinzel Decorative',cursive",fontSize:".9rem",color:"#dd88ff",textAlign:"center",marginBottom:14 }}>👁️ The Witness</div>
-          {done ? (
-            <div style={{ textAlign:"center",padding:"20px 0",color:"var(--gold)",fontFamily:"'Cinzel',serif",fontSize:".85rem" }}>
-              ✓ Your answers are in. The host is tallying scores.
-            </div>
-          ) : !q ? (
-            <div style={{ textAlign:"center",color:"var(--dim)",fontStyle:"italic" }}>Loading questions…</div>
-          ) : (
-            <>
-              <div style={{ fontFamily:"'Cinzel',serif",fontSize:".58rem",color:"var(--dim)",marginBottom:8 }}>Question {qIdx+1} of {Math.min(qs.length,5)}</div>
-              <div style={{ fontSize:".95rem",color:"var(--text)",lineHeight:1.6,marginBottom:14,fontWeight:600 }}>{q.q}</div>
-              <div style={{ display:"flex",flexDirection:"column",gap:8 }}>
-                {(q.opts || [q.a]).map((opt,i) => (
-                  <button key={i} className="btn btn-outline" onClick={()=>submit(opt)}
-                    style={{ textAlign:"left",padding:"10px 14px",borderColor:"rgba(120,0,180,.3)",color:"var(--text)" }}>
-                    {opt}
-                  </button>
-                ))}
-              </div>
-            </>
-          )}
-        </div>
-      );
-    }
-
-    // ── The Draw: show winner notification to the winner only ──
-    if (m.digitalType === "the_draw") {
-      const [isWinner, setIsWinner] = useState(false);
-      useEffect(() => {
-        load(gameId + "-draw-winner").then(wid => { if (wid === myId) setIsWinner(true); });
-      }, []);
-      return (
-        <div className="card" style={{ marginTop: 16, textAlign: "center", padding: "28px 20px" }}>
-          <div style={{ fontSize: "2.5rem", marginBottom: 10 }}>🎴</div>
-          <div style={{ fontFamily: "'Cinzel Decorative',cursive", fontSize: "1.1rem", color: "var(--gold)", marginBottom: 12 }}>The Draw</div>
-          {isWinner ? (
-            <div style={{ background: "rgba(201,168,76,.1)", border: "2px solid rgba(201,168,76,.4)", borderRadius: 6, padding: "16px 20px" }}>
-              <div style={{ fontFamily: "'Cinzel',serif", fontSize: ".65rem", letterSpacing: ".15em", textTransform: "uppercase", color: "var(--gold2)", marginBottom: 8 }}>You have been chosen</div>
-              <div style={{ fontSize: "2rem", marginBottom: 6 }}>🛡️</div>
-              <div style={{ fontFamily: "'Cinzel',serif", fontSize: ".82rem", color: "var(--dim)", fontStyle: "italic" }}>Tell no one. The host will award your shield silently.</div>
-            </div>
-          ) : (
-            <div style={{ color: "var(--dim)", fontStyle: "italic", fontSize: ".9rem", lineHeight: 1.7 }}>
-              The castle chooses one player at random. Sit quietly. If it's you — you'll know.
-            </div>
-          )}
-        </div>
-      );
-    }
-
-    // ── Emoji Cipher: show the emoji on player phones ──
-    if (m.digitalType === "emoji_cipher") {
-      const [emojiDisplay, setEmojiDisplay] = useState("…");
-      useEffect(() => {
-        load(gameId + "-emoji-cipher").then(e => { if (e) setEmojiDisplay(e); });
-      }, []);
-      return (
-        <div className="card" style={{ marginTop: 16, textAlign: "center", padding: "28px 20px" }}>
-          <div style={{ fontFamily: "'Cinzel Decorative',cursive", fontSize: "1rem", color: "var(--gold)", marginBottom: 16 }}>📱 Emoji Cipher</div>
-          <div style={{ fontSize: "3rem", letterSpacing: ".3em", margin: "0 auto 20px", padding: "16px", background: "rgba(255,255,255,.03)", border: "1px solid rgba(201,168,76,.15)", borderRadius: 6 }}>{emojiDisplay}</div>
-          <div style={{ color: "var(--dim)", fontStyle: "italic", fontSize: ".9rem", lineHeight: 1.7 }}>
-            Decode the emojis. If you know the answer —<br />whisper it to the host <em>immediately</em>.
-          </div>
-        </div>
-      );
-    }
-
-    // ── Name 5 in 30: show current category on player phones ──
-    if (m.digitalType === "name5") {
-      const [cat, setCat] = useState("…");
-      useEffect(() => {
-        const poll = () => load(gameId + "-name5-cat").then(c => { if (c) setCat(c); });
-        poll();
-        const t = setInterval(poll, 2000);
-        return () => clearInterval(t);
-      }, []);
-      return (
-        <div className="card" style={{ marginTop: 16, textAlign: "center", padding: "28px 20px" }}>
-          <div style={{ fontFamily: "'Cinzel Decorative',cursive", fontSize: "1rem", color: "var(--gold)", marginBottom: 16 }}>⏱️ Name 5 in 30</div>
-          <div style={{ background: "rgba(201,168,76,.08)", border: "1px solid rgba(201,168,76,.25)", borderRadius: 6, padding: "18px 20px", marginBottom: 16 }}>
-            <div style={{ fontFamily: "'Cinzel',serif", fontSize: ".62rem", letterSpacing: ".15em", textTransform: "uppercase", color: "var(--gold2)", marginBottom: 8 }}>Category</div>
-            <div style={{ fontFamily: "'Cinzel Decorative',cursive", fontSize: "1.2rem", color: "var(--gold)", lineHeight: 1.4 }}>{cat}</div>
-          </div>
-          <div style={{ color: "var(--dim)", fontStyle: "italic", fontSize: ".9rem" }}>
-            First to shout 5 valid answers wins the round.
-          </div>
-        </div>
-      );
-    }
-
-    // ── RPS Bracket: show current matchup on player phones ──
-    if (m.digitalType === "rps_bracket") {
-      const [matchup, setMatchup] = useState(null);
-      useEffect(() => {
-        const poll = () => load(gameId + "-rps-matchup").then(m => { if (m) setMatchup(m); });
-        poll();
-        const t = setInterval(poll, 2000);
-        return () => clearInterval(t);
-      }, []);
-      return (
-        <div className="card" style={{ marginTop: 16, textAlign: "center", padding: "28px 20px" }}>
-          <div style={{ fontFamily: "'Cinzel Decorative',cursive", fontSize: "1rem", color: "var(--gold)", marginBottom: 16 }}>✊ Rock Paper Scissors</div>
-          {matchup?.p1 === myId || matchup?.p2 === myId ? (
-            <div style={{ background: "rgba(201,168,76,.1)", border: "2px solid rgba(201,168,76,.4)", borderRadius: 6, padding: "20px" }}>
-              <div style={{ fontFamily: "'Cinzel',serif", fontSize: ".65rem", letterSpacing: ".15em", textTransform: "uppercase", color: "var(--crim3)", marginBottom: 8 }}>⚔️ It's Your Turn</div>
-              <div style={{ fontSize: "1.5rem", marginBottom: 8 }}>
-                {alivePlayers.find(p=>p.id===matchup.p1)?.emoji} vs {alivePlayers.find(p=>p.id===matchup.p2)?.emoji}
-              </div>
-              <div style={{ fontFamily: "'Cinzel',serif", fontSize: ".85rem", color: "var(--text)" }}>
-                {alivePlayers.find(p=>p.id===matchup.p1)?.name} vs {alivePlayers.find(p=>p.id===matchup.p2)?.name}
-              </div>
-              <div style={{ color: "var(--dim)", fontStyle: "italic", fontSize: ".82rem", marginTop: 10 }}>Best of 3. Step forward when called.</div>
-            </div>
-          ) : (
-            <div style={{ color: "var(--dim)", fontStyle: "italic", fontSize: ".9rem", lineHeight: 1.7 }}>
-              {matchup ? `Current match: ${alivePlayers.find(p=>p.id===matchup.p1)?.name} vs ${alivePlayers.find(p=>p.id===matchup.p2)?.name}` : "Waiting for the host to call the next match…"}
-            </div>
-          )}
-        </div>
-      );
-    }
-
-    // ── The Relic: phase-aware player screen ──
-    if (m.digitalType === "the_relic") {
-      const [phase, setPhase] = useState("waiting");
-      useEffect(() => {
-        const poll = () => load(gameId+"-relic-phase").then(p => { if (p) setPhase(p); });
-        poll();
-        const t = setInterval(poll, 2000);
-        return () => clearInterval(t);
-      }, []);
-      return (
-        <div className="card" style={{ marginTop:16, textAlign:"center", padding:"28px 20px" }}>
-          <div style={{ fontSize:"2.5rem",marginBottom:10 }}>🗿</div>
-          <div style={{ fontFamily:"'Cinzel Decorative',cursive",fontSize:"1rem",color:"var(--gold)",marginBottom:12 }}>The Relic</div>
-          {phase === "blindfold" || phase === "hide" ? (
-            <div style={{ background:"rgba(40,0,60,.2)",border:"1px solid rgba(120,0,180,.3)",borderRadius:6,padding:"20px" }}>
-              <div style={{ fontFamily:"'Cinzel',serif",fontSize:".65rem",letterSpacing:".15em",textTransform:"uppercase",color:"#dd88ff",marginBottom:10 }}>🙈 Blindfolds On</div>
-              <div style={{ fontSize:".9rem",color:"var(--dim)",lineHeight:1.7 }}>Eyes closed. Phone face-down. Don't move. Don't peek.<br /><em>The host is hiding something.</em></div>
-            </div>
-          ) : phase === "search" ? (
-            <div>
-              <div style={{ background:"rgba(201,168,76,.08)",border:"1px solid rgba(201,168,76,.25)",borderRadius:6,padding:"18px 20px",marginBottom:12 }}>
-                <div style={{ fontFamily:"'Cinzel Decorative',cursive",fontSize:"1rem",color:"var(--gold)",marginBottom:8 }}>Blindfolds Off — Search</div>
-                <div style={{ fontSize:".9rem",color:"var(--dim)",lineHeight:1.7 }}>Somewhere in this space, a small object is hidden. Find it.<br /><br />If you find it — <strong style={{ color:"var(--gold)" }}>pocket it silently</strong> and say nothing. Act completely normal.<br /><br />After the search ends, the group will vote on who they think found it.</div>
-              </div>
-            </div>
-          ) : (
-            <div style={{ color:"var(--dim)",fontStyle:"italic",fontSize:".9rem" }}>Waiting for the host to begin…</div>
-          )}
-        </div>
-      );
-    }
-
-    // Default player view (analog missions)
+    if (m.digitalType === "forbidden_word") return <ForbiddenWordPlayerView gameId={gameId} myId={myId} />;
+    if (m.digitalType === "secret_ballot") return <SecretBallotPlayerView gameId={gameId} myId={myId} alivePlayers={alivePlayers} />;
+    if (m.digitalType === "auction") return <AuctionPlayerView gameId={gameId} myId={myId} />;
+    if (m.digitalType === "hot_take") return <HotTakePlayerView gameId={gameId} myId={myId} />;
+    if (m.digitalType === "the_witness") return <WitnessPlayerView gameId={gameId} myId={myId} />;
+    if (m.digitalType === "the_draw") return <DrawPlayerView gameId={gameId} myId={myId} />;
+    if (m.digitalType === "emoji_cipher") return <EmojiCipherPlayerView gameId={gameId} />;
+    if (m.digitalType === "name5") return <Name5PlayerView gameId={gameId} />;
+    if (m.digitalType === "rps_bracket") return <RpsPlayerView gameId={gameId} myId={myId} alivePlayers={alivePlayers} />;
+    if (m.digitalType === "the_relic") return <RelicPlayerView gameId={gameId} />;
     return (
       <div className="card phase-enter" style={{ marginTop: 16, position:"relative", overflow:"hidden" }}>
         <div style={{ position:"absolute", top:0, left:0, right:0, height:2, background:"linear-gradient(to right,transparent,rgba(201,168,76,.5),transparent)", animation:"swordShimmer 2s ease-in-out infinite" }} />
