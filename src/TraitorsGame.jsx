@@ -150,6 +150,15 @@ const [showAvatarCapture, setShowAvatarCapture] = useState(false);
 const [myAvatar, setMyAvatar] = useState(null); // base64 data URL
 const [avatars, setAvatars] = useState({}); // { playerId: dataURL }
 
+// Host control modals
+const [showPauseConfirm, setShowPauseConfirm] = useState(false);
+const [showEndEarlyConfirm, setShowEndEarlyConfirm] = useState(false);
+// Player controls
+const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
+const [showPlayerMenu, setShowPlayerMenu] = useState(false);
+// Ghost screen tab (for ghost/spectator view)
+const [ghostTab, setGhostTab] = useState("ghost");
+
 const pollRef = useRef(null);
 const timerRef = useRef(null);
 const prevPhaseRef = useRef(null);
@@ -1356,6 +1365,55 @@ await save(gameId, updated); setGame(updated);
 await addMsg(gameId, { type: "system", text: `🪄 ${target.name} has been returned to the game by the host.` });
 };
 
+const endGameEarly = async () => {
+const g = await load(gameId);
+const updated = { ...g, phase: PHASES.ENDED, winner: "abandoned" };
+await save(gameId, updated);
+setGame(updated);
+await addMsg(gameId, { type: "system", text: "🏁 The host has ended the game early." });
+};
+
+const removePlayer = async (playerId) => {
+const g = await load(gameId);
+const target = g.players.find(p => p.id === playerId);
+if (!target || !target.alive) return;
+const newPlayers = g.players.map(p => p.id === playerId ? { ...p, alive: false, isGhost: true } : p);
+const removedIds = [...(g.removedPlayerIds || []), playerId];
+const tl = [...(g.timeline || []), { round: g.currentRound || 1, type: "removed", text: `❌ ${target.emoji} ${target.name} was removed by the host.`, ts: Date.now() }];
+const updated = { ...g, players: newPlayers, removedPlayerIds: removedIds, timeline: tl };
+await save(gameId, updated);
+setGame(updated);
+await addMsg(gameId, { type: "system", text: `❌ ${target.emoji} ${target.name} has been removed from the game by the host.` });
+};
+
+const leaveGame = async () => {
+if (!me || !me.alive) return;
+const g = await load(gameId);
+const newPlayers = g.players.map(p => p.id === myId ? { ...p, alive: false, isGhost: true } : p);
+const aliveAfter = newPlayers.filter(p => p.alive);
+const aliveTraitorsAfter = aliveAfter.filter(p => p.role === "traitor" || p.role === "secret_traitor");
+let updated = { ...g, players: newPlayers };
+if (me.role === "traitor" || me.role === "secret_traitor") {
+if (aliveTraitorsAfter.length === 0) {
+updated = { ...updated, phase: PHASES.ENDED, winner: "faithful" };
+await save(gameId, updated);
+setGame(updated);
+await addMsg(gameId, { type: "win", text: `${me.emoji} ${me.name} (a Traitor) has left. All Traitors are gone — the Faithful win!` });
+} else {
+await save(gameId, updated);
+setGame(updated);
+await addMsg(gameId, { type: "system", text: `${me.emoji} ${me.name} has left the game.` });
+}
+} else {
+await save(gameId, updated);
+setGame(updated);
+await addMsg(gameId, { type: "system", text: `${me.emoji} ${me.name} has left the game.` });
+}
+try { await save("traitors-session", null); } catch(e) {}
+setShowLeaveConfirm(false);
+setShowPlayerMenu(false);
+};
+
 const saveAvatar = (dataUrl) => {
 // Update local state immediately so the UI responds without waiting for Convex
 setMyAvatar(dataUrl);
@@ -1602,6 +1660,28 @@ if (game.phase === PHASES.GAME_INTRO) return (
 <GameIntroScreen game={game} isHost={isHost} gameId={gameId}
 load={load} save={save} advanceTo={advanceTo} PHASES={PHASES}
 secretTraitorEnabled={game.secretTraitorEnabled} />
+);
+
+if (game.phase === PHASES.ENDED && game.winner === "abandoned") return (
+<div className="app"><style>{CSS}</style><div className="noise" /><div className="z1">
+<div className="hdr"><div style={{ textAlign: "center" }}>
+<div className="logo-title flicker" style={{ fontFamily:"'Cinzel Decorative',cursive", fontSize:"clamp(2.4rem,8vw,5rem)", fontWeight:900, color:"var(--gold)", letterSpacing:".06em", lineHeight:.9, WebkitFontSmoothing:"antialiased", overflow:"visible", display:"block", paddingBottom:".05em", paddingTop:".1em" }}>The Traitors</div>
+<div style={{ fontFamily:"'Cinzel Decorative',cursive", fontSize:".8rem", fontWeight:900, letterSpacing:".2em", color:"var(--gold)", textTransform:"uppercase", marginTop:6 }}>at home</div>
+</div></div>
+<div className="main">
+<div className="card" style={{ textAlign:"center", padding:"48px 20px" }}>
+<div style={{ fontSize:"3rem", marginBottom:14 }}>🏁</div>
+<div style={{ fontFamily:"'Cinzel Decorative',cursive", fontSize:"1.3rem", color:"var(--gold)", marginBottom:12 }}>Game Ended Early</div>
+<div style={{ fontStyle:"italic", color:"var(--dim)", fontSize:"1rem", lineHeight:1.8, marginBottom:24 }}>
+The host has ended the game early.<br />No winner — the game was abandoned.
+</div>
+<div className="row" style={{ justifyContent:"center", gap:8 }}>
+{isHost && <button className="btn btn-gold" onClick={resetGame}>↩ Return to Lobby</button>}
+{!isHost && <button className="btn btn-outline" onClick={async () => { setGame(null); setGameId(""); setMyId(""); setIsHost(false); setScreen("start"); try { await save("traitors-session", null); } catch(e) {} }}>Exit Game</button>}
+</div>
+</div>
+</div>
+</div></div>
 );
 
 if (game.phase === PHASES.ENDED) return (
@@ -1852,6 +1932,20 @@ return (
         }}>a party game of deception and murder</div>
       </div></div>
       <div className="main">
+
+        {/* REMOVED BY HOST — banner for removed players */}
+        {game.removedPlayerIds?.includes(myId) && (
+          <div style={{ background:"rgba(139,26,26,.15)", border:"1px solid rgba(139,26,26,.5)", borderRadius:6, padding:"18px 20px", marginBottom:14, textAlign:"center" }}>
+            <div style={{ fontSize:"2rem", marginBottom:10 }}>❌</div>
+            <div style={{ fontFamily:"'Cinzel Decorative',cursive", fontSize:"1.1rem", color:"var(--crim3)", marginBottom:10 }}>You Have Been Removed</div>
+            <div style={{ fontStyle:"italic", color:"var(--dim)", fontSize:".92rem", lineHeight:1.7, marginBottom:18 }}>
+              The host has removed you from the game.<br />The game continues without you.
+            </div>
+            <button className="btn btn-outline" onClick={async () => { setGame(null); setGameId(""); setMyId(""); setIsHost(false); setScreen("start"); try { await save("traitors-session", null); } catch(e) {} }}>
+              Exit Game
+            </button>
+          </div>
+        )}
 
         {/* Phase + ghost badge */}
         <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 14 }}>
@@ -2701,11 +2795,63 @@ return (
         <button onClick={() => setPrivacyMode(true)} style={{ position: "absolute", top: 10, left: isOnline ? 30 : 70, background: "transparent", border: "none", cursor: "pointer", fontSize: ".85rem", opacity: .4 }} title="Privacy mode">🔒</button>
       )}
       {isHost && (
-        <button onClick={togglePause} style={{ position: "absolute", top: 12, right: 16, background: game.paused ? "rgba(201,168,76,.15)" : "rgba(255,255,255,.05)", border: game.paused ? "1px solid rgba(201,168,76,.4)" : "1px solid rgba(255,255,255,.1)", borderRadius: 3, padding: "5px 10px", fontFamily: "'Cinzel',serif", fontSize: ".6rem", letterSpacing: ".1em", color: game.paused ? "var(--gold)" : "var(--dim)", cursor: "pointer" }}>
+        <button onClick={() => game.paused ? togglePause() : setShowPauseConfirm(true)} style={{ position: "absolute", top: 12, right: 16, background: game.paused ? "rgba(201,168,76,.15)" : "rgba(255,255,255,.05)", border: game.paused ? "1px solid rgba(201,168,76,.4)" : "1px solid rgba(255,255,255,.1)", borderRadius: 3, padding: "5px 10px", fontFamily: "'Cinzel',serif", fontSize: ".6rem", letterSpacing: ".1em", color: game.paused ? "var(--gold)" : "var(--dim)", cursor: "pointer" }}>
           {game.paused ? "▶ RESUME" : "⏸ PAUSE"}
         </button>
       )}
     </div>
+    {/* PAUSE CONFIRMATION MODAL */}
+    {showPauseConfirm && (
+      <div className="overlay" onClick={() => setShowPauseConfirm(false)}>
+        <div className="modal" style={{ maxWidth: 360 }} onClick={e => e.stopPropagation()}>
+          <div style={{ fontSize: "2rem", marginBottom: 10, textAlign: "center" }}>⏸</div>
+          <div style={{ fontFamily: "'Cinzel Decorative',cursive", fontSize: "1.1rem", color: "var(--gold)", textAlign: "center", marginBottom: 10 }}>Pause the game?</div>
+          <div style={{ fontStyle: "italic", color: "var(--dim)", textAlign: "center", marginBottom: 20, lineHeight: 1.7, fontSize: ".92rem" }}>
+            All player screens will freeze until you resume. Timers stop.
+          </div>
+          <div className="row" style={{ justifyContent: "center", gap: 8 }}>
+            <button className="btn btn-outline btn-sm" onClick={() => setShowPauseConfirm(false)}>Cancel</button>
+            <button className="btn btn-gold" onClick={() => { setShowPauseConfirm(false); togglePause(); }}>⏸ Pause Game</button>
+          </div>
+        </div>
+      </div>
+    )}
+
+    {/* END GAME EARLY CONFIRMATION MODAL */}
+    {showEndEarlyConfirm && (
+      <div className="overlay" onClick={() => setShowEndEarlyConfirm(false)}>
+        <div className="modal" style={{ maxWidth: 380, borderColor: "rgba(139,26,26,.5)" }} onClick={e => e.stopPropagation()}>
+          <div style={{ fontSize: "2rem", marginBottom: 10, textAlign: "center" }}>🏁</div>
+          <div style={{ fontFamily: "'Cinzel Decorative',cursive", fontSize: "1.1rem", color: "var(--crim3)", textAlign: "center", marginBottom: 10 }}>End Game Early?</div>
+          <div style={{ fontStyle: "italic", color: "var(--dim)", textAlign: "center", marginBottom: 18, lineHeight: 1.7, fontSize: ".92rem" }}>
+            This will immediately end the game for everyone.<br />No winner — the game is abandoned.
+          </div>
+          <HoldToConfirm label="Hold to End Game" onConfirm={() => { setShowEndEarlyConfirm(false); endGameEarly(); }} />
+          <button className="btn btn-outline btn-sm" style={{ marginTop: 12, width: "100%" }} onClick={() => setShowEndEarlyConfirm(false)}>Cancel</button>
+        </div>
+      </div>
+    )}
+
+    {/* LEAVE GAME CONFIRMATION MODAL */}
+    {showLeaveConfirm && (
+      <div className="overlay" onClick={() => setShowLeaveConfirm(false)}>
+        <div className="modal" style={{ maxWidth: 360, borderColor: "rgba(139,26,26,.4)" }} onClick={e => e.stopPropagation()}>
+          <div style={{ fontSize: "2rem", marginBottom: 10, textAlign: "center" }}>🚪</div>
+          <div style={{ fontFamily: "'Cinzel Decorative',cursive", fontSize: "1.1rem", color: "var(--gold)", textAlign: "center", marginBottom: 10 }}>Leave the game?</div>
+          <div style={{ fontStyle: "italic", color: "var(--dim)", textAlign: "center", marginBottom: 18, lineHeight: 1.7, fontSize: ".92rem" }}>
+            You'll be eliminated and the game continues without you.
+            {(me?.role === "traitor" || me?.role === "secret_traitor") && (
+              <><br /><span style={{ color: "var(--crim3)", fontStyle: "normal" }}>You are a Traitor — your absence may change the game.</span></>
+            )}
+          </div>
+          <div className="row" style={{ justifyContent: "center", gap: 8 }}>
+            <button className="btn btn-outline btn-sm" onClick={() => setShowLeaveConfirm(false)}>Stay</button>
+            <button className="btn" style={{ background: "rgba(139,26,26,.25)", border: "1px solid rgba(139,26,26,.5)", color: "var(--crim3)" }} onClick={leaveGame}>Leave Game</button>
+          </div>
+        </div>
+      </div>
+    )}
+
     {/* Pause overlay — shown to all players */}
     {game.paused && (
       <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(4,1,8,.92)", zIndex: 200, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16 }}>
@@ -2718,18 +2864,35 @@ return (
         {isHost && <button onClick={togglePause} className="btn btn-gold" style={{ marginTop: 8 }}>▶ Resume Game</button>}
       </div>
     )}
-    {/* Persistent player buttons — Role, Inventory, Players */}
+    {/* Persistent player buttons — Role, Inventory, Players, Menu */}
     {!isHost && me && game.phase !== PHASES.LOBBY && game.phase !== PHASES.ENDED && (
       <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 100, background: "rgba(4,1,8,.95)", borderTop: "1px solid rgba(201,168,76,.15)", display: "flex", gap: 0 }}>
-        <button onClick={() => { const opening = !showMyRole; setShowMyRole(opening); setShowInventory(false); setShowPlayerPanel(false); }} style={{ flex: 1, padding: "10px 4px", fontFamily: "'Cinzel',serif", fontSize: ".58rem", letterSpacing: ".08em", textTransform: "uppercase", background: showMyRole ? "rgba(201,168,76,.12)" : "transparent", color: showMyRole ? "var(--gold)" : "var(--dim)", border: "none", borderRight: "1px solid rgba(201,168,76,.1)", cursor: "pointer" }}>
+        <button onClick={() => { const opening = !showMyRole; setShowMyRole(opening); setShowInventory(false); setShowPlayerPanel(false); setShowPlayerMenu(false); }} style={{ flex: 1, padding: "10px 4px", fontFamily: "'Cinzel',serif", fontSize: ".58rem", letterSpacing: ".08em", textTransform: "uppercase", background: showMyRole ? "rgba(201,168,76,.12)" : "transparent", color: showMyRole ? "var(--gold)" : "var(--dim)", border: "none", borderRight: "1px solid rgba(201,168,76,.1)", cursor: "pointer" }}>
           🎭 Role
         </button>
-        <button onClick={() => { const opening = !showInventory; setShowInventory(opening); setShowMyRole(false); setShowPlayerPanel(false); }} style={{ flex: 1, padding: "10px 4px", fontFamily: "'Cinzel',serif", fontSize: ".58rem", letterSpacing: ".08em", textTransform: "uppercase", background: showInventory ? "rgba(201,168,76,.12)" : "transparent", color: showInventory ? "var(--gold)" : "var(--dim)", border: "none", borderRight: "1px solid rgba(201,168,76,.1)", cursor: "pointer" }}>
+        <button onClick={() => { const opening = !showInventory; setShowInventory(opening); setShowMyRole(false); setShowPlayerPanel(false); setShowPlayerMenu(false); }} style={{ flex: 1, padding: "10px 4px", fontFamily: "'Cinzel',serif", fontSize: ".58rem", letterSpacing: ".08em", textTransform: "uppercase", background: showInventory ? "rgba(201,168,76,.12)" : "transparent", color: showInventory ? "var(--gold)" : "var(--dim)", border: "none", borderRight: "1px solid rgba(201,168,76,.1)", cursor: "pointer" }}>
           🎒 Inventory
         </button>
-        <button onClick={() => { const opening = !showPlayerPanel; setShowPlayerPanel(opening); setShowMyRole(false); setShowInventory(false); }} style={{ flex: 1, padding: "10px 4px", fontFamily: "'Cinzel',serif", fontSize: ".58rem", letterSpacing: ".08em", textTransform: "uppercase", background: showPlayerPanel ? "rgba(201,168,76,.12)" : "transparent", color: showPlayerPanel ? "var(--gold)" : "var(--dim)", border: "none", cursor: "pointer" }}>
+        <button onClick={() => { const opening = !showPlayerPanel; setShowPlayerPanel(opening); setShowMyRole(false); setShowInventory(false); setShowPlayerMenu(false); }} style={{ flex: 1, padding: "10px 4px", fontFamily: "'Cinzel',serif", fontSize: ".58rem", letterSpacing: ".08em", textTransform: "uppercase", background: showPlayerPanel ? "rgba(201,168,76,.12)" : "transparent", color: showPlayerPanel ? "var(--gold)" : "var(--dim)", border: "none", borderRight: "1px solid rgba(201,168,76,.1)", cursor: "pointer" }}>
           👥 Players
         </button>
+        <button onClick={() => { const opening = !showPlayerMenu; setShowPlayerMenu(opening); setShowMyRole(false); setShowInventory(false); setShowPlayerPanel(false); }} style={{ flex: 1, padding: "10px 4px", fontFamily: "'Cinzel',serif", fontSize: ".58rem", letterSpacing: ".08em", textTransform: "uppercase", background: showPlayerMenu ? "rgba(201,168,76,.12)" : "transparent", color: showPlayerMenu ? "var(--gold)" : "var(--dim)", border: "none", cursor: "pointer" }}>
+          ⚙ Menu
+        </button>
+      </div>
+    )}
+    {/* Player menu panel */}
+    {!isHost && showPlayerMenu && me && (
+      <div style={{ position: "fixed", bottom: 44, left: 0, right: 0, zIndex: 99, background: "rgba(7,3,14,.97)", borderTop: "1px solid rgba(201,168,76,.2)", padding: "16px 20px" }}>
+        <div style={{ fontFamily: "'Cinzel',serif", fontSize: ".65rem", letterSpacing: ".15em", textTransform: "uppercase", color: "var(--gold2)", marginBottom: 14 }}>⚙ Menu</div>
+        {me.alive ? (
+          <button className="btn" style={{ width: "100%", background: "rgba(139,26,26,.15)", border: "1px solid rgba(139,26,26,.4)", color: "var(--crim3)" }}
+            onClick={() => { setShowPlayerMenu(false); setShowLeaveConfirm(true); }}>
+            🚪 Leave Game
+          </button>
+        ) : (
+          <div style={{ fontStyle: "italic", color: "var(--dim)", fontSize: ".88rem" }}>You have been eliminated.</div>
+        )}
       </div>
     )}
     {/* Role panel */}
@@ -2916,6 +3079,17 @@ return (
         dmRelicObject={dmRelicObject} setDmRelicObject={setDmRelicObject}
       />
 
+      {/* HOST CONTROLS — always visible for host during active game */}
+      {isHost && game.phase !== PHASES.LOBBY && game.phase !== PHASES.ENDED && (
+        <HostControls
+          game={game}
+          alivePlayers={alivePlayers}
+          removePlayer={removePlayer}
+          onEndEarly={() => setShowEndEarlyConfirm(true)}
+          onPause={() => game.paused ? togglePause() : setShowPauseConfirm(true)}
+        />
+      )}
+
       {/* DEAD PLAYERS */}
       {deadPlayers.length > 0 && (
         <div className="card" style={{ opacity: .55, marginTop: 14 }}>
@@ -2954,4 +3128,113 @@ return (
 }
 
 // ─── SUBCOMPONENTS ────────────────────────────────────────────────────────────
+
+function HostControls({ game, alivePlayers, removePlayer, onEndEarly, onPause }) {
+const [expanded, setExpanded] = useState(true);
+const [removeConfirmId, setRemoveConfirmId] = useState(null);
+
+const playerToRemove = removeConfirmId ? (game.players || []).find(p => p.id === removeConfirmId) : null;
+
+return (
+<div className="card host" style={{ marginTop: 14, border: "1px solid rgba(201,168,76,.25)" }}>
+<div className="host-label" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer" }} onClick={() => setExpanded(v => !v)}>
+<span>⚙ Host Controls</span>
+<span style={{ fontSize: ".7rem", opacity: .6 }}>{expanded ? "▲" : "▼"}</span>
+</div>
+{expanded && (
+<div className="col" style={{ gap: 16, paddingTop: 8 }}>
+
+{/* Pause / Resume */}
+<div>
+<div style={{ fontFamily: "'Cinzel',serif", fontSize: ".62rem", letterSpacing: ".12em", textTransform: "uppercase", color: "var(--gold2)", marginBottom: 8 }}>Game State</div>
+<button className="btn btn-outline" style={{ width: "100%", color: game.paused ? "var(--gold)" : "var(--dim)" }} onClick={onPause}>
+{game.paused ? "▶ Resume Game" : "⏸ Pause Game"}
+</button>
+</div>
+
+{/* Remove Player */}
+<div>
+<div style={{ fontFamily: "'Cinzel',serif", fontSize: ".62rem", letterSpacing: ".12em", textTransform: "uppercase", color: "var(--gold2)", marginBottom: 8 }}>Remove Player</div>
+{alivePlayers.length === 0
+? <div style={{ fontStyle: "italic", color: "var(--dim)", fontSize: ".85rem" }}>No alive players.</div>
+: <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+{alivePlayers.map(pl => (
+<div key={pl.id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 10px", background: "rgba(255,255,255,.03)", border: "1px solid rgba(255,255,255,.06)", borderRadius: 3 }}>
+<span style={{ fontSize: "1rem" }}>{pl.emoji}</span>
+<span style={{ flex: 1, fontFamily: "'Cinzel',serif", fontSize: ".78rem", color: "var(--text)" }}>{pl.name}</span>
+<button onClick={() => setRemoveConfirmId(pl.id)} style={{ background: "rgba(139,26,26,.3)", border: "1px solid rgba(139,26,26,.5)", borderRadius: 2, padding: "2px 8px", fontSize: ".6rem", color: "var(--crim3)", cursor: "pointer", fontFamily: "'Cinzel',serif" }}>Remove</button>
+</div>
+))}
+</div>}
+</div>
+
+{/* End Game Early */}
+<div>
+<div style={{ fontFamily: "'Cinzel',serif", fontSize: ".62rem", letterSpacing: ".12em", textTransform: "uppercase", color: "var(--crim3)", marginBottom: 8 }}>Danger Zone</div>
+<button className="btn" style={{ width: "100%", background: "rgba(139,26,26,.12)", border: "1px solid rgba(139,26,26,.4)", color: "var(--crim3)" }} onClick={onEndEarly}>
+🏁 End Game Early…
+</button>
+</div>
+
+</div>
+)}
+
+{/* Remove player confirmation */}
+{removeConfirmId && playerToRemove && (
+<div className="overlay" onClick={() => setRemoveConfirmId(null)}>
+<div className="modal" style={{ maxWidth: 360, borderColor: "rgba(139,26,26,.5)" }} onClick={e => e.stopPropagation()}>
+<div style={{ fontSize: "2rem", marginBottom: 10, textAlign: "center" }}>❌</div>
+<div style={{ fontFamily: "'Cinzel Decorative',cursive", fontSize: "1rem", color: "var(--crim3)", textAlign: "center", marginBottom: 6 }}>Remove {playerToRemove.emoji} {playerToRemove.name}?</div>
+<div style={{ fontStyle: "italic", color: "var(--dim)", textAlign: "center", marginBottom: 20, lineHeight: 1.7, fontSize: ".88rem" }}>
+They'll be eliminated and see a removal notice. The game continues without them.
+</div>
+<div className="row" style={{ justifyContent: "center", gap: 8 }}>
+<button className="btn btn-outline btn-sm" onClick={() => setRemoveConfirmId(null)}>Cancel</button>
+<button className="btn" style={{ background: "rgba(139,26,26,.3)", border: "1px solid rgba(139,26,26,.6)", color: "var(--crim3)" }} onClick={() => { removePlayer(removeConfirmId); setRemoveConfirmId(null); }}>
+Remove Player
+</button>
+</div>
+</div>
+</div>
+)}
+</div>
+);
+}
+
+function HoldToConfirm({ label, onConfirm, holdMs = 3000 }) {
+const [pct, setPct] = useState(0);
+const intervalRef = useRef(null);
+const startRef = useRef(null);
+
+const start = () => {
+startRef.current = Date.now();
+intervalRef.current = setInterval(() => {
+const elapsed = Date.now() - startRef.current;
+const p = Math.min(100, (elapsed / holdMs) * 100);
+setPct(p);
+if (p >= 100) {
+clearInterval(intervalRef.current);
+onConfirm();
+}
+}, 30);
+};
+
+const stop = () => {
+clearInterval(intervalRef.current);
+setPct(0);
+};
+
+return (
+<div>
+<button
+onMouseDown={start} onMouseUp={stop} onMouseLeave={stop}
+onTouchStart={start} onTouchEnd={stop}
+style={{ width: "100%", padding: "14px 16px", borderRadius: 4, cursor: "pointer", position: "relative", overflow: "hidden", background: "rgba(139,26,26,.2)", border: "2px solid rgba(139,26,26,.6)", color: "var(--crim3)", fontFamily: "'Cinzel',serif", fontSize: ".75rem", letterSpacing: ".1em", textTransform: "uppercase", userSelect: "none" }}>
+<div style={{ position: "absolute", left: 0, top: 0, height: "100%", width: `${pct}%`, background: "rgba(139,26,26,.35)", transition: pct === 0 ? "none" : "none", pointerEvents: "none" }} />
+<span style={{ position: "relative", zIndex: 1 }}>{pct > 0 ? `${Math.round(pct)}%… keep holding` : label}</span>
+</button>
+<div style={{ fontSize: ".72rem", color: "var(--dim)", fontStyle: "italic", textAlign: "center", marginTop: 6 }}>Hold for {holdMs / 1000} seconds to confirm</div>
+</div>
+);
+}
 

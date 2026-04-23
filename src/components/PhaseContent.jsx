@@ -1454,7 +1454,6 @@ Tapping Done — Release Roles →
                         {pl.shield && <span style={{ fontSize: ".6rem", background: "rgba(40,80,180,.3)", border: "1px solid rgba(60,100,220,.4)", borderRadius: 2, padding: "1px 5px", color: "#88aaff" }}>🛡️</span>}
                         {pl.dagger && <span style={{ fontSize: ".6rem", background: "rgba(139,26,26,.3)", border: "1px solid rgba(139,26,26,.5)", borderRadius: 2, padding: "1px 5px", color: "var(--crim3)" }}>🗡️</span>}
                         {pl.seerRole && <span style={{ fontSize: ".6rem", background: "rgba(80,0,120,.3)", border: "1px solid rgba(120,0,180,.5)", borderRadius: 2, padding: "1px 5px", color: "#dd88ff" }}>👁️</span>}
-                        <button onClick={() => manualKillPlayer(pl.id)} style={{ background: "rgba(139,26,26,.3)", border: "1px solid rgba(139,26,26,.5)", borderRadius: 2, padding: "2px 6px", fontSize: ".52rem", color: "var(--crim3)", cursor: "pointer", fontFamily: "'Cinzel',serif" }} title="Remove from game">✕ Remove</button>
                       </div>
                     </div>
                   ))}
