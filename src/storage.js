@@ -30,11 +30,22 @@ if (!convexUrl) {
 // The ConvexHttpClient is safe to share across the app.
 export const httpClient = new ConvexHttpClient(convexUrl ?? "");
 
+// Keys that must stay device-local (never go to the shared Convex DB).
+const LOCAL_KEYS = new Set(["traitors-session"]);
+
 /**
  * Persist a value under `key`.
  * Value is serialised to JSON exactly as the original window.storage adapter did.
  */
 export const save = async (key, value) => {
+  if (LOCAL_KEYS.has(key)) {
+    try {
+      localStorage.setItem(key, JSON.stringify(value));
+    } catch (e) {
+      console.warn("[storage] localStorage save error", key, e);
+    }
+    return;
+  }
   try {
     await httpClient.mutation("storage:set", {
       key,
@@ -49,6 +60,15 @@ export const save = async (key, value) => {
  * Load a value by key. Returns the parsed object/array/primitive, or null.
  */
 export const load = async (key) => {
+  if (LOCAL_KEYS.has(key)) {
+    try {
+      const raw = localStorage.getItem(key);
+      return raw ? JSON.parse(raw) : null;
+    } catch (e) {
+      console.warn("[storage] localStorage load error", key, e);
+      return null;
+    }
+  }
   try {
     const result = await httpClient.query("storage:get", { key });
     return result ? JSON.parse(result.value) : null;
@@ -95,5 +115,6 @@ export const clearGame = async (gameId) => {
 
 export const saveSession = (session) => save("traitors-session", session);
 export const loadSession = () => load("traitors-session");
-export const clearSession = () =>
-  httpClient.mutation("storage:del", { key: "traitors-session" });
+export const clearSession = () => {
+  try { localStorage.removeItem("traitors-session"); } catch (e) { /* ignore */ }
+};

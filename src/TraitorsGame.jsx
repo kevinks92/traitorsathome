@@ -32,6 +32,7 @@ import { AvatarCapture }     from "./components/AvatarCapture.jsx";
 import { GoldFrame }         from "./components/GoldFrame.jsx";
 import { MsgLog }            from "./components/MsgLog.jsx";
 import { GhostChat }         from "./components/GhostChat.jsx";
+import { RoleCard }          from "./components/RoleCard.jsx";
 
 export default function TraitorsGame() {
 const [screen, setScreen] = useState("start");
@@ -185,7 +186,10 @@ const sess = await load("traitors-session");
 if (!sess) return;
 const { gId, pId, host, name } = sess;
 const g = await load(gId);
-if (!g) return;
+if (!g) { localStorage.removeItem("traitors-session"); return; }
+// Validate that this player/host still belongs to this game
+const isValidPlayer = host ? g.hostId === pId : g.players?.some(p => p.id === pId);
+if (!isValidPlayer) { localStorage.removeItem("traitors-session"); return; }
 setGame(g); setGameId(gId); setMyId(pId); setIsHost(!!host);
 setPlayerName(name || ""); setScreen("game");
 } catch(e) {}
@@ -307,12 +311,12 @@ return () => clearInterval(pollRef.current);
 }, [gameId, myId]);
 
 // ── LOBBY HEARTBEAT ────────────────────────────────────────────────────────
-// Each player pings every 5s. Host's poll evicts anyone silent for 15s.
+// Each player pings every 15s. Host evicts anyone silent for 60s.
 useEffect(() => {
 if (!gameId || !myId || !game || game.phase !== PHASES.LOBBY) return;
 const ping = () => save(gameId + "-hb-" + myId, Date.now());
 ping();
-const iv = setInterval(ping, 5000);
+const iv = setInterval(ping, 15000);
 return () => clearInterval(iv);
 }, [gameId, myId, game?.phase]);
 
@@ -325,7 +329,7 @@ const checkHeartbeats = async () => {
     for (const p of game.players) {
       if (p.id === game.hostId) continue; // never evict the host
       const ts = await load(gameId + "-hb-" + p.id);
-      if (ts && now - ts > 15000) stale.push(p.id); // stale ping = evict (no ping = new joiner, give grace)
+      if (ts && now - ts > 60000) stale.push(p.id); // only evict if we've seen a ping that's now stale
     }
     if (stale.length === 0) return;
     const g = await load(gameId);
@@ -335,7 +339,7 @@ const checkHeartbeats = async () => {
     setGame(updated);
   } catch(e) {}
 };
-const iv = setInterval(checkHeartbeats, 8000);
+const iv = setInterval(checkHeartbeats, 20000);
 return () => clearInterval(iv);
 }, [gameId, isHost, game?.phase, game?.players?.length]);
 
@@ -392,8 +396,8 @@ setLoading(true);
 const gId = genId();
 const hId = genId();
 const g = {
-id: gId, hostId: hId, phase: PHASES.LOBBY,
-players: [{ id: hId, name: playerName.trim(), emoji: getEmoji(playerName), role: null, alive: true, shield: false, dagger: false, seerRole: false }],
+id: gId, hostId: hId, hostName: playerName.trim(), phase: PHASES.LOBBY,
+players: [],
 nightVotes: {}, dayVotes: {}, endgameVotes: {},
 round: 0, currentMission: null,
 lastKilled: null, lastBanished: null, winner: null,
@@ -459,8 +463,8 @@ if (!confirmedActivePlayers) {
   for (const p of game.players) {
     if (p.id === myId) continue; // host is always present
     const ts = await load(gameId + "-hb-" + p.id).catch(() => null);
-    // No heartbeat at all, or last ping > 15s ago = inactive
-    if (!ts || now - ts > 15000) stale.push(p);
+    // Only flag as stale if we've seen a heartbeat that's now expired (60s)
+    if (ts && now - ts > 60000) stale.push(p);
   }
   if (stale.length > 0) {
     const remaining = game.players.length - stale.length;
@@ -472,7 +476,7 @@ if (!confirmedActivePlayers) {
 const activePlayers = confirmedActivePlayers || game.players;
 
 // Just check the count — host can override if needed
-if (activePlayers.length < 10) return setError(`Need at least 10 players to start (${activePlayers.length} active)`);
+if (activePlayers.length < 8) return setError(`Need at least 8 players to start (${activePlayers.length} active)`);
 
 // Remove stale players from game before starting
 if (confirmedActivePlayers && confirmedActivePlayers.length !== game.players.length) {
@@ -1253,7 +1257,7 @@ setChatDraft("");
 
 const sendGhostChat = async () => {
 if (!ghostDraft.trim()) return;
-const senderName = isHost ? "👁️ Host" : (me?.name || "Ghost");
+const senderName = isHost ? "👁️ Host" : (me?.name || playerName || "Ghost");
 const chats = (await load(gameId + "-ghost-chat")) || [];
 chats.push({ sender: senderName, senderId: myId, text: ghostDraft.trim(), ts: Date.now(), isHost });
 await save(gameId + "-ghost-chat", chats);
@@ -1601,7 +1605,7 @@ if (!game || !myId) return <div className="app"><style>{CSS}</style><div style={
 if (game.phase === PHASES.GAME_INTRO) return (
 <GameIntroScreen game={game} isHost={isHost} gameId={gameId}
 load={load} save={save} advanceTo={advanceTo} PHASES={PHASES}
-secretTraitorEnabled={game.secretTraitorEnabled} />
+secretTraitorEnabled={game.secretTraitorEnabled} CSS={CSS} />
 );
 
 if (game.phase === PHASES.ENDED) return (
@@ -2484,9 +2488,9 @@ if (game.phase === PHASES.LOBBY) return (
                       <div key={p.id} style={{ fontSize:".82rem",color:"var(--crim3)",fontFamily:"'Cinzel',serif" }}>{p.emoji} {p.name}</div>
                     ))}
                   </div>
-                  {pendingRemoval.remaining < 10 ? (
+                  {pendingRemoval.remaining < 8 ? (
                     <div style={{ fontSize:".78rem",color:"var(--crim3)",fontStyle:"italic",marginBottom:10 }}>
-                      Only {pendingRemoval.remaining} active player{pendingRemoval.remaining !== 1 ? "s" : ""} remaining — need at least 10 to start. Ask players to rejoin.
+                      Only {pendingRemoval.remaining} active player{pendingRemoval.remaining !== 1 ? "s" : ""} remaining — need at least 8 to start. Ask players to rejoin.
                     </div>
                   ) : (
                     <div style={{ fontSize:".78rem",color:"var(--dim)",fontStyle:"italic",marginBottom:10 }}>
@@ -2495,7 +2499,7 @@ if (game.phase === PHASES.LOBBY) return (
                   )}
                   <div style={{ display:"flex",gap:8 }}>
                     <button className="btn btn-outline btn-sm" onClick={() => setPendingRemoval(null)}>← Cancel</button>
-                    {pendingRemoval.remaining >= 10 && (
+                    {pendingRemoval.remaining >= 8 && (
                       <button className="btn btn-gold btn-sm" onClick={() => {
                         const activeIds = new Set(pendingRemoval.players.map(p => p.id));
                         const activePlayers = game.players.filter(p => !activeIds.has(p.id));
@@ -2506,8 +2510,8 @@ if (game.phase === PHASES.LOBBY) return (
                   </div>
                 </div>
               ) : (
-                <button className="btn btn-gold btn-lg" onClick={() => startGame()} disabled={game.players.length < 4}>
-                  {game.players.length < 10 ? `Need ${10 - game.players.length} more player${10 - game.players.length === 1 ? "" : "s"} (${game.players.length}/10 min)` : "Lock In & Begin →"}
+                <button className="btn btn-gold btn-lg" onClick={() => startGame()} disabled={game.players.length < 8}>
+                  {game.players.length < 8 ? `Need ${8 - game.players.length} more player${8 - game.players.length === 1 ? "" : "s"} (${game.players.length}/8 min)` : "Lock In & Begin →"}
                 </button>
               )}
             </div>
@@ -2934,8 +2938,8 @@ return (
 
       <MsgLog messages={messages} />
 
-      {/* HOST GHOST CHAT — always visible when ghosts exist */}
-      {deadPlayers.length > 0 && (
+      {/* HOST GHOST CHAT — only visible to host */}
+      {isHost && deadPlayers.length > 0 && (
         <GhostChat
           ghostChats={ghostChats}
           ghostDraft={ghostDraft}

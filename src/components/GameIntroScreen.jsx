@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 
-function GameIntroScreen({ game, isHost, gameId, load, save, advanceTo, PHASES, secretTraitorEnabled }) {
+function GameIntroScreen({ game, isHost, gameId, load, save, advanceTo, PHASES, secretTraitorEnabled, CSS }) {
 const [slide, setSlide] = useState(game?.introSlide || 0);
 const [hostReady, setHostReady] = useState(false);
 // Sync players to host's current slide
@@ -95,7 +95,7 @@ isLast: true,
 if (isHost) {
 const current = hostSlides[slide];
 return (
-<div className="app"><style>{`@keyframes slideIn { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:translateY(0); } } @keyframes castleGlow { 0%,100%{text-shadow:0 0 40px rgba(201,168,76,.3);} 50%{text-shadow:0 0 80px rgba(201,168,76,.6),0 0 120px rgba(201,168,76,.2);} }`}</style>
+<div className="app">{CSS && <style>{CSS}</style>}
 <div className="noise" /><div className="z1">
 <div className="hdr">
 <div style={{ textAlign: "center", overflow: "visible" }}>
@@ -193,7 +193,7 @@ Begin the Game → 🏰
 // Player view — mirrors host slides, tracks host's current slide
 const playerCurrent = playerSlides[Math.min(slide, playerSlides.length - 1)];
 return (
-<div className="app"><style>{`@keyframes castleGlow { 0%,100%{text-shadow:0 0 40px rgba(201,168,76,.3);} 50%{text-shadow:0 0 80px rgba(201,168,76,.6),0 0 120px rgba(201,168,76,.2);} } @keyframes slideIn { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:translateY(0); } }`}</style>
+<div className="app">{CSS && <style>{CSS}</style>}
 <div className="noise"/><div className="z1">
 <div className="hdr">
 <div style={{ textAlign: "center", overflow: "visible" }}>
