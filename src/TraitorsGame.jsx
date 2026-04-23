@@ -2356,22 +2356,21 @@ if (game.phase === PHASES.LOBBY) return (
               {manualTraitorIds.length === 0 && (
                 <div className="row" style={{ marginBottom: 4 }}>
                   <span className="label" style={{ margin: 0 }}>Number of Traitors:</span>
-                  <input type="number" value={traitorCount} onChange={e => setTraitorCount(Math.max(1, parseInt(e.target.value) || 1))} min={1} max={Math.max(1, Math.floor(game.players.length / 3))} style={{ width: 48 }} />
+                  <input type="number" value={traitorCount} onChange={e => setTraitorCount(Math.min(Math.max(1, parseInt(e.target.value) || 1), Math.max(1, Math.floor(game.players.length / 3))))} min={1} max={Math.max(1, Math.floor(game.players.length / 3))} style={{ width: 48 }} />
                   <span style={{ fontSize: ".85rem", color: "var(--dim)" }}>of {game.players.length}</span>
                 </div>
               )}
               {manualTraitorIds.length > 0 && (
                 <div>
-                  <div style={{ fontSize: ".72rem", color: "var(--dim)", fontStyle: "italic", marginBottom: 8 }}>Tap players to designate as Traitors. Selected: {manualTraitorIds.filter(id=>id!=='select').length}/{Math.max(1,Math.floor(game.players.length/3))} max</div>
+                  <div style={{ fontSize: ".72rem", color: "var(--dim)", fontStyle: "italic", marginBottom: 8 }}>Tap players to designate as Traitors. Selected: {manualTraitorIds.filter(id=>id!=='select').length}/{traitorCount}</div>
                   <div className="pgrid">
                     {game.players.filter(p => p.id !== myId).map(p => {
                       const isSelected = manualTraitorIds.includes(p.id);
                       return (
                         <div key={p.id} className={`pcard click ${isSelected ? "crim" : ""}`} style={{ borderColor: isSelected ? "rgba(139,26,26,.6)" : "var(--border)" }} onClick={() => setManualTraitorIds(prev => {
                           const clean = prev.filter(id => id !== 'select');
-                          const max = Math.max(1, Math.floor(game.players.length / 3));
                           if (clean.includes(p.id)) return clean.filter(id => id !== p.id);
-                          if (clean.length >= max) return clean;
+                          if (clean.length >= traitorCount) return clean;
                           return [...clean, p.id];
                         })}>
                           <div className="pavatar">{p.emoji}</div>
