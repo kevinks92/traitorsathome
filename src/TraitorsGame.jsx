@@ -311,7 +311,9 @@ return () => clearInterval(pollRef.current);
 }, [gameId, myId]);
 
 // ── LOBBY HEARTBEAT ────────────────────────────────────────────────────────
-// Each player pings every 15s. Host evicts anyone silent for 60s.
+// Players ping every 15s so startGame can detect phones that went dark before
+// the game started. No auto-eviction during the lobby — players leave via the
+// "Leave Lobby" button or are removed manually by the host.
 useEffect(() => {
 if (!gameId || !myId || !game || game.phase !== PHASES.LOBBY) return;
 const ping = () => save(gameId + "-hb-" + myId, Date.now());
@@ -319,29 +321,6 @@ ping();
 const iv = setInterval(ping, 15000);
 return () => clearInterval(iv);
 }, [gameId, myId, game?.phase]);
-
-useEffect(() => {
-if (!gameId || !isHost || !game || game.phase !== PHASES.LOBBY) return;
-const checkHeartbeats = async () => {
-  try {
-    const now = Date.now();
-    const stale = [];
-    for (const p of game.players) {
-      if (p.id === game.hostId) continue; // never evict the host
-      const ts = await load(gameId + "-hb-" + p.id);
-      if (ts && now - ts > 60000) stale.push(p.id); // only evict if we've seen a ping that's now stale
-    }
-    if (stale.length === 0) return;
-    const g = await load(gameId);
-    if (!g || g.phase !== PHASES.LOBBY) return;
-    const updated = { ...g, players: g.players.filter(p => !stale.includes(p.id)) };
-    await save(gameId, updated);
-    setGame(updated);
-  } catch(e) {}
-};
-const iv = setInterval(checkHeartbeats, 20000);
-return () => clearInterval(iv);
-}, [gameId, isHost, game?.phase, game?.players?.length]);
 
 // ── TIMER ──────────────────────────────────────────────────────────────────
 const startTimer = useCallback((seconds) => {
