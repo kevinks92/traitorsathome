@@ -34,6 +34,20 @@ import { MsgLog }            from "./components/MsgLog.jsx";
 import { GhostChat }         from "./components/GhostChat.jsx";
 import { RoleCard }          from "./components/RoleCard.jsx";
 
+// ─── Dev Mode ─────────────────────────────────────────────────────────────────
+// Hidden feature: 3-second long-press on the title activates solo dev mode.
+// Stored in sessionStorage only — never shared with Convex.
+const DEV_FAKE_PLAYERS = [
+  { name: "Marcus",  emoji: "🦊" },
+  { name: "Priya",   emoji: "🌊" },
+  { name: "Dominic", emoji: "🐺" },
+  { name: "Isla",    emoji: "🌙" },
+  { name: "Cass",    emoji: "🎭" },
+  { name: "Remy",    emoji: "🦅" },
+  { name: "Nora",    emoji: "🌹" },
+  { name: "Theo",    emoji: "⚡" },
+];
+
 export default function TraitorsGame() {
 const [screen, setScreen] = useState("start");
 const [tutorialMode, setTutorialMode] = useState("rules");
@@ -145,6 +159,12 @@ const [privacyMode, setPrivacyMode] = useState(false);
 // Connection status
 const [isOnline, setIsOnline] = useState(true);
 const lastSyncRef = useRef(Date.now());
+
+// Dev mode — sessionStorage only, never synced to Convex
+const [devMode, setDevMode] = useState(() => {
+  try { return sessionStorage.getItem("traitors-dev") === "1"; } catch(e) { return false; }
+});
+const devPressTimer = useRef(null);
 
 // Avatar capture
 const [showAvatarCapture, setShowAvatarCapture] = useState(false);
@@ -388,11 +408,19 @@ secretTraitorRevealCycle: 0,
 secretTraitorRevealedInChat: false,
 currentRound: 0,
 };
-await save(gId, g);
+let finalGame = g;
+if (devMode) {
+  const fakePlayers = DEV_FAKE_PLAYERS.map(fp => ({
+    id: genId(), name: fp.name, emoji: fp.emoji,
+    role: null, alive: true, shield: false, isFake: true,
+  }));
+  finalGame = { ...g, players: fakePlayers };
+}
+await save(gId, finalGame);
 await save(gId + "-msgs", []);
 await save(gId + "-traitor-chat", []);
 await save(gId + "-ghost-chat", []);
-setGame(g); setGameId(gId); setMyId(hId);
+setGame(finalGame); setGameId(gId); setMyId(hId);
 setIsHost(true); setScreen("game"); setLoading(false); setError("");
 try {
   await save("traitors-session", { gId, pId: hId, host: true, name: playerName.trim() });
@@ -1431,6 +1459,59 @@ await addMsg(gameId, { type: "win", text: "✅ A unanimous vote to end it. The m
 await save(gameId, final);
 };
 
+// Dev mode: auto-fill pending actions for all fake players
+const devAdvanceFakePlayers = async () => {
+  const g = await load(gameId);
+  if (!g) return;
+  const fakePlayers = (g.players || []).filter(p => p.isFake && p.alive);
+  if (fakePlayers.length === 0) return;
+  const aliveAll = (g.players || []).filter(p => p.alive);
+
+  if (g.phase === PHASES.VOTING) {
+    // Fake players vote for a random alive real player
+    const aliveReal = aliveAll.filter(p => !p.isFake);
+    const newVotes = { ...(g.dayVotes || {}) };
+    for (const fp of fakePlayers) {
+      if (!newVotes[fp.id] && aliveReal.length > 0) {
+        newVotes[fp.id] = aliveReal[Math.floor(Math.random() * aliveReal.length)].id;
+      }
+    }
+    const updated = { ...g, dayVotes: newVotes };
+    await save(gameId, updated); setGame(updated);
+
+  } else if ([PHASES.NIGHT_SEQUESTER, PHASES.NIGHT_TRAITOR_CHAT].includes(g.phase)) {
+    // Fake traitors vote to murder a random alive faithful
+    const fakeTraitors = fakePlayers.filter(p => p.role === "traitor" || p.role === "secret_traitor");
+    if (fakeTraitors.length === 0) return;
+    const aliveReal = aliveAll.filter(p => !p.isFake && p.role !== "traitor" && p.role !== "secret_traitor");
+    const newVotes = { ...(g.nightVotes || {}) };
+    for (const ft of fakeTraitors) {
+      if (!newVotes[ft.id] && aliveReal.length > 0) {
+        newVotes[ft.id] = aliveReal[Math.floor(Math.random() * aliveReal.length)].id;
+      }
+    }
+    const updated = { ...g, nightVotes: newVotes };
+    await save(gameId, updated); setGame(updated);
+
+  } else if (g.phase === PHASES.ENDGAME) {
+    // Fake players all vote to "banish"
+    const newVotes = { ...(g.endgameVotes || {}) };
+    for (const fp of fakePlayers) {
+      if (!newVotes[fp.id]) newVotes[fp.id] = "banish";
+    }
+    const updated = { ...g, endgameVotes: newVotes };
+    await save(gameId, updated); setGame(updated);
+
+  } else if (g.phase === PHASES.NIGHT_RECRUIT_RESPONSE) {
+    // Fake recruit target auto-declines
+    const recruitTarget = fakePlayers.find(p => p.id === g.recruitTargetId);
+    if (recruitTarget) {
+      const updated = { ...g, recruitResponse: "decline" };
+      await save(gameId, updated); setGame(updated);
+    }
+  }
+};
+
 const copyId = () => { navigator.clipboard.writeText(gameId); setCopied(true); setTimeout(() => setCopied(false), 2000); };
 
 // Tallies
@@ -1451,7 +1532,15 @@ if (screen === "start") return (
 <div className="noise" />
 <div className="z1">
 <div className="hdr">
-<div style={{ textAlign: "center", overflow: "visible" }}>
+<div style={{ textAlign: "center", overflow: "visible" }}
+  onPointerDown={() => { devPressTimer.current = setTimeout(() => {
+    const next = !devMode;
+    try { next ? sessionStorage.setItem("traitors-dev","1") : sessionStorage.removeItem("traitors-dev"); } catch(e){}
+    setDevMode(next);
+  }, 3000); }}
+  onPointerUp={() => clearTimeout(devPressTimer.current)}
+  onPointerLeave={() => clearTimeout(devPressTimer.current)}
+>
 <div className="logo-title flicker" style={{
 fontFamily: "'Cinzel Decorative',cursive",
 fontSize: "clamp(2.4rem,8vw,5rem)",
@@ -1483,6 +1572,11 @@ color: "var(--dim)",
 letterSpacing: ".04em",
 marginTop: 8,
 }}>a party game of deception and murder</div>
+{devMode && (
+  <div style={{ marginTop: 10, padding: "3px 10px", background: "rgba(255,60,60,.15)", border: "1px solid rgba(255,60,60,.4)", borderRadius: 3, display: "inline-block", fontFamily: "'Cinzel',serif", fontSize: ".55rem", letterSpacing: ".16em", textTransform: "uppercase", color: "#ff9090" }}>
+    ⚠ DEV MODE — hold title to disable
+  </div>
+)}
 </div>
 
     </div>
@@ -2786,6 +2880,17 @@ return (
         })()}
       </div>
     )}
+    {/* DEV MODE banner */}
+    {devMode && isHost && (
+      <div style={{ background: "rgba(255,60,60,.12)", border: "1px solid rgba(255,60,60,.3)", borderRadius: 3, padding: "4px 12px", textAlign: "center", margin: "4px 0 0", fontSize: ".6rem", fontFamily: "'Cinzel',serif", letterSpacing: ".12em", textTransform: "uppercase", color: "#ff9090" }}>
+        ⚠ DEV MODE
+        {[PHASES.VOTING, PHASES.NIGHT_SEQUESTER, PHASES.NIGHT_TRAITOR_CHAT, PHASES.ENDGAME, PHASES.NIGHT_RECRUIT_RESPONSE].includes(game.phase) && (
+          <button onClick={devAdvanceFakePlayers} style={{ marginLeft: 12, background: "rgba(255,60,60,.2)", border: "1px solid rgba(255,60,60,.5)", borderRadius: 2, padding: "2px 8px", fontSize: ".55rem", color: "#ffb0b0", cursor: "pointer", fontFamily: "'Cinzel',serif", letterSpacing: ".08em" }}>
+            ▶ Advance Fake Players
+          </button>
+        )}
+      </div>
+    )}
     <div className="phase-strip">
       {PHASE_STRIP.map((s, i) => (
         <div key={s.key} className={`ps-item ${game.phase === s.key || (isNightPhase && s.key === PHASES.NIGHT_SEQUESTER) ? "active" : i < phaseStripIdx ? "done" : ""}`}>{s.label}</div>
@@ -2806,7 +2911,7 @@ return (
           <div className="stat"><div className="stat-n">{alivePlayers.length}</div><div className="stat-l">Alive</div></div>
           <div className="stat"><div className="stat-n">{game.round || 1}{game.totalRounds ? <span style={{ fontSize: ".7rem", color: "var(--dim2)" }}>/{game.totalRounds}</span> : ""}</div><div className="stat-l">Round</div></div>
           <div className="stat"><div className="stat-n">{deadPlayers.length}</div><div className="stat-l">Dead</div></div>
-          <div className="stat"><div className="stat-n">{game.round || 1}{game.totalRounds ? <span style={{ fontSize: ".7rem", color: "var(--dim2)" }}>/{game.totalRounds}</span> : ""}</div><div className="stat-l">Round</div></div>
+          <div className="stat"><div className="stat-n">{alivePlayers.filter(p => p.shield).length}</div><div className="stat-l">Shields</div></div>
         </div>
       )}
 
@@ -2887,6 +2992,9 @@ return (
         dmAuctionRevealed={dmAuctionRevealed} setDmAuctionRevealed={setDmAuctionRevealed}
         dmWhisperPhrase={dmWhisperPhrase}
         dmEmojiIdx={dmEmojiIdx} dmName5Idx={dmName5Idx} dmName5Round={dmName5Round} dmName5Scores={dmName5Scores}
+        setDmName5Scores={setDmName5Scores} setDmName5Round={setDmName5Round}
+        castleMsg={castleMsg} addMsg={addMsg} setGame={setGame}
+        endGameFinal={endGameFinal} revealEndgameVote={revealEndgameVote}
         dmRpsBracket={dmRpsBracket} setDmRpsBracket={setDmRpsBracket} dmRpsRound={dmRpsRound}
         dmHotTakeIdx={dmHotTakeIdx} dmHotTakeVotes={dmHotTakeVotes} setDmHotTakeVotes={setDmHotTakeVotes}
         dmDrawWinner={dmDrawWinner} setDmDrawWinner={setDmDrawWinner}
