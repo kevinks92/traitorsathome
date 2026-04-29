@@ -8,14 +8,22 @@ const [streaming, setStreaming] = useState(false);
 const [captured, setCaptured] = useState(null);
 const [error, setError] = useState("");
 
+// Start camera when no photo captured yet; stop it (via cleanup) once a photo exists.
 useEffect(() => {
+if (captured) return; // photo already taken — camera not needed
+let stream = null;
 navigator.mediaDevices?.getUserMedia({ video: { facingMode: "user" }, audio: false })
-.then(stream => {
-if (videoRef.current) { videoRef.current.srcObject = stream; setStreaming(true); }
+.then(s => {
+  stream = s;
+  if (videoRef.current) { videoRef.current.srcObject = s; setStreaming(true); }
 })
 .catch(() => setError("Camera not available. You can skip this."));
-return () => { if (videoRef.current?.srcObject) videoRef.current.srcObject.getTracks().forEach(t => t.stop()); };
-}, []);
+return () => {
+  if (stream) stream.getTracks().forEach(t => t.stop());
+  if (videoRef.current) videoRef.current.srcObject = null;
+  setStreaming(false);
+};
+}, [captured]);
 
 const capture = () => {
 const v = videoRef.current, c = canvasRef.current;

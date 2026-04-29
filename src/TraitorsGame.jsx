@@ -32,6 +32,21 @@ import { AvatarCapture }     from "./components/AvatarCapture.jsx";
 import { GoldFrame }         from "./components/GoldFrame.jsx";
 import { MsgLog }            from "./components/MsgLog.jsx";
 import { GhostChat }         from "./components/GhostChat.jsx";
+import { RoleCard }          from "./components/RoleCard.jsx";
+
+// ─── Dev Mode ─────────────────────────────────────────────────────────────────
+// Hidden feature: 3-second long-press on the title activates solo dev mode.
+// Stored in sessionStorage only — never shared with Convex.
+const DEV_FAKE_PLAYERS = [
+  { name: "Marcus",  emoji: "🦊" },
+  { name: "Priya",   emoji: "🌊" },
+  { name: "Dominic", emoji: "🐺" },
+  { name: "Isla",    emoji: "🌙" },
+  { name: "Cass",    emoji: "🎭" },
+  { name: "Remy",    emoji: "🦅" },
+  { name: "Nora",    emoji: "🌹" },
+  { name: "Theo",    emoji: "⚡" },
+];
 
 export default function TraitorsGame() {
 const [screen, setScreen] = useState("start");
@@ -145,6 +160,12 @@ const [privacyMode, setPrivacyMode] = useState(false);
 const [isOnline, setIsOnline] = useState(true);
 const lastSyncRef = useRef(Date.now());
 
+// Dev mode — sessionStorage only, never synced to Convex
+const [devMode, setDevMode] = useState(() => {
+  try { return sessionStorage.getItem("traitors-dev") === "1"; } catch(e) { return false; }
+});
+const devPressTimer = useRef(null);
+
 // Avatar capture
 const [showAvatarCapture, setShowAvatarCapture] = useState(false);
 const [myAvatar, setMyAvatar] = useState(null); // base64 data URL
@@ -194,7 +215,10 @@ const sess = await load("traitors-session");
 if (!sess) return;
 const { gId, pId, host, name } = sess;
 const g = await load(gId);
-if (!g) return;
+if (!g) { localStorage.removeItem("traitors-session"); return; }
+// Validate that this player/host still belongs to this game
+const isValidPlayer = host ? g.hostId === pId : g.players?.some(p => p.id === pId);
+if (!isValidPlayer) { localStorage.removeItem("traitors-session"); return; }
 setGame(g); setGameId(gId); setMyId(pId); setIsHost(!!host);
 setPlayerName(name || ""); setScreen("game");
 } catch(e) {}
@@ -316,37 +340,16 @@ return () => clearInterval(pollRef.current);
 }, [gameId, myId]);
 
 // ── LOBBY HEARTBEAT ────────────────────────────────────────────────────────
-// Each player pings every 5s. Host's poll evicts anyone silent for 15s.
+// Players ping every 15s so startGame can detect phones that went dark before
+// the game started. No auto-eviction during the lobby — players leave via the
+// "Leave Lobby" button or are removed manually by the host.
 useEffect(() => {
 if (!gameId || !myId || !game || game.phase !== PHASES.LOBBY) return;
 const ping = () => save(gameId + "-hb-" + myId, Date.now());
 ping();
-const iv = setInterval(ping, 5000);
+const iv = setInterval(ping, 15000);
 return () => clearInterval(iv);
 }, [gameId, myId, game?.phase]);
-
-useEffect(() => {
-if (!gameId || !isHost || !game || game.phase !== PHASES.LOBBY) return;
-const checkHeartbeats = async () => {
-  try {
-    const now = Date.now();
-    const stale = [];
-    for (const p of game.players) {
-      if (p.id === game.hostId) continue; // never evict the host
-      const ts = await load(gameId + "-hb-" + p.id);
-      if (ts && now - ts > 15000) stale.push(p.id); // stale ping = evict (no ping = new joiner, give grace)
-    }
-    if (stale.length === 0) return;
-    const g = await load(gameId);
-    if (!g || g.phase !== PHASES.LOBBY) return;
-    const updated = { ...g, players: g.players.filter(p => !stale.includes(p.id)) };
-    await save(gameId, updated);
-    setGame(updated);
-  } catch(e) {}
-};
-const iv = setInterval(checkHeartbeats, 8000);
-return () => clearInterval(iv);
-}, [gameId, isHost, game?.phase, game?.players?.length]);
 
 // ── TIMER ──────────────────────────────────────────────────────────────────
 const startTimer = useCallback((seconds) => {
@@ -401,8 +404,8 @@ setLoading(true);
 const gId = genId();
 const hId = genId();
 const g = {
-id: gId, hostId: hId, phase: PHASES.LOBBY,
-players: [{ id: hId, name: playerName.trim(), emoji: getEmoji(playerName), role: null, alive: true, shield: false, dagger: false, seerRole: false }],
+id: gId, hostId: hId, hostName: playerName.trim(), phase: PHASES.LOBBY,
+players: [],
 nightVotes: {}, dayVotes: {}, endgameVotes: {},
 round: 0, currentMission: null,
 lastKilled: null, lastBanished: null, winner: null,
@@ -414,11 +417,19 @@ secretTraitorRevealCycle: 0,
 secretTraitorRevealedInChat: false,
 currentRound: 0,
 };
-await save(gId, g);
+let finalGame = g;
+if (devMode) {
+  const fakePlayers = DEV_FAKE_PLAYERS.map(fp => ({
+    id: genId(), name: fp.name, emoji: fp.emoji,
+    role: null, alive: true, shield: false, isFake: true,
+  }));
+  finalGame = { ...g, players: fakePlayers };
+}
+await save(gId, finalGame);
 await save(gId + "-msgs", []);
 await save(gId + "-traitor-chat", []);
 await save(gId + "-ghost-chat", []);
-setGame(g); setGameId(gId); setMyId(hId);
+setGame(finalGame); setGameId(gId); setMyId(hId);
 setIsHost(true); setScreen("game"); setLoading(false); setError("");
 try {
   await save("traitors-session", { gId, pId: hId, host: true, name: playerName.trim() });
@@ -468,8 +479,8 @@ if (!confirmedActivePlayers) {
   for (const p of game.players) {
     if (p.id === myId) continue; // host is always present
     const ts = await load(gameId + "-hb-" + p.id).catch(() => null);
-    // No heartbeat at all, or last ping > 15s ago = inactive
-    if (!ts || now - ts > 15000) stale.push(p);
+    // Only flag as stale if we've seen a heartbeat that's now expired (60s)
+    if (ts && now - ts > 60000) stale.push(p);
   }
   if (stale.length > 0) {
     const remaining = game.players.length - stale.length;
@@ -481,7 +492,7 @@ if (!confirmedActivePlayers) {
 const activePlayers = confirmedActivePlayers || game.players;
 
 // Just check the count — host can override if needed
-if (activePlayers.length < 10) return setError(`Need at least 10 players to start (${activePlayers.length} active)`);
+if (activePlayers.length < 8) return setError(`Need at least 8 players to start (${activePlayers.length} active)`);
 
 // Remove stale players from game before starting
 if (confirmedActivePlayers && confirmedActivePlayers.length !== game.players.length) {
@@ -1262,7 +1273,7 @@ setChatDraft("");
 
 const sendGhostChat = async () => {
 if (!ghostDraft.trim()) return;
-const senderName = isHost ? "👁️ Host" : (me?.name || "Ghost");
+const senderName = isHost ? "👁️ Host" : (me?.name || playerName || "Ghost");
 const chats = (await load(gameId + "-ghost-chat")) || [];
 chats.push({ sender: senderName, senderId: myId, text: ghostDraft.trim(), ts: Date.now(), isHost });
 await save(gameId + "-ghost-chat", chats);
@@ -1506,6 +1517,59 @@ await addMsg(gameId, { type: "win", text: "✅ A unanimous vote to end it. The m
 await save(gameId, final);
 };
 
+// Dev mode: auto-fill pending actions for all fake players
+const devAdvanceFakePlayers = async () => {
+  const g = await load(gameId);
+  if (!g) return;
+  const fakePlayers = (g.players || []).filter(p => p.isFake && p.alive);
+  if (fakePlayers.length === 0) return;
+  const aliveAll = (g.players || []).filter(p => p.alive);
+
+  if (g.phase === PHASES.VOTING) {
+    // Fake players vote for a random alive real player
+    const aliveReal = aliveAll.filter(p => !p.isFake);
+    const newVotes = { ...(g.dayVotes || {}) };
+    for (const fp of fakePlayers) {
+      if (!newVotes[fp.id] && aliveReal.length > 0) {
+        newVotes[fp.id] = aliveReal[Math.floor(Math.random() * aliveReal.length)].id;
+      }
+    }
+    const updated = { ...g, dayVotes: newVotes };
+    await save(gameId, updated); setGame(updated);
+
+  } else if ([PHASES.NIGHT_SEQUESTER, PHASES.NIGHT_TRAITOR_CHAT].includes(g.phase)) {
+    // Fake traitors vote to murder a random alive faithful
+    const fakeTraitors = fakePlayers.filter(p => p.role === "traitor" || p.role === "secret_traitor");
+    if (fakeTraitors.length === 0) return;
+    const aliveReal = aliveAll.filter(p => !p.isFake && p.role !== "traitor" && p.role !== "secret_traitor");
+    const newVotes = { ...(g.nightVotes || {}) };
+    for (const ft of fakeTraitors) {
+      if (!newVotes[ft.id] && aliveReal.length > 0) {
+        newVotes[ft.id] = aliveReal[Math.floor(Math.random() * aliveReal.length)].id;
+      }
+    }
+    const updated = { ...g, nightVotes: newVotes };
+    await save(gameId, updated); setGame(updated);
+
+  } else if (g.phase === PHASES.ENDGAME) {
+    // Fake players all vote to "banish"
+    const newVotes = { ...(g.endgameVotes || {}) };
+    for (const fp of fakePlayers) {
+      if (!newVotes[fp.id]) newVotes[fp.id] = "banish";
+    }
+    const updated = { ...g, endgameVotes: newVotes };
+    await save(gameId, updated); setGame(updated);
+
+  } else if (g.phase === PHASES.NIGHT_RECRUIT_RESPONSE) {
+    // Fake recruit target auto-declines
+    const recruitTarget = fakePlayers.find(p => p.id === g.recruitTargetId);
+    if (recruitTarget) {
+      const updated = { ...g, recruitResponse: "decline" };
+      await save(gameId, updated); setGame(updated);
+    }
+  }
+};
+
 const copyId = () => { navigator.clipboard.writeText(gameId); setCopied(true); setTimeout(() => setCopied(false), 2000); };
 
 // Tallies
@@ -1526,7 +1590,15 @@ if (screen === "start") return (
 <div className="noise" />
 <div className="z1">
 <div className="hdr">
-<div style={{ textAlign: "center", overflow: "visible" }}>
+<div style={{ textAlign: "center", overflow: "visible" }}
+  onPointerDown={() => { devPressTimer.current = setTimeout(() => {
+    const next = !devMode;
+    try { next ? sessionStorage.setItem("traitors-dev","1") : sessionStorage.removeItem("traitors-dev"); } catch(e){}
+    setDevMode(next);
+  }, 3000); }}
+  onPointerUp={() => clearTimeout(devPressTimer.current)}
+  onPointerLeave={() => clearTimeout(devPressTimer.current)}
+>
 <div className="logo-title flicker" style={{
 fontFamily: "'Cinzel Decorative',cursive",
 fontSize: "clamp(2.4rem,8vw,5rem)",
@@ -1558,6 +1630,11 @@ color: "var(--dim)",
 letterSpacing: ".04em",
 marginTop: 8,
 }}>a party game of deception and murder</div>
+{devMode && (
+  <div style={{ marginTop: 10, padding: "3px 10px", background: "rgba(255,60,60,.15)", border: "1px solid rgba(255,60,60,.4)", borderRadius: 3, display: "inline-block", fontFamily: "'Cinzel',serif", fontSize: ".55rem", letterSpacing: ".16em", textTransform: "uppercase", color: "#ff9090" }}>
+    ⚠ DEV MODE — hold title to disable
+  </div>
+)}
 </div>
 
     </div>
@@ -1659,7 +1736,7 @@ if (!game || !myId) return <div className="app"><style>{CSS}</style><div style={
 if (game.phase === PHASES.GAME_INTRO) return (
 <GameIntroScreen game={game} isHost={isHost} gameId={gameId}
 load={load} save={save} advanceTo={advanceTo} PHASES={PHASES}
-secretTraitorEnabled={game.secretTraitorEnabled} />
+secretTraitorEnabled={game.secretTraitorEnabled} CSS={CSS} />
 );
 
 if (game.phase === PHASES.ENDED && game.winner === "abandoned") return (
@@ -2467,22 +2544,21 @@ if (game.phase === PHASES.LOBBY) return (
               {manualTraitorIds.length === 0 && (
                 <div className="row" style={{ marginBottom: 4 }}>
                   <span className="label" style={{ margin: 0 }}>Number of Traitors:</span>
-                  <input type="number" value={traitorCount} onChange={e => setTraitorCount(Math.max(1, parseInt(e.target.value) || 1))} min={1} max={Math.max(1, Math.floor(game.players.length / 3))} style={{ width: 48 }} />
+                  <input type="number" value={traitorCount} onChange={e => setTraitorCount(Math.min(Math.max(1, parseInt(e.target.value) || 1), Math.max(1, Math.floor(game.players.length / 3))))} min={1} max={Math.max(1, Math.floor(game.players.length / 3))} style={{ width: 48 }} />
                   <span style={{ fontSize: ".85rem", color: "var(--dim)" }}>of {game.players.length}</span>
                 </div>
               )}
               {manualTraitorIds.length > 0 && (
                 <div>
-                  <div style={{ fontSize: ".72rem", color: "var(--dim)", fontStyle: "italic", marginBottom: 8 }}>Tap players to designate as Traitors. Selected: {manualTraitorIds.filter(id=>id!=='select').length}/{Math.max(1,Math.floor(game.players.length/3))} max</div>
+                  <div style={{ fontSize: ".72rem", color: "var(--dim)", fontStyle: "italic", marginBottom: 8 }}>Tap players to designate as Traitors. Selected: {manualTraitorIds.filter(id=>id!=='select').length}/{traitorCount}</div>
                   <div className="pgrid">
                     {game.players.filter(p => p.id !== myId).map(p => {
                       const isSelected = manualTraitorIds.includes(p.id);
                       return (
                         <div key={p.id} className={`pcard click ${isSelected ? "crim" : ""}`} style={{ borderColor: isSelected ? "rgba(139,26,26,.6)" : "var(--border)" }} onClick={() => setManualTraitorIds(prev => {
                           const clean = prev.filter(id => id !== 'select');
-                          const max = Math.max(1, Math.floor(game.players.length / 3));
                           if (clean.includes(p.id)) return clean.filter(id => id !== p.id);
-                          if (clean.length >= max) return clean;
+                          if (clean.length >= traitorCount) return clean;
                           return [...clean, p.id];
                         })}>
                           <div className="pavatar">{p.emoji}</div>
@@ -2578,9 +2654,9 @@ if (game.phase === PHASES.LOBBY) return (
                       <div key={p.id} style={{ fontSize:".82rem",color:"var(--crim3)",fontFamily:"'Cinzel',serif" }}>{p.emoji} {p.name}</div>
                     ))}
                   </div>
-                  {pendingRemoval.remaining < 10 ? (
+                  {pendingRemoval.remaining < 8 ? (
                     <div style={{ fontSize:".78rem",color:"var(--crim3)",fontStyle:"italic",marginBottom:10 }}>
-                      Only {pendingRemoval.remaining} active player{pendingRemoval.remaining !== 1 ? "s" : ""} remaining — need at least 10 to start. Ask players to rejoin.
+                      Only {pendingRemoval.remaining} active player{pendingRemoval.remaining !== 1 ? "s" : ""} remaining — need at least 8 to start. Ask players to rejoin.
                     </div>
                   ) : (
                     <div style={{ fontSize:".78rem",color:"var(--dim)",fontStyle:"italic",marginBottom:10 }}>
@@ -2589,7 +2665,7 @@ if (game.phase === PHASES.LOBBY) return (
                   )}
                   <div style={{ display:"flex",gap:8 }}>
                     <button className="btn btn-outline btn-sm" onClick={() => setPendingRemoval(null)}>← Cancel</button>
-                    {pendingRemoval.remaining >= 10 && (
+                    {pendingRemoval.remaining >= 8 && (
                       <button className="btn btn-gold btn-sm" onClick={() => {
                         const activeIds = new Set(pendingRemoval.players.map(p => p.id));
                         const activePlayers = game.players.filter(p => !activeIds.has(p.id));
@@ -2600,8 +2676,8 @@ if (game.phase === PHASES.LOBBY) return (
                   </div>
                 </div>
               ) : (
-                <button className="btn btn-gold btn-lg" onClick={() => startGame()} disabled={game.players.length < 4}>
-                  {game.players.length < 10 ? `Need ${10 - game.players.length} more player${10 - game.players.length === 1 ? "" : "s"} (${game.players.length}/10 min)` : "Lock In & Begin →"}
+                <button className="btn btn-gold btn-lg" onClick={() => startGame()} disabled={game.players.length < 8}>
+                  {game.players.length < 8 ? `Need ${8 - game.players.length} more player${8 - game.players.length === 1 ? "" : "s"} (${game.players.length}/8 min)` : "Lock In & Begin →"}
                 </button>
               )}
             </div>
@@ -2967,6 +3043,17 @@ return (
         })()}
       </div>
     )}
+    {/* DEV MODE banner */}
+    {devMode && isHost && (
+      <div style={{ background: "rgba(255,60,60,.12)", border: "1px solid rgba(255,60,60,.3)", borderRadius: 3, padding: "4px 12px", textAlign: "center", margin: "4px 0 0", fontSize: ".6rem", fontFamily: "'Cinzel',serif", letterSpacing: ".12em", textTransform: "uppercase", color: "#ff9090" }}>
+        ⚠ DEV MODE
+        {[PHASES.VOTING, PHASES.NIGHT_SEQUESTER, PHASES.NIGHT_TRAITOR_CHAT, PHASES.ENDGAME, PHASES.NIGHT_RECRUIT_RESPONSE].includes(game.phase) && (
+          <button onClick={devAdvanceFakePlayers} style={{ marginLeft: 12, background: "rgba(255,60,60,.2)", border: "1px solid rgba(255,60,60,.5)", borderRadius: 2, padding: "2px 8px", fontSize: ".55rem", color: "#ffb0b0", cursor: "pointer", fontFamily: "'Cinzel',serif", letterSpacing: ".08em" }}>
+            ▶ Advance Fake Players
+          </button>
+        )}
+      </div>
+    )}
     <div className="phase-strip">
       {PHASE_STRIP.map((s, i) => (
         <div key={s.key} className={`ps-item ${game.phase === s.key || (isNightPhase && s.key === PHASES.NIGHT_SEQUESTER) ? "active" : i < phaseStripIdx ? "done" : ""}`}>{s.label}</div>
@@ -2987,7 +3074,7 @@ return (
           <div className="stat"><div className="stat-n">{alivePlayers.length}</div><div className="stat-l">Alive</div></div>
           <div className="stat"><div className="stat-n">{game.round || 1}{game.totalRounds ? <span style={{ fontSize: ".7rem", color: "var(--dim2)" }}>/{game.totalRounds}</span> : ""}</div><div className="stat-l">Round</div></div>
           <div className="stat"><div className="stat-n">{deadPlayers.length}</div><div className="stat-l">Dead</div></div>
-          <div className="stat"><div className="stat-n">{game.round || 1}{game.totalRounds ? <span style={{ fontSize: ".7rem", color: "var(--dim2)" }}>/{game.totalRounds}</span> : ""}</div><div className="stat-l">Round</div></div>
+          <div className="stat"><div className="stat-n">{alivePlayers.filter(p => p.shield).length}</div><div className="stat-l">Shields</div></div>
         </div>
       )}
 
@@ -3068,6 +3155,9 @@ return (
         dmAuctionRevealed={dmAuctionRevealed} setDmAuctionRevealed={setDmAuctionRevealed}
         dmWhisperPhrase={dmWhisperPhrase}
         dmEmojiIdx={dmEmojiIdx} dmName5Idx={dmName5Idx} dmName5Round={dmName5Round} dmName5Scores={dmName5Scores}
+        setDmName5Scores={setDmName5Scores} setDmName5Round={setDmName5Round}
+        castleMsg={castleMsg} addMsg={addMsg} setGame={setGame}
+        endGameFinal={endGameFinal} revealEndgameVote={revealEndgameVote}
         dmRpsBracket={dmRpsBracket} setDmRpsBracket={setDmRpsBracket} dmRpsRound={dmRpsRound}
         dmHotTakeIdx={dmHotTakeIdx} dmHotTakeVotes={dmHotTakeVotes} setDmHotTakeVotes={setDmHotTakeVotes}
         dmDrawWinner={dmDrawWinner} setDmDrawWinner={setDmDrawWinner}
@@ -3108,8 +3198,8 @@ return (
 
       <MsgLog messages={messages} />
 
-      {/* HOST GHOST CHAT — always visible when ghosts exist */}
-      {deadPlayers.length > 0 && (
+      {/* HOST GHOST CHAT — only visible to host */}
+      {isHost && deadPlayers.length > 0 && (
         <GhostChat
           ghostChats={ghostChats}
           ghostDraft={ghostDraft}

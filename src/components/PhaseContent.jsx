@@ -14,12 +14,561 @@ import { MISSIONS, TRIVIA_BANK, NAME5_CATEGORIES, EMOJI_CIPHERS,
 import { SHIELD_MODE_LABELS, EMOJIS, genId, getEmoji, shuffleArray, shuffle } from "../utils/gameUtils.js";
 import { generateWitnessQuestions } from "../utils/gameUtils.js";
 
+// ── Extracted mission sub-components (React hooks compliance) ─────────────────
+// Each branch that calls hooks must be its own named component so that hooks
+// are always called unconditionally at the top level of a function component.
+
+// HOST: Secret Ballot ──────────────────────────────────────────────────────────
+function HostSecretBallotPanel({ gameId, alivePlayers, dmSecretBallotVotes, setDmSecretBallotVotes, awardBar }) {
+  useEffect(() => {
+    const poll = async () => {
+      const v = {};
+      for (const pl of alivePlayers) {
+        const vote = await load(gameId + "-ballot-" + pl.id);
+        if (vote) v[pl.id] = vote;
+      }
+      setDmSecretBallotVotes(v);
+    };
+    poll();
+    const t = setInterval(poll, 3000);
+    return () => clearInterval(t);
+  }, []);
+  const votes = dmSecretBallotVotes;
+  const tally = {};
+  Object.values(votes).forEach(vid => { tally[vid] = (tally[vid] || 0) + 1; });
+  const topScore = Math.max(0, ...Object.values(tally));
+  return (
+    <>
+      <div style={{ background:"rgba(10,5,20,.8)",border:"1px solid rgba(201,168,76,.2)",borderRadius:4,padding:12,marginBottom:10 }}>
+        <div style={{ fontFamily:"'Cinzel',serif",fontSize:".6rem",letterSpacing:".12em",textTransform:"uppercase",color:"var(--gold2)",marginBottom:8 }}>🗳️ Secret Ballot — {Object.keys(votes).length}/{alivePlayers.length} votes cast</div>
+        <div style={{ fontSize:".82rem",color:"var(--dim)",fontStyle:"italic",marginBottom:10 }}>Players vote privately on their phones for who they'd most protect. Results visible only here.</div>
+        <button className="btn btn-outline btn-sm" style={{ fontSize:".6rem",marginBottom:10 }} onClick={async () => {
+          const v = {};
+          for (const pl of alivePlayers) {
+            const vote = await load(gameId + "-ballot-" + pl.id);
+            if (vote) v[pl.id] = vote;
+          }
+          setDmSecretBallotVotes(v);
+        }}>🔄 Refresh Votes</button>
+        <div style={{ display:"flex",flexDirection:"column",gap:4 }}>
+          {alivePlayers.slice().sort((a, b) => (tally[b.id] || 0) - (tally[a.id] || 0)).map(pl => (
+            <div key={pl.id} style={{ display:"flex",justifyContent:"space-between",alignItems:"center",padding:"5px 8px",background:(tally[pl.id]||0)===topScore&&topScore>0?"rgba(201,168,76,.08)":"transparent",borderRadius:3 }}>
+              <span style={{ color:"var(--dim)",fontSize:".82rem" }}>{pl.emoji} {pl.name}</span>
+              <span style={{ color:"var(--gold)",fontFamily:"'Cinzel',serif",fontWeight:700,fontSize:".85rem" }}>{tally[pl.id] || 0} votes</span>
+            </div>
+          ))}
+        </div>
+      </div>
+      {awardBar}
+    </>
+  );
+}
+
+// HOST: Midnight Auction ───────────────────────────────────────────────────────
+function HostAuctionPanel({ gameId, alivePlayers, dmAuctionBids, setDmAuctionBids, dmAuctionRevealed, setDmAuctionRevealed, awardBar }) {
+  useEffect(() => {
+    if (dmAuctionRevealed) return;
+    const poll = async () => {
+      let count = 0;
+      for (const pl of alivePlayers) {
+        const b = await load(gameId + "-auction-bid-" + pl.id);
+        if (b != null) count++;
+      }
+      setDmAuctionBids(prev => ({ ...prev, _count: count }));
+    };
+    poll();
+    const t = setInterval(poll, 2000);
+    return () => clearInterval(t);
+  }, [dmAuctionRevealed]);
+  return (
+    <>
+      <div style={{ background:"rgba(10,5,20,.8)",border:"1px solid rgba(201,168,76,.2)",borderRadius:4,padding:12,marginBottom:10 }}>
+        <div style={{ fontFamily:"'Cinzel',serif",fontSize:".6rem",letterSpacing:".12em",textTransform:"uppercase",color:"var(--gold2)",marginBottom:8 }}>🏺 Midnight Auction — {Object.keys(dmAuctionBids).length}/{alivePlayers.length} bids</div>
+        <div style={{ fontSize:".82rem",color:"var(--dim)",fontStyle:"italic",marginBottom:10 }}>Players submit bids (1–10) on their phones. Once all bids are in, reveal simultaneously.</div>
+        {!dmAuctionRevealed ? (
+          <>
+            <div style={{ display:"flex",flexWrap:"wrap",gap:6,marginBottom:10 }}>
+              {alivePlayers.map(pl => (
+                <div key={pl.id} style={{ background:dmAuctionBids[pl.id]!=null?"rgba(201,168,76,.1)":"rgba(255,255,255,.03)",border:"1px solid rgba(201,168,76,.2)",borderRadius:3,padding:"6px 10px",textAlign:"center" }}>
+                  <div style={{ fontSize:".9rem" }}>{pl.emoji}</div>
+                  <div style={{ fontFamily:"'Cinzel',serif",fontSize:".5rem",color:"var(--dim)" }}>{pl.name}</div>
+                  <div style={{ color:dmAuctionBids[pl.id]!=null?"var(--gold)":"var(--dim)",fontSize:".7rem",marginTop:2 }}>{dmAuctionBids[pl.id] != null ? "✓ Bid in" : "waiting…"}</div>
+                </div>
+              ))}
+            </div>
+            <button className="btn btn-gold btn-sm" onClick={async () => {
+              const bids = {};
+              for (const pl of alivePlayers) {
+                const b = await load(gameId + "-auction-bid-" + pl.id);
+                if (b != null) bids[pl.id] = b;
+              }
+              setDmAuctionBids(bids); setDmAuctionRevealed(true);
+            }}>Reveal All Bids →</button>
+          </>
+        ) : (
+          <div style={{ display:"flex",flexDirection:"column",gap:5,marginBottom:10 }}>
+            {alivePlayers.slice().sort((a, b) => (dmAuctionBids[b.id] || 0) - (dmAuctionBids[a.id] || 0)).map(pl => {
+              const bid = dmAuctionBids[pl.id] || "?";
+              const topBid = Math.max(...Object.values(dmAuctionBids).map(Number));
+              const isWinner = Number(bid) === topBid;
+              return (
+                <div key={pl.id} style={{ display:"flex",justifyContent:"space-between",alignItems:"center",padding:"6px 10px",background:isWinner?"rgba(201,168,76,.12)":"rgba(255,255,255,.02)",borderRadius:3,border:isWinner?"1px solid rgba(201,168,76,.3)":"1px solid transparent" }}>
+                  <span style={{ color:"var(--dim)",fontSize:".82rem" }}>{pl.emoji} {pl.name}</span>
+                  <span style={{ color:isWinner?"var(--gold)":"var(--dim)",fontFamily:"'Cinzel',serif",fontWeight:isWinner?700:400,fontSize:".9rem" }}>{bid}{isWinner ? " 🏆" : ""}</span>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+      {awardBar}
+    </>
+  );
+}
+
+// HOST: Hot Take ───────────────────────────────────────────────────────────────
+function HostHotTakePanel({ gameId, alivePlayers, dmHotTakeIdx, dmHotTakeVotes, setDmHotTakeVotes, awardBar }) {
+  useEffect(() => {
+    const poll = async () => {
+      const v = {};
+      for (const pl of alivePlayers) {
+        const vote = await load(gameId + "-hottake-" + pl.id);
+        if (vote) v[pl.id] = vote;
+      }
+      setDmHotTakeVotes(v);
+    };
+    poll();
+    const t = setInterval(poll, 3000);
+    return () => clearInterval(t);
+  }, []);
+  const take = HOT_TAKES[dmHotTakeIdx];
+  const votes = dmHotTakeVotes;
+  const agree = Object.values(votes).filter(v => v === "agree").length;
+  const disagree = Object.values(votes).filter(v => v === "disagree").length;
+  const majority = agree > disagree ? "agree" : disagree > agree ? "disagree" : null;
+  return (
+    <>
+      <div style={{ background:"rgba(10,5,20,.8)",border:"1px solid rgba(201,168,76,.2)",borderRadius:4,padding:12,marginBottom:10 }}>
+        <div style={{ fontFamily:"'Cinzel',serif",fontSize:".6rem",letterSpacing:".12em",textTransform:"uppercase",color:"var(--gold2)",marginBottom:8 }}>🔥 Hot Take</div>
+        <div style={{ background:"rgba(201,168,76,.08)",border:"1px solid rgba(201,168,76,.25)",borderRadius:4,padding:"14px 16px",marginBottom:12,fontSize:"1rem",color:"var(--text)",lineHeight:1.6,textAlign:"center",fontStyle:"italic" }}>"{take}"</div>
+        <div style={{ display:"flex",gap:8,marginBottom:10,fontSize:".72rem",color:"var(--dim)" }}>
+          <div style={{ flex:1,textAlign:"center",color:"#80e080" }}>✓ Agree: {agree}</div>
+          <div style={{ flex:1,textAlign:"center",color:"var(--crim3)" }}>✗ Disagree: {disagree}</div>
+          <div style={{ flex:1,textAlign:"center",color:"var(--dim)" }}>Waiting: {alivePlayers.length - Object.keys(votes).length}</div>
+        </div>
+        {majority && <div style={{ textAlign:"center",fontFamily:"'Cinzel',serif",fontSize:".75rem",color:majority==="agree"?"#80e080":"var(--crim3)",marginBottom:8 }}>Majority: {majority === "agree" ? "AGREE ✓" : "DISAGREE ✗"} — award shields to {majority} voters</div>}
+        <div style={{ display:"flex",flexDirection:"column",gap:4,marginBottom:10 }}>
+          {alivePlayers.map(pl => (
+            <div key={pl.id} style={{ display:"flex",justifyContent:"space-between",alignItems:"center",padding:"4px 8px",fontSize:".78rem" }}>
+              <span style={{ color:"var(--dim)" }}>{pl.emoji} {pl.name}</span>
+              <span style={{ color:votes[pl.id]==="agree"?"#80e080":votes[pl.id]==="disagree"?"var(--crim3)":"var(--dim)",fontStyle:!votes[pl.id]?"italic":"normal" }}>{votes[pl.id] || "waiting…"}</span>
+            </div>
+          ))}
+        </div>
+        <button className="btn btn-outline btn-sm" style={{ fontSize:".6rem" }} onClick={async () => {
+          const v = {};
+          for (const pl of alivePlayers) {
+            const vote = await load(gameId + "-hottake-" + pl.id);
+            if (vote) v[pl.id] = vote;
+          }
+          setDmHotTakeVotes(v);
+        }}>🔄 Refresh Votes</button>
+      </div>
+      {awardBar}
+    </>
+  );
+}
+
+// HOST: RPS Bracket ────────────────────────────────────────────────────────────
+// Replaces per-matchup useEffect inside .map() with a single top-level effect.
+function HostRpsBracketPanel({ gameId, alivePlayers, dmRpsBracket, setDmRpsBracket, awardBar }) {
+  const players = dmRpsBracket;
+  const roundSize = Math.pow(2, Math.ceil(Math.log2(Math.max(players.length, 2))));
+  const padded = [...players, ...Array(roundSize - players.length).fill("bye")];
+  const matchups = [];
+  for (let i = 0; i < padded.length; i += 2) matchups.push([padded[i], padded[i + 1]]);
+  // Push only the first pending (non-bye) matchup to player phones
+  const bracketKey = dmRpsBracket.join(",");
+  useEffect(() => {
+    const first = matchups.find(([a, b]) => {
+      const pa = alivePlayers.find(p => p.id === a);
+      const pb = alivePlayers.find(p => p.id === b);
+      return pa && pb && b !== "bye";
+    });
+    if (first) save(gameId + "-rps-matchup", { p1: first[0], p2: first[1] });
+  }, [bracketKey]);
+  return (
+    <>
+      <div style={{ background:"rgba(10,5,20,.8)",border:"1px solid rgba(201,168,76,.2)",borderRadius:4,padding:12,marginBottom:10 }}>
+        <div style={{ fontFamily:"'Cinzel',serif",fontSize:".6rem",letterSpacing:".12em",textTransform:"uppercase",color:"var(--gold2)",marginBottom:8 }}>✊ Rock Paper Scissors Tournament — {players.length} players remaining</div>
+        <div style={{ display:"flex",flexDirection:"column",gap:8,marginBottom:10 }}>
+          {matchups.map(([a, b], i) => {
+            const pa = alivePlayers.find(p => p.id === a);
+            const pb = alivePlayers.find(p => p.id === b);
+            if (!pa && !pb) return null;
+            if (!pb || b === "bye") return (
+              <div key={i} style={{ padding:"8px 10px",background:"rgba(201,168,76,.04)",borderRadius:3,fontSize:".78rem",color:"var(--dim)" }}>
+                {pa?.emoji} {pa?.name} — advances automatically (bye)
+              </div>
+            );
+            return (
+              <div key={i} style={{ background:"rgba(255,255,255,.03)",border:"1px solid rgba(255,255,255,.06)",borderRadius:3,padding:"10px 12px",display:"flex",alignItems:"center",gap:8 }}>
+                <button onClick={() => { setDmRpsBracket(br => br.filter(id => id !== b)); save(gameId + "-rps-matchup", null); }}
+                  style={{ flex:1,background:"rgba(40,20,60,.6)",border:"1px solid rgba(120,60,180,.4)",borderRadius:3,padding:"8px",cursor:"pointer",color:"var(--text)",fontSize:".78rem",display:"flex",flexDirection:"column",alignItems:"center",gap:3 }}>
+                  <span style={{ fontSize:"1.2rem" }}>{pa?.emoji}</span>
+                  <span style={{ fontFamily:"'Cinzel',serif",fontSize:".55rem" }}>{pa?.name}</span>
+                  <span style={{ fontSize:".5rem",color:"#80e080" }}>← Wins</span>
+                </button>
+                <div style={{ fontFamily:"'Cinzel',serif",fontSize:".7rem",color:"var(--dim)" }}>vs</div>
+                <button onClick={() => { setDmRpsBracket(br => br.filter(id => id !== a)); save(gameId + "-rps-matchup", null); }}
+                  style={{ flex:1,background:"rgba(40,20,60,.6)",border:"1px solid rgba(120,60,180,.4)",borderRadius:3,padding:"8px",cursor:"pointer",color:"var(--text)",fontSize:".78rem",display:"flex",flexDirection:"column",alignItems:"center",gap:3 }}>
+                  <span style={{ fontSize:"1.2rem" }}>{pb?.emoji}</span>
+                  <span style={{ fontFamily:"'Cinzel',serif",fontSize:".55rem" }}>{pb?.name}</span>
+                  <span style={{ fontSize:".5rem",color:"#80e080" }}>← Wins</span>
+                </button>
+              </div>
+            );
+          })}
+        </div>
+        {players.length === 1 && (() => {
+          const champ = alivePlayers.find(p => p.id === players[0]);
+          return <div style={{ textAlign:"center",padding:"10px",background:"rgba(201,168,76,.1)",borderRadius:3,fontFamily:"'Cinzel',serif",color:"var(--gold)" }}>🏆 Champion: {champ?.emoji} {champ?.name}</div>;
+        })()}
+      </div>
+      {awardBar}
+    </>
+  );
+}
+
+// HOST: The Relic ──────────────────────────────────────────────────────────────
+function HostRelicPanel({ gameId, dmRelicObject, setDmRelicObject, awardBar }) {
+  const [relicPhase, setRelicPhase] = useState("pick");
+  const [hideTimer, setHideTimer] = useState(60);
+  useEffect(() => {
+    if (relicPhase !== "hide") return;
+    if (hideTimer <= 0) { setRelicPhase("search"); return; }
+    const t = setTimeout(() => setHideTimer(s => s - 1), 1000);
+    return () => clearTimeout(t);
+  }, [relicPhase, hideTimer]);
+  return (
+    <>
+      <div style={{ background:"rgba(10,5,20,.8)",border:"1px solid rgba(201,168,76,.2)",borderRadius:4,padding:12,marginBottom:10 }}>
+        <div style={{ fontFamily:"'Cinzel',serif",fontSize:".6rem",letterSpacing:".12em",textTransform:"uppercase",color:"var(--gold2)",marginBottom:8 }}>🗿 The Relic — {relicPhase === "pick" ? "Choose Object" : relicPhase === "blindfold" ? "Players Blindfolding" : relicPhase === "hide" ? "Hide the Relic" : "Search Phase"}</div>
+        {relicPhase === "pick" && (<>
+          <div style={{ background:"rgba(201,168,76,.08)",border:"1px solid rgba(201,168,76,.25)",borderRadius:4,padding:"14px 16px",marginBottom:10,textAlign:"center" }}>
+            <div style={{ fontFamily:"'Cinzel',serif",fontSize:".58rem",letterSpacing:".12em",textTransform:"uppercase",color:"var(--gold2)",marginBottom:6 }}>The Object to Hide</div>
+            <div style={{ fontFamily:"'Cinzel Decorative',cursive",fontSize:"1.3rem",color:"var(--gold)" }}>{dmRelicObject}</div>
+          </div>
+          <div style={{ display:"flex",flexWrap:"wrap",gap:5,marginBottom:12 }}>
+            {RELIC_OBJECTS.map((o, i) => (<button key={i} className="btn btn-outline btn-sm" style={{ fontSize:".55rem",padding:"4px 8px" }} onClick={() => setDmRelicObject(o)}>{o}</button>))}
+          </div>
+          <button className="btn btn-gold" style={{ width:"100%" }} onClick={async () => { setRelicPhase("blindfold"); await save(gameId + "-relic-phase", "blindfold"); }}>
+            Object chosen — Blindfold everyone →
+          </button>
+        </>)}
+        {relicPhase === "blindfold" && (<>
+          <div style={{ background:"rgba(40,0,60,.2)",border:"1px solid rgba(120,0,180,.3)",borderRadius:4,padding:"16px",textAlign:"center",marginBottom:12 }}>
+            <div style={{ fontSize:"2rem",marginBottom:8 }}>🙈</div>
+            <div style={{ fontFamily:"'Cinzel Decorative',cursive",fontSize:"1rem",color:"#dd88ff",marginBottom:8 }}>Blindfolds On</div>
+            <div style={{ fontSize:".85rem",color:"var(--dim)",lineHeight:1.6 }}>Say: <em>"Blindfolds on, phones face-down. Nobody opens their eyes or moves until I say so."</em></div>
+          </div>
+          <button className="btn btn-crim" style={{ width:"100%" }} onClick={() => { setRelicPhase("hide"); setHideTimer(60); }}>
+            Everyone's blindfolded — Start hiding →
+          </button>
+        </>)}
+        {relicPhase === "hide" && (<>
+          <div style={{ background:"rgba(201,168,76,.08)",border:"1px solid rgba(201,168,76,.3)",borderRadius:4,padding:"16px",textAlign:"center",marginBottom:12 }}>
+            <div style={{ fontFamily:"'Cinzel Decorative',cursive",fontSize:"1rem",color:"var(--gold)",marginBottom:8 }}>Hide It Now</div>
+            <div style={{ fontFamily:"'Cinzel Decorative',cursive",fontSize:"3rem",color:hideTimer < 10 ? "var(--crim3)" : "var(--gold)" }}>{hideTimer}s</div>
+            <div style={{ fontSize:".78rem",color:"var(--dim)",marginTop:6,fontStyle:"italic" }}>Take the {dmRelicObject} somewhere it won't be obvious. Return to your spot before time runs out.</div>
+          </div>
+          {hideTimer <= 0 && <div style={{ color:"#80e080",textAlign:"center",fontSize:".85rem",fontFamily:"'Cinzel',serif" }}>✓ Time's up — back to your spot</div>}
+        </>)}
+        {relicPhase === "search" && (<>
+          <div style={{ background:"rgba(40,0,60,.15)",border:"1px solid rgba(120,0,180,.25)",borderRadius:4,padding:"14px",marginBottom:10 }}>
+            <div style={{ fontFamily:"'Cinzel Decorative',cursive",fontSize:"1rem",color:"#dd88ff",marginBottom:6 }}>Blindfolds Off — Search!</div>
+            <div style={{ fontSize:".85rem",color:"var(--dim)",lineHeight:1.6 }}>Say: <em>"Blindfolds off. Somewhere in this space is a hidden {dmRelicObject}. Find it. If you do — pocket it silently and say absolutely nothing."</em></div>
+          </div>
+          <div style={{ fontSize:".78rem",color:"var(--dim)",fontStyle:"italic" }}>The finder will come to you privately. You decide who won — regardless of the group vote. Award their shield silently.</div>
+        </>)}
+      </div>
+      {relicPhase === "search" && awardBar}
+    </>
+  );
+}
+
+// PLAYER: Forbidden Word ───────────────────────────────────────────────────────
+function PlayerForbiddenWordPanel({ gameId, myId }) {
+  const [myWord, setMyWord] = useState("loading…");
+  useEffect(() => {
+    load(gameId + "-fw-" + myId).then(w => { if (w) setMyWord(w); });
+  }, []);
+  return (
+    <div className="card" style={{ marginTop: 16, textAlign: "center", padding: "24px 20px" }}>
+      <div style={{ fontSize: "2.5rem", marginBottom: 10 }}>🚫</div>
+      <div style={{ fontFamily: "'Cinzel Decorative',cursive", fontSize: "1.1rem", color: "var(--gold)", marginBottom: 8 }}>Forbidden Word</div>
+      <div style={{ fontSize: ".9rem", color: "var(--dim)", fontStyle: "italic", marginBottom: 14 }}>You must NOT say this word. Try to make others say theirs.</div>
+      <div style={{ background: "rgba(139,26,26,.15)", border: "2px solid rgba(139,26,26,.4)", borderRadius: 6, padding: "14px 20px", display: "inline-block" }}>
+        <div style={{ fontFamily: "'Cinzel',serif", fontSize: ".6rem", color: "var(--crim3)", letterSpacing: ".15em", textTransform: "uppercase", marginBottom: 6 }}>Your Secret Word</div>
+        <div style={{ fontFamily: "'Cinzel Decorative',cursive", fontSize: "1.8rem", color: "var(--text)", letterSpacing: ".05em" }}>{myWord}</div>
+      </div>
+    </div>
+  );
+}
+
+// PLAYER: Secret Ballot ────────────────────────────────────────────────────────
+function PlayerSecretBallotPanel({ gameId, myId, alivePlayers }) {
+  const [voted, setVoted] = useState(null);
+  return (
+    <div className="card" style={{ marginTop: 16 }}>
+      <div className="ctitle">🗳️ Secret Ballot</div>
+      <div className="info-box" style={{ marginBottom: 14, textAlign: "center" }}>Who would you most want to protect? Your vote is completely private.</div>
+      {!voted ? (
+        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+          {alivePlayers.filter(pl => pl.id !== myId).map(pl => (
+            <button key={pl.id} className="btn btn-outline" onClick={async () => { await save(gameId + "-ballot-" + myId, pl.id); setVoted(pl.id); }}
+              style={{ textAlign: "left", padding: "10px 14px", display: "flex", alignItems: "center", gap: 10 }}>
+              <span style={{ fontSize: "1.2rem" }}>{pl.emoji}</span>
+              <span style={{ fontFamily: "'Cinzel',serif", fontSize: ".82rem" }}>{pl.name}</span>
+            </button>
+          ))}
+        </div>
+      ) : (
+        <div style={{ textAlign: "center", padding: "20px 0", color: "var(--gold)", fontFamily: "'Cinzel',serif", fontSize: ".85rem" }}>
+          ✓ Vote cast. Wait for the host to reveal results.
+        </div>
+      )}
+    </div>
+  );
+}
+
+// PLAYER: Midnight Auction ─────────────────────────────────────────────────────
+function PlayerAuctionPanel({ gameId, myId }) {
+  const [bid, setBid] = useState("");
+  const [submitted, setSubmitted] = useState(false);
+  return (
+    <div className="card" style={{ marginTop: 16, textAlign: "center", padding: "24px 20px" }}>
+      <div style={{ fontSize: "2.5rem", marginBottom: 10 }}>🏺</div>
+      <div style={{ fontFamily: "'Cinzel Decorative',cursive", fontSize: "1.1rem", color: "var(--gold)", marginBottom: 8 }}>Midnight Auction</div>
+      <div style={{ fontSize: ".9rem", color: "var(--dim)", fontStyle: "italic", marginBottom: 16 }}>Enter a number from 1 to 10. Highest unique bid wins. Nobody sees your bid until all are revealed.</div>
+      {!submitted ? (
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 10 }}>
+          <input type="number" min="1" max="10" value={bid} onChange={e => setBid(e.target.value)}
+            style={{ width: 80, padding: "12px", fontSize: "1.5rem", textAlign: "center", background: "rgba(255,255,255,.05)", border: "1px solid rgba(201,168,76,.3)", borderRadius: 4, color: "var(--gold)", fontFamily: "'Cinzel',serif" }} />
+          <button className="btn btn-gold" disabled={!bid || bid < 1 || bid > 10} onClick={async () => { await save(gameId + "-auction-bid-" + myId, Number(bid)); setSubmitted(true); }}>
+            Submit Bid
+          </button>
+        </div>
+      ) : (
+        <div style={{ color: "var(--gold)", fontFamily: "'Cinzel',serif" }}>✓ Bid of {bid} submitted. Sit tight.</div>
+      )}
+    </div>
+  );
+}
+
+// PLAYER: Hot Take ─────────────────────────────────────────────────────────────
+function PlayerHotTakePanel({ gameId, myId }) {
+  const [voted, setVoted] = useState(null);
+  const [takeText, setTakeText] = useState("Loading…");
+  useEffect(() => { load(gameId + "-hot-take").then(t => { if (t) setTakeText(t); }); }, []);
+  return (
+    <div className="card" style={{ marginTop: 16, textAlign: "center", padding: "24px 20px" }}>
+      <div style={{ fontSize: "2.5rem", marginBottom: 10 }}>🔥</div>
+      <div style={{ fontFamily: "'Cinzel Decorative',cursive", fontSize: "1.1rem", color: "var(--gold)", marginBottom: 14 }}>Hot Take</div>
+      <div style={{ background: "rgba(201,168,76,.08)", border: "1px solid rgba(201,168,76,.2)", borderRadius: 4, padding: "14px 16px", marginBottom: 16, fontSize: ".95rem", color: "var(--text)", fontStyle: "italic", lineHeight: 1.6 }}>"{takeText}"</div>
+      {!voted ? (
+        <div style={{ display: "flex", gap: 10, justifyContent: "center" }}>
+          <button className="btn btn-sm" style={{ background: "rgba(40,100,40,.4)", border: "1px solid rgba(60,160,60,.5)", color: "#80e080", padding: "12px 20px", fontSize: ".85rem" }}
+            onClick={async () => { await save(gameId + "-hottake-" + myId, "agree"); setVoted("agree"); }}>✓ Agree</button>
+          <button className="btn btn-sm" style={{ background: "rgba(100,20,20,.4)", border: "1px solid rgba(160,40,40,.5)", color: "var(--crim3)", padding: "12px 20px", fontSize: ".85rem" }}
+            onClick={async () => { await save(gameId + "-hottake-" + myId, "disagree"); setVoted("disagree"); }}>✗ Disagree</button>
+        </div>
+      ) : (
+        <div style={{ color: "var(--gold)", fontFamily: "'Cinzel',serif" }}>✓ Voted {voted}. Waiting for others.</div>
+      )}
+    </div>
+  );
+}
+
+// PLAYER: The Witness ──────────────────────────────────────────────────────────
+function PlayerWitnessPanel({ gameId, myId }) {
+  const [qs, setQs] = useState([]);
+  const [qIdx, setQIdx] = useState(0);
+  const [answers, setAnswers] = useState({});
+  const [done, setDone] = useState(false);
+  useEffect(() => { load(gameId + "-witness-qs").then(q => { if (q) setQs(q); }); }, []);
+  const q = qs[qIdx];
+  const submit = async (opt) => {
+    const newAnswers = { ...answers, [qIdx]: opt };
+    setAnswers(newAnswers);
+    await save(gameId + "-witness-ans-" + myId, newAnswers);
+    if (qIdx >= Math.min(qs.length, 5) - 1) setDone(true);
+    else setQIdx(i => i + 1);
+  };
+  return (
+    <div className="card" style={{ marginTop: 16 }}>
+      <div style={{ fontFamily: "'Cinzel Decorative',cursive", fontSize: ".9rem", color: "#dd88ff", textAlign: "center", marginBottom: 14 }}>👁️ The Witness</div>
+      {done ? (
+        <div style={{ textAlign: "center", padding: "20px 0", color: "var(--gold)", fontFamily: "'Cinzel',serif", fontSize: ".85rem" }}>
+          ✓ Your answers are in. The host is tallying scores.
+        </div>
+      ) : !q ? (
+        <div style={{ textAlign: "center", color: "var(--dim)", fontStyle: "italic" }}>Loading questions…</div>
+      ) : (
+        <>
+          <div style={{ fontFamily: "'Cinzel',serif", fontSize: ".58rem", color: "var(--dim)", marginBottom: 8 }}>Question {qIdx + 1} of {Math.min(qs.length, 5)}</div>
+          <div style={{ fontSize: ".95rem", color: "var(--text)", lineHeight: 1.6, marginBottom: 14, fontWeight: 600 }}>{q.q}</div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            {(q.opts ? q.opts() : [q.a]).map((opt, i) => (
+              <button key={i} className="btn btn-outline" onClick={() => submit(opt)}
+                style={{ textAlign: "left", padding: "10px 14px", borderColor: "rgba(120,0,180,.3)", color: "var(--text)" }}>
+                {opt}
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+// PLAYER: The Draw ─────────────────────────────────────────────────────────────
+function PlayerDrawPanel({ gameId, myId }) {
+  const [isWinner, setIsWinner] = useState(false);
+  useEffect(() => {
+    load(gameId + "-draw-winner").then(wid => { if (wid === myId) setIsWinner(true); });
+  }, []);
+  return (
+    <div className="card" style={{ marginTop: 16, textAlign: "center", padding: "28px 20px" }}>
+      <div style={{ fontSize: "2.5rem", marginBottom: 10 }}>🎴</div>
+      <div style={{ fontFamily: "'Cinzel Decorative',cursive", fontSize: "1.1rem", color: "var(--gold)", marginBottom: 12 }}>The Draw</div>
+      {isWinner ? (
+        <div style={{ background: "rgba(201,168,76,.1)", border: "2px solid rgba(201,168,76,.4)", borderRadius: 6, padding: "16px 20px" }}>
+          <div style={{ fontFamily: "'Cinzel',serif", fontSize: ".65rem", letterSpacing: ".15em", textTransform: "uppercase", color: "var(--gold2)", marginBottom: 8 }}>You have been chosen</div>
+          <div style={{ fontSize: "2rem", marginBottom: 6 }}>🛡️</div>
+          <div style={{ fontFamily: "'Cinzel',serif", fontSize: ".82rem", color: "var(--dim)", fontStyle: "italic" }}>Tell no one. The host will award your shield silently.</div>
+        </div>
+      ) : (
+        <div style={{ color: "var(--dim)", fontStyle: "italic", fontSize: ".9rem", lineHeight: 1.7 }}>
+          The castle chooses one player at random. Sit quietly. If it's you — you'll know.
+        </div>
+      )}
+    </div>
+  );
+}
+
+// PLAYER: Emoji Cipher ─────────────────────────────────────────────────────────
+function PlayerEmojiCipherPanel({ gameId }) {
+  const [emojiDisplay, setEmojiDisplay] = useState("…");
+  useEffect(() => {
+    load(gameId + "-emoji-cipher").then(e => { if (e) setEmojiDisplay(e); });
+  }, []);
+  return (
+    <div className="card" style={{ marginTop: 16, textAlign: "center", padding: "28px 20px" }}>
+      <div style={{ fontFamily: "'Cinzel Decorative',cursive", fontSize: "1rem", color: "var(--gold)", marginBottom: 16 }}>📱 Emoji Cipher</div>
+      <div style={{ fontSize: "3rem", letterSpacing: ".3em", margin: "0 auto 20px", padding: "16px", background: "rgba(255,255,255,.03)", border: "1px solid rgba(201,168,76,.15)", borderRadius: 6 }}>{emojiDisplay}</div>
+      <div style={{ color: "var(--dim)", fontStyle: "italic", fontSize: ".9rem", lineHeight: 1.7 }}>
+        Decode the emojis. If you know the answer —<br />whisper it to the host <em>immediately</em>.
+      </div>
+    </div>
+  );
+}
+
+// PLAYER: Name 5 in 30 ─────────────────────────────────────────────────────────
+function PlayerName5Panel({ gameId }) {
+  const [cat, setCat] = useState("…");
+  useEffect(() => {
+    const poll = () => load(gameId + "-name5-cat").then(c => { if (c) setCat(c); });
+    poll();
+    const t = setInterval(poll, 2000);
+    return () => clearInterval(t);
+  }, []);
+  return (
+    <div className="card" style={{ marginTop: 16, textAlign: "center", padding: "28px 20px" }}>
+      <div style={{ fontFamily: "'Cinzel Decorative',cursive", fontSize: "1rem", color: "var(--gold)", marginBottom: 16 }}>⏱️ Name 5 in 30</div>
+      <div style={{ background: "rgba(201,168,76,.08)", border: "1px solid rgba(201,168,76,.25)", borderRadius: 6, padding: "18px 20px", marginBottom: 16 }}>
+        <div style={{ fontFamily: "'Cinzel',serif", fontSize: ".62rem", letterSpacing: ".15em", textTransform: "uppercase", color: "var(--gold2)", marginBottom: 8 }}>Category</div>
+        <div style={{ fontFamily: "'Cinzel Decorative',cursive", fontSize: "1.2rem", color: "var(--gold)", lineHeight: 1.4 }}>{cat}</div>
+      </div>
+      <div style={{ color: "var(--dim)", fontStyle: "italic", fontSize: ".9rem" }}>
+        First to shout 5 valid answers wins the round.
+      </div>
+    </div>
+  );
+}
+
+// PLAYER: RPS Bracket ──────────────────────────────────────────────────────────
+function PlayerRpsBracketPanel({ gameId, myId, alivePlayers }) {
+  const [matchup, setMatchup] = useState(null);
+  useEffect(() => {
+    const poll = () => load(gameId + "-rps-matchup").then(m => { if (m) setMatchup(m); });
+    poll();
+    const t = setInterval(poll, 2000);
+    return () => clearInterval(t);
+  }, []);
+  return (
+    <div className="card" style={{ marginTop: 16, textAlign: "center", padding: "28px 20px" }}>
+      <div style={{ fontFamily: "'Cinzel Decorative',cursive", fontSize: "1rem", color: "var(--gold)", marginBottom: 16 }}>✊ Rock Paper Scissors</div>
+      {matchup?.p1 === myId || matchup?.p2 === myId ? (
+        <div style={{ background: "rgba(201,168,76,.1)", border: "2px solid rgba(201,168,76,.4)", borderRadius: 6, padding: "20px" }}>
+          <div style={{ fontFamily: "'Cinzel',serif", fontSize: ".65rem", letterSpacing: ".15em", textTransform: "uppercase", color: "var(--crim3)", marginBottom: 8 }}>⚔️ It's Your Turn</div>
+          <div style={{ fontSize: "1.5rem", marginBottom: 8 }}>
+            {alivePlayers.find(p => p.id === matchup.p1)?.emoji} vs {alivePlayers.find(p => p.id === matchup.p2)?.emoji}
+          </div>
+          <div style={{ fontFamily: "'Cinzel',serif", fontSize: ".85rem", color: "var(--text)" }}>
+            {alivePlayers.find(p => p.id === matchup.p1)?.name} vs {alivePlayers.find(p => p.id === matchup.p2)?.name}
+          </div>
+          <div style={{ color: "var(--dim)", fontStyle: "italic", fontSize: ".82rem", marginTop: 10 }}>Best of 3. Step forward when called.</div>
+        </div>
+      ) : (
+        <div style={{ color: "var(--dim)", fontStyle: "italic", fontSize: ".9rem", lineHeight: 1.7 }}>
+          {matchup ? `Current match: ${alivePlayers.find(p => p.id === matchup.p1)?.name} vs ${alivePlayers.find(p => p.id === matchup.p2)?.name}` : "Waiting for the host to call the next match…"}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// PLAYER: The Relic ────────────────────────────────────────────────────────────
+function PlayerRelicPanel({ gameId }) {
+  const [phase, setPhase] = useState("waiting");
+  useEffect(() => {
+    const poll = () => load(gameId + "-relic-phase").then(p => { if (p) setPhase(p); });
+    poll();
+    const t = setInterval(poll, 2000);
+    return () => clearInterval(t);
+  }, []);
+  return (
+    <div className="card" style={{ marginTop: 16, textAlign: "center", padding: "28px 20px" }}>
+      <div style={{ fontSize: "2.5rem", marginBottom: 10 }}>🗿</div>
+      <div style={{ fontFamily: "'Cinzel Decorative',cursive", fontSize: "1rem", color: "var(--gold)", marginBottom: 12 }}>The Relic</div>
+      {phase === "blindfold" || phase === "hide" ? (
+        <div style={{ background: "rgba(40,0,60,.2)", border: "1px solid rgba(120,0,180,.3)", borderRadius: 6, padding: "20px" }}>
+          <div style={{ fontFamily: "'Cinzel',serif", fontSize: ".65rem", letterSpacing: ".15em", textTransform: "uppercase", color: "#dd88ff", marginBottom: 10 }}>🙈 Blindfolds On</div>
+          <div style={{ fontSize: ".9rem", color: "var(--dim)", lineHeight: 1.7 }}>Eyes closed. Phone face-down. Don't move. Don't peek.<br /><em>The host is hiding something.</em></div>
+        </div>
+      ) : phase === "search" ? (
+        <div>
+          <div style={{ background: "rgba(201,168,76,.08)", border: "1px solid rgba(201,168,76,.25)", borderRadius: 6, padding: "18px 20px", marginBottom: 12 }}>
+            <div style={{ fontFamily: "'Cinzel Decorative',cursive", fontSize: "1rem", color: "var(--gold)", marginBottom: 8 }}>Blindfolds Off — Search</div>
+            <div style={{ fontSize: ".9rem", color: "var(--dim)", lineHeight: 1.7 }}>Somewhere in this space, a small object is hidden. Find it.<br /><br />If you find it — <strong style={{ color: "var(--gold)" }}>pocket it silently</strong> and say nothing. Act completely normal.<br /><br />After the search ends, the group will vote on who they think found it.</div>
+          </div>
+        </div>
+      ) : (
+        <div style={{ color: "var(--dim)", fontStyle: "italic", fontSize: ".9rem" }}>Waiting for the host to begin…</div>
+      )}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 function PhaseContent(props) {
 const { game, me, myId, gameId, isHost, isTraitor, isSecretTraitor, isSeer, canJoinTraitorChat, hasTraitorRole, alivePlayers, aliveTraitors, selectedTarget, setSelectedTarget, selectedMission, setSelectedMission, missionFilter, setMissionFilter, myRoom, updateRoom, timerSec, timerMax, timerRunning, timerClass, fmtTime, timerPct, startTimer, chatDraft, setChatDraft, traitorChats, chatRef, stChats, stChatDraft, setStChatDraft, sendStChat, seerChats, seerDraft, setSeerDraft, sendSeerChat, recruitChats, recruitDraft, setRecruitDraft, sendRecruitChat, shortlist, setShortlist, dayTally, hasVotedDay, hasVotedNight, breakfastGroupIdx, endgameChoice, hostStartMission, awardPower, advanceTo, hostBeginNight, hostEndSeerPhase, hostEndSecretTraitorPhase, submitRecruitTarget, acceptRecruitment, declineRecruitment, recruitTarget, setRecruitTarget, resolveNight, resolveBanishment, advanceBreakfastGroup, advanceFromBreakfast, revealBreakfast, submitDayVote, submitNightVote, submitTwoTraitorRecruitChoice, submitTwoTraitorTarget, submitShortlist, sendChat, submitEndgameVote, resetGame, goBackPhase, manualKillPlayer, manualRevivePlayer, avatars, releaseRoles, finishRoleReveal, stRevealPlayer, stAdvanceToNext, stSkipSelection, stRevealResult, phaseTimers, seerTarget, setSeerTarget, seerResult, useSeerPower, seerLocked, setSeerLocked, seerExplain,
   dmTriviaQ, setDmTriviaQ, dmTriviaScores, setDmTriviaScores, dmTriviaBank,
   dmBuzzerWinner, setDmBuzzerWinner, dmForbiddenWords, dmForbiddenElim, setDmForbiddenElim,
   dmAuctionBids, setDmAuctionBids, dmAuctionRevealed, setDmAuctionRevealed,
-  dmWhisperPhrase, dmEmojiIdx, dmName5Idx, dmName5Round, dmName5Scores,
+  dmWhisperPhrase, dmEmojiIdx, dmName5Idx, dmName5Round, dmName5Scores, setDmName5Scores, setDmName5Round,
+  castleMsg, addMsg, setGame, endGameFinal, revealEndgameVote,
   dmRpsBracket, setDmRpsBracket, dmRpsRound, dmHotTakeIdx, dmHotTakeVotes, setDmHotTakeVotes,
   dmDrawWinner, setDmDrawWinner, dmWitnessQs, dmWitnessQ, setDmWitnessQ,
   dmWitnessScores, setDmWitnessScores, dmSecretBallotVotes, setDmSecretBallotVotes,
@@ -357,49 +906,7 @@ Tapping Done — Release Roles →
             }
 
             if (m.digitalType === "secret_ballot") {
-              // Auto-poll votes every 3s
-              useEffect(() => {
-                const poll = async () => {
-                  const v = {};
-                  for (const pl of alivePlayers) {
-                    const vote = await load(gameId+"-ballot-"+pl.id);
-                    if (vote) v[pl.id] = vote;
-                  }
-                  setDmSecretBallotVotes(v);
-                };
-                poll();
-                const t = setInterval(poll, 3000);
-                return () => clearInterval(t);
-              }, []);
-              const votes = dmSecretBallotVotes;
-              const tally = {};
-              Object.values(votes).forEach(vid => { tally[vid] = (tally[vid]||0)+1; });
-              const topScore = Math.max(0,...Object.values(tally));
-              return (
-                <>
-                  <div style={{ background:"rgba(10,5,20,.8)",border:"1px solid rgba(201,168,76,.2)",borderRadius:4,padding:12,marginBottom:10 }}>
-                    <div style={{ fontFamily:"'Cinzel',serif",fontSize:".6rem",letterSpacing:".12em",textTransform:"uppercase",color:"var(--gold2)",marginBottom:8 }}>🗳️ Secret Ballot — {Object.keys(votes).length}/{alivePlayers.length} votes cast</div>
-                    <div style={{ fontSize:".82rem",color:"var(--dim)",fontStyle:"italic",marginBottom:10 }}>Players vote privately on their phones for who they'd most protect. Results visible only here.</div>
-                    <button className="btn btn-outline btn-sm" style={{ fontSize:".6rem",marginBottom:10 }} onClick={async()=>{
-                      const v = {};
-                      for (const pl of alivePlayers) {
-                        const vote = await load(gameId+"-ballot-"+pl.id);
-                        if (vote) v[pl.id] = vote;
-                      }
-                      setDmSecretBallotVotes(v);
-                    }}>🔄 Refresh Votes</button>
-                    <div style={{ display:"flex",flexDirection:"column",gap:4 }}>
-                      {alivePlayers.slice().sort((a,b)=>(tally[b.id]||0)-(tally[a.id]||0)).map(pl => (
-                        <div key={pl.id} style={{ display:"flex",justifyContent:"space-between",alignItems:"center",padding:"5px 8px",background:(tally[pl.id]||0)===topScore&&topScore>0?"rgba(201,168,76,.08)":"transparent",borderRadius:3 }}>
-                          <span style={{ color:"var(--dim)",fontSize:".82rem" }}>{pl.emoji} {pl.name}</span>
-                          <span style={{ color:"var(--gold)",fontFamily:"'Cinzel',serif",fontWeight:700,fontSize:".85rem" }}>{tally[pl.id]||0} votes</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                  <AwardBar />
-                </>
-              );
+              return <HostSecretBallotPanel gameId={gameId} alivePlayers={alivePlayers} dmSecretBallotVotes={dmSecretBallotVotes} setDmSecretBallotVotes={setDmSecretBallotVotes} awardBar={<AwardBar />} />;
             }
 
             if (m.digitalType === "forbidden_word") {
@@ -430,67 +937,7 @@ Tapping Done — Release Roles →
             }
 
             if (m.digitalType === "auction") {
-              return (
-                <>
-                  <div style={{ background:"rgba(10,5,20,.8)",border:"1px solid rgba(201,168,76,.2)",borderRadius:4,padding:12,marginBottom:10 }}>
-                    <div style={{ fontFamily:"'Cinzel',serif",fontSize:".6rem",letterSpacing:".12em",textTransform:"uppercase",color:"var(--gold2)",marginBottom:8 }}>🏺 Midnight Auction — {Object.keys(dmAuctionBids).length}/{alivePlayers.length} bids</div>
-                    {/* Auto-poll bid count */}
-                    {useEffect(() => {
-                      if (dmAuctionRevealed) return;
-                      const poll = async () => {
-                        let count = 0;
-                        for (const pl of alivePlayers) {
-                          const b = await load(gameId+"-auction-bid-"+pl.id);
-                          if (b != null) count++;
-                        }
-                        setDmAuctionBids(prev => ({ ...prev, _count: count }));
-                      };
-                      poll();
-                      const t = setInterval(poll, 2000);
-                      return () => clearInterval(t);
-                    }, [dmAuctionRevealed]) || null}
-                    <div style={{ fontSize:".82rem",color:"var(--dim)",fontStyle:"italic",marginBottom:10 }}>Players submit bids (1--10) on their phones. Once all bids are in, reveal simultaneously.</div>
-                    {!dmAuctionRevealed ? (
-                      <>
-                        <div style={{ display:"flex",flexWrap:"wrap",gap:6,marginBottom:10 }}>
-                          {alivePlayers.map(pl => (
-                            <div key={pl.id} style={{ background:dmAuctionBids[pl.id]!=null?"rgba(201,168,76,.1)":"rgba(255,255,255,.03)",border:"1px solid rgba(201,168,76,.2)",borderRadius:3,padding:"6px 10px",textAlign:"center" }}>
-                              <div style={{ fontSize:".9rem" }}>{pl.emoji}</div>
-                              <div style={{ fontFamily:"'Cinzel',serif",fontSize:".5rem",color:"var(--dim)" }}>{pl.name}</div>
-                              <div style={{ color:dmAuctionBids[pl.id]!=null?"var(--gold)":"var(--dim)",fontSize:".7rem",marginTop:2 }}>{dmAuctionBids[pl.id]!=null?"✓ Bid in":"waiting…"}</div>
-                            </div>
-                          ))}
-                        </div>
-                        <button className="btn btn-gold btn-sm" onClick={async()=>{
-                          const bids = {};
-                          for (const pl of alivePlayers) {
-                            const b = await load(gameId+"-auction-bid-"+pl.id);
-                            if (b != null) bids[pl.id] = b;
-                          }
-                          setDmAuctionBids(bids); setDmAuctionRevealed(true);
-                        }}>Reveal All Bids →</button>
-                      </>
-                    ) : (
-                      <>
-                        <div style={{ display:"flex",flexDirection:"column",gap:5,marginBottom:10 }}>
-                          {alivePlayers.slice().sort((a,b)=>(dmAuctionBids[b.id]||0)-(dmAuctionBids[a.id]||0)).map(pl => {
-                            const bid = dmAuctionBids[pl.id]||"?";
-                            const topBid = Math.max(...Object.values(dmAuctionBids).map(Number));
-                            const isWinner = Number(bid)===topBid;
-                            return (
-                              <div key={pl.id} style={{ display:"flex",justifyContent:"space-between",alignItems:"center",padding:"6px 10px",background:isWinner?"rgba(201,168,76,.12)":"rgba(255,255,255,.02)",borderRadius:3,border:isWinner?"1px solid rgba(201,168,76,.3)":"1px solid transparent" }}>
-                                <span style={{ color:"var(--dim)",fontSize:".82rem" }}>{pl.emoji} {pl.name}</span>
-                                <span style={{ color:isWinner?"var(--gold)":"var(--dim)",fontFamily:"'Cinzel',serif",fontWeight:isWinner?700:400,fontSize:".9rem" }}>{bid}{isWinner?" 🏆":""}</span>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </>
-                    )}
-                  </div>
-                  <AwardBar />
-                </>
-              );
+              return <HostAuctionPanel gameId={gameId} alivePlayers={alivePlayers} dmAuctionBids={dmAuctionBids} setDmAuctionBids={setDmAuctionBids} dmAuctionRevealed={dmAuctionRevealed} setDmAuctionRevealed={setDmAuctionRevealed} awardBar={<AwardBar />} />;
             }
 
             if (m.digitalType === "whisper_chain") {
@@ -585,110 +1032,11 @@ Tapping Done — Release Roles →
             }
 
             if (m.digitalType === "rps_bracket") {
-              const players = dmRpsBracket;
-              // Build current round matchups
-              const roundSize = Math.pow(2, Math.ceil(Math.log2(players.length)));
-              const padded = [...players, ...Array(roundSize-players.length).fill("bye")];
-              const matchups = [];
-              for(let i=0;i<padded.length;i+=2) matchups.push([padded[i],padded[i+1]]);
-              return (
-                <>
-                  <div style={{ background:"rgba(10,5,20,.8)",border:"1px solid rgba(201,168,76,.2)",borderRadius:4,padding:12,marginBottom:10 }}>
-                    <div style={{ fontFamily:"'Cinzel',serif",fontSize:".6rem",letterSpacing:".12em",textTransform:"uppercase",color:"var(--gold2)",marginBottom:8 }}>✊ Rock Paper Scissors Tournament — {players.length} players remaining</div>
-                    <div style={{ display:"flex",flexDirection:"column",gap:8,marginBottom:10 }}>
-                      {matchups.map(([a,b],i) => {
-                        const pa = alivePlayers.find(p=>p.id===a);
-                        const pb = alivePlayers.find(p=>p.id===b);
-                        if (!pa && !pb) return null;
-                        if (!pb || b==="bye") return (
-                          <div key={i} style={{ padding:"8px 10px",background:"rgba(201,168,76,.04)",borderRadius:3,fontSize:".78rem",color:"var(--dim)" }}>
-                            {pa?.emoji} {pa?.name} — advances automatically (bye)
-                          </div>
-                        );
-                        // Push this matchup to player phones
-                        useEffect(() => {
-                          if (pa && pb) save(gameId+"-rps-matchup", {p1:a, p2:b});
-                        }, [a, b]);
-                        return (
-                          <div key={i} style={{ background:"rgba(255,255,255,.03)",border:"1px solid rgba(255,255,255,.06)",borderRadius:3,padding:"10px 12px",display:"flex",alignItems:"center",gap:8 }}>
-                            <button onClick={()=>{ setDmRpsBracket(br=>br.filter(id=>id!==b)); save(gameId+"-rps-matchup", null); }}
-                              style={{ flex:1,background:"rgba(40,20,60,.6)",border:"1px solid rgba(120,60,180,.4)",borderRadius:3,padding:"8px",cursor:"pointer",color:"var(--text)",fontSize:".78rem",display:"flex",flexDirection:"column",alignItems:"center",gap:3 }}>
-                              <span style={{ fontSize:"1.2rem" }}>{pa?.emoji}</span>
-                              <span style={{ fontFamily:"'Cinzel',serif",fontSize:".55rem" }}>{pa?.name}</span>
-                              <span style={{ fontSize:".5rem",color:"#80e080" }}>← Wins</span>
-                            </button>
-                            <div style={{ fontFamily:"'Cinzel',serif",fontSize:".7rem",color:"var(--dim)" }}>vs</div>
-                            <button onClick={()=>{ setDmRpsBracket(br=>br.filter(id=>id!==a)); save(gameId+"-rps-matchup", null); }}
-                              style={{ flex:1,background:"rgba(40,20,60,.6)",border:"1px solid rgba(120,60,180,.4)",borderRadius:3,padding:"8px",cursor:"pointer",color:"var(--text)",fontSize:".78rem",display:"flex",flexDirection:"column",alignItems:"center",gap:3 }}>
-                              <span style={{ fontSize:"1.2rem" }}>{pb?.emoji}</span>
-                              <span style={{ fontFamily:"'Cinzel',serif",fontSize:".55rem" }}>{pb?.name}</span>
-                              <span style={{ fontSize:".5rem",color:"#80e080" }}>← Wins</span>
-                            </button>
-                          </div>
-                        );
-                      })}
-                    </div>
-                    {players.length===1 && (() => {
-                      const champ = alivePlayers.find(p=>p.id===players[0]);
-                      return <div style={{ textAlign:"center",padding:"10px",background:"rgba(201,168,76,.1)",borderRadius:3,fontFamily:"'Cinzel',serif",color:"var(--gold)" }}>🏆 Champion: {champ?.emoji} {champ?.name}</div>;
-                    })()}
-                  </div>
-                  <AwardBar />
-                </>
-              );
+              return <HostRpsBracketPanel gameId={gameId} alivePlayers={alivePlayers} dmRpsBracket={dmRpsBracket} setDmRpsBracket={setDmRpsBracket} awardBar={<AwardBar />} />;
             }
 
             if (m.digitalType === "hot_take") {
-              const take = HOT_TAKES[dmHotTakeIdx];
-              const votes = dmHotTakeVotes;
-              // Auto-poll votes every 3s
-              useEffect(() => {
-                const poll = async () => {
-                  const v = {};
-                  for (const pl of alivePlayers) {
-                    const vote = await load(gameId+"-hottake-"+pl.id);
-                    if (vote) v[pl.id] = vote;
-                  }
-                  setDmHotTakeVotes(v);
-                };
-                poll();
-                const t = setInterval(poll, 3000);
-                return () => clearInterval(t);
-              }, []);
-              const agree = Object.values(votes).filter(v=>v==="agree").length;
-              const disagree = Object.values(votes).filter(v=>v==="disagree").length;
-              const majority = agree > disagree ? "agree" : disagree > agree ? "disagree" : null;
-              return (
-                <>
-                  <div style={{ background:"rgba(10,5,20,.8)",border:"1px solid rgba(201,168,76,.2)",borderRadius:4,padding:12,marginBottom:10 }}>
-                    <div style={{ fontFamily:"'Cinzel',serif",fontSize:".6rem",letterSpacing:".12em",textTransform:"uppercase",color:"var(--gold2)",marginBottom:8 }}>🔥 Hot Take</div>
-                    <div style={{ background:"rgba(201,168,76,.08)",border:"1px solid rgba(201,168,76,.25)",borderRadius:4,padding:"14px 16px",marginBottom:12,fontSize:"1rem",color:"var(--text)",lineHeight:1.6,textAlign:"center",fontStyle:"italic" }}>"{take}"</div>
-                    <div style={{ display:"flex",gap:8,marginBottom:10,fontSize:".72rem",color:"var(--dim)" }}>
-                      <div style={{ flex:1,textAlign:"center",color:"#80e080" }}>✓ Agree: {agree}</div>
-                      <div style={{ flex:1,textAlign:"center",color:"var(--crim3)" }}>✗ Disagree: {disagree}</div>
-                      <div style={{ flex:1,textAlign:"center",color:"var(--dim)" }}>Waiting: {alivePlayers.length-Object.keys(votes).length}</div>
-                    </div>
-                    {majority && <div style={{ textAlign:"center",fontFamily:"'Cinzel',serif",fontSize:".75rem",color:majority==="agree"?"#80e080":"var(--crim3)",marginBottom:8 }}>Majority: {majority==="agree"?"AGREE ✓":"DISAGREE ✗"} — award shields to {majority} voters</div>}
-                    <div style={{ display:"flex",flexDirection:"column",gap:4,marginBottom:10 }}>
-                      {alivePlayers.map(pl=>(
-                        <div key={pl.id} style={{ display:"flex",justifyContent:"space-between",alignItems:"center",padding:"4px 8px",fontSize:".78rem" }}>
-                          <span style={{ color:"var(--dim)" }}>{pl.emoji} {pl.name}</span>
-                          <span style={{ color:votes[pl.id]==="agree"?"#80e080":votes[pl.id]==="disagree"?"var(--crim3)":"var(--dim)",fontStyle:!votes[pl.id]?"italic":"normal" }}>{votes[pl.id]||"waiting…"}</span>
-                        </div>
-                      ))}
-                    </div>
-                    <button className="btn btn-outline btn-sm" style={{ fontSize:".6rem" }} onClick={async()=>{
-                      const v = {};
-                      for (const pl of alivePlayers) {
-                        const vote = await load(gameId+"-hottake-"+pl.id);
-                        if (vote) v[pl.id] = vote;
-                      }
-                      setDmHotTakeVotes(v);
-                    }}>🔄 Refresh Votes</button>
-                  </div>
-                  <AwardBar />
-                </>
-              );
+              return <HostHotTakePanel gameId={gameId} alivePlayers={alivePlayers} dmHotTakeIdx={dmHotTakeIdx} dmHotTakeVotes={dmHotTakeVotes} setDmHotTakeVotes={setDmHotTakeVotes} awardBar={<AwardBar />} />;
             }
 
             if (m.digitalType === "the_draw") {
@@ -812,59 +1160,7 @@ Tapping Done — Release Roles →
             }
 
             if (m.digitalType === "the_relic") {
-              const [relicPhase, setRelicPhase] = useState("pick"); // pick → blindfold → hide → search
-              const [hideTimer, setHideTimer] = useState(60);
-              useEffect(() => {
-                if (relicPhase !== "hide") return;
-                if (hideTimer <= 0) { setRelicPhase("search"); return; }
-                const t = setTimeout(() => setHideTimer(s => s-1), 1000);
-                return () => clearTimeout(t);
-              }, [relicPhase, hideTimer]);
-              return (
-                <>
-                  <div style={{ background:"rgba(10,5,20,.8)",border:"1px solid rgba(201,168,76,.2)",borderRadius:4,padding:12,marginBottom:10 }}>
-                    <div style={{ fontFamily:"'Cinzel',serif",fontSize:".6rem",letterSpacing:".12em",textTransform:"uppercase",color:"var(--gold2)",marginBottom:8 }}>🗿 The Relic — {relicPhase==="pick"?"Choose Object":relicPhase==="blindfold"?"Players Blindfolding":relicPhase==="hide"?"Hide the Relic":("Search Phase")}</div>
-                    {relicPhase === "pick" && (<>
-                      <div style={{ background:"rgba(201,168,76,.08)",border:"1px solid rgba(201,168,76,.25)",borderRadius:4,padding:"14px 16px",marginBottom:10,textAlign:"center" }}>
-                        <div style={{ fontFamily:"'Cinzel',serif",fontSize:".58rem",letterSpacing:".12em",textTransform:"uppercase",color:"var(--gold2)",marginBottom:6 }}>The Object to Hide</div>
-                        <div style={{ fontFamily:"'Cinzel Decorative',cursive",fontSize:"1.3rem",color:"var(--gold)" }}>{dmRelicObject}</div>
-                      </div>
-                      <div style={{ display:"flex",flexWrap:"wrap",gap:5,marginBottom:12 }}>
-                        {RELIC_OBJECTS.map((o,i)=>(<button key={i} className="btn btn-outline btn-sm" style={{ fontSize:".55rem",padding:"4px 8px" }} onClick={()=>setDmRelicObject(o)}>{o}</button>))}
-                      </div>
-                      <button className="btn btn-gold" style={{ width:"100%" }} onClick={async()=>{ setRelicPhase("blindfold"); await save(gameId+"-relic-phase","blindfold"); }}>
-                        Object chosen — Blindfold everyone →
-                      </button>
-                    </>)}
-                    {relicPhase === "blindfold" && (<>
-                      <div style={{ background:"rgba(40,0,60,.2)",border:"1px solid rgba(120,0,180,.3)",borderRadius:4,padding:"16px",textAlign:"center",marginBottom:12 }}>
-                        <div style={{ fontSize:"2rem",marginBottom:8 }}>🙈</div>
-                        <div style={{ fontFamily:"'Cinzel Decorative',cursive",fontSize:"1rem",color:"#dd88ff",marginBottom:8 }}>Blindfolds On</div>
-                        <div style={{ fontSize:".85rem",color:"var(--dim)",lineHeight:1.6 }}>Say: <em>"Blindfolds on, phones face-down. Nobody opens their eyes or moves until I say so."</em></div>
-                      </div>
-                      <button className="btn btn-crim" style={{ width:"100%" }} onClick={()=>{ setRelicPhase("hide"); setHideTimer(60); }}>
-                        Everyone's blindfolded — Start hiding →
-                      </button>
-                    </>)}
-                    {relicPhase === "hide" && (<>
-                      <div style={{ background:"rgba(201,168,76,.08)",border:"1px solid rgba(201,168,76,.3)",borderRadius:4,padding:"16px",textAlign:"center",marginBottom:12 }}>
-                        <div style={{ fontFamily:"'Cinzel Decorative',cursive",fontSize:"1rem",color:"var(--gold)",marginBottom:8 }}>Hide It Now</div>
-                        <div style={{ fontFamily:"'Cinzel Decorative',cursive",fontSize:"3rem",color:hideTimer<10?"var(--crim3)":"var(--gold)" }}>{hideTimer}s</div>
-                        <div style={{ fontSize:".78rem",color:"var(--dim)",marginTop:6,fontStyle:"italic" }}>Take the {dmRelicObject} somewhere it won't be obvious. Return to your spot before time runs out.</div>
-                      </div>
-                      {hideTimer <= 0 && <div style={{ color:"#80e080",textAlign:"center",fontSize:".85rem",fontFamily:"'Cinzel',serif" }}>✓ Time's up — back to your spot</div>}
-                    </>)}
-                    {relicPhase === "search" && (<>
-                      <div style={{ background:"rgba(40,0,60,.15)",border:"1px solid rgba(120,0,180,.25)",borderRadius:4,padding:"14px",marginBottom:10 }}>
-                        <div style={{ fontFamily:"'Cinzel Decorative',cursive",fontSize:"1rem",color:"#dd88ff",marginBottom:6 }}>Blindfolds Off — Search!</div>
-                        <div style={{ fontSize:".85rem",color:"var(--dim)",lineHeight:1.6 }}>Say: <em>"Blindfolds off. Somewhere in this space is a hidden {dmRelicObject}. Find it. If you do — pocket it silently and say absolutely nothing."</em></div>
-                      </div>
-                      <div style={{ fontSize:".78rem",color:"var(--dim)",fontStyle:"italic" }}>The finder will come to you privately. You decide who won — regardless of the group vote. Award their shield silently.</div>
-                    </>)}
-                  </div>
-                  {relicPhase === "search" && <AwardBar />}
-                </>
-              );
+              return <HostRelicPanel gameId={gameId} dmRelicObject={dmRelicObject} setDmRelicObject={setDmRelicObject} awardBar={<AwardBar />} />;
             }
 
             // Default (analog) mission panel
@@ -1623,266 +1919,52 @@ Tapping Done — Release Roles →
 
     // ── Forbidden Word: show player's secret word ──
     if (m.digitalType === "forbidden_word") {
-      const [myWord, setMyWord] = useState("loading…");
-      useEffect(() => {
-        load(gameId + "-fw-" + myId).then(w => { if (w) setMyWord(w); });
-      }, []);
-      return (
-        <div className="card" style={{ marginTop: 16, textAlign: "center", padding: "24px 20px" }}>
-          <div style={{ fontSize: "2.5rem", marginBottom: 10 }}>🚫</div>
-          <div style={{ fontFamily: "'Cinzel Decorative',cursive", fontSize: "1.1rem", color: "var(--gold)", marginBottom: 8 }}>Forbidden Word</div>
-          <div style={{ fontSize: ".9rem", color: "var(--dim)", fontStyle: "italic", marginBottom: 14 }}>You must NOT say this word. Try to make others say theirs.</div>
-          <div style={{ background: "rgba(139,26,26,.15)", border: "2px solid rgba(139,26,26,.4)", borderRadius: 6, padding: "14px 20px", display: "inline-block" }}>
-            <div style={{ fontFamily: "'Cinzel',serif", fontSize: ".6rem", color: "var(--crim3)", letterSpacing: ".15em", textTransform: "uppercase", marginBottom: 6 }}>Your Secret Word</div>
-            <div style={{ fontFamily: "'Cinzel Decorative',cursive", fontSize: "1.8rem", color: "var(--text)", letterSpacing: ".05em" }}>{myWord}</div>
-          </div>
-        </div>
-      );
+      return <PlayerForbiddenWordPanel gameId={gameId} myId={myId} />;
     }
 
     // ── Secret Ballot: vote on phone ──
     if (m.digitalType === "secret_ballot") {
-      const [voted, setVoted] = useState(null);
-      return (
-        <div className="card" style={{ marginTop: 16 }}>
-          <div className="ctitle">🗳️ Secret Ballot</div>
-          <div className="info-box" style={{ marginBottom: 14, textAlign: "center" }}>Who would you most want to protect? Your vote is completely private.</div>
-          {!voted ? (
-            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-              {alivePlayers.filter(pl=>pl.id!==myId).map(pl => (
-                <button key={pl.id} className="btn btn-outline" onClick={async()=>{ await save(gameId+"-ballot-"+myId, pl.id); setVoted(pl.id); }}
-                  style={{ textAlign:"left",padding:"10px 14px",display:"flex",alignItems:"center",gap:10 }}>
-                  <span style={{ fontSize:"1.2rem" }}>{pl.emoji}</span>
-                  <span style={{ fontFamily:"'Cinzel',serif",fontSize:".82rem" }}>{pl.name}</span>
-                </button>
-              ))}
-            </div>
-          ) : (
-            <div style={{ textAlign:"center",padding:"20px 0",color:"var(--gold)",fontFamily:"'Cinzel',serif",fontSize:".85rem" }}>
-              ✓ Vote cast. Wait for the host to reveal results.
-            </div>
-          )}
-        </div>
-      );
+      return <PlayerSecretBallotPanel gameId={gameId} myId={myId} alivePlayers={alivePlayers} />;
     }
 
     // ── Midnight Auction: submit bid on phone ──
     if (m.digitalType === "auction") {
-      const [bid, setBid] = useState("");
-      const [submitted, setSubmitted] = useState(false);
-      return (
-        <div className="card" style={{ marginTop: 16, textAlign: "center", padding: "24px 20px" }}>
-          <div style={{ fontSize: "2.5rem", marginBottom: 10 }}>🏺</div>
-          <div style={{ fontFamily: "'Cinzel Decorative',cursive", fontSize: "1.1rem", color: "var(--gold)", marginBottom: 8 }}>Midnight Auction</div>
-          <div style={{ fontSize: ".9rem", color: "var(--dim)", fontStyle: "italic", marginBottom: 16 }}>Enter a number from 1 to 10. Highest unique bid wins. Nobody sees your bid until all are revealed.</div>
-          {!submitted ? (
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 10 }}>
-              <input type="number" min="1" max="10" value={bid} onChange={e=>setBid(e.target.value)}
-                style={{ width:80,padding:"12px",fontSize:"1.5rem",textAlign:"center",background:"rgba(255,255,255,.05)",border:"1px solid rgba(201,168,76,.3)",borderRadius:4,color:"var(--gold)",fontFamily:"'Cinzel',serif" }} />
-              <button className="btn btn-gold" disabled={!bid||bid<1||bid>10} onClick={async()=>{ await save(gameId+"-auction-bid-"+myId, Number(bid)); setSubmitted(true); }}>
-                Submit Bid
-              </button>
-            </div>
-          ) : (
-            <div style={{ color:"var(--gold)",fontFamily:"'Cinzel',serif" }}>✓ Bid of {bid} submitted. Sit tight.</div>
-          )}
-        </div>
-      );
+      return <PlayerAuctionPanel gameId={gameId} myId={myId} />;
     }
 
     // ── Hot Take: vote agree/disagree ──
     if (m.digitalType === "hot_take") {
-      const [voted, setVoted] = useState(null);
-      const [takeText, setTakeText] = useState("Loading…");
-      useEffect(() => { load(gameId+"-hot-take").then(t=>{ if(t) setTakeText(t); }); }, []);
-      return (
-        <div className="card" style={{ marginTop: 16, textAlign: "center", padding: "24px 20px" }}>
-          <div style={{ fontSize: "2.5rem", marginBottom: 10 }}>🔥</div>
-          <div style={{ fontFamily: "'Cinzel Decorative',cursive", fontSize: "1.1rem", color: "var(--gold)", marginBottom: 14 }}>Hot Take</div>
-          <div style={{ background:"rgba(201,168,76,.08)",border:"1px solid rgba(201,168,76,.2)",borderRadius:4,padding:"14px 16px",marginBottom:16,fontSize:".95rem",color:"var(--text)",fontStyle:"italic",lineHeight:1.6 }}>"{takeText}"</div>
-          {!voted ? (
-            <div style={{ display:"flex",gap:10,justifyContent:"center" }}>
-              <button className="btn btn-sm" style={{ background:"rgba(40,100,40,.4)",border:"1px solid rgba(60,160,60,.5)",color:"#80e080",padding:"12px 20px",fontSize:".85rem" }}
-                onClick={async()=>{ await save(gameId+"-hottake-"+myId,"agree"); setVoted("agree"); }}>✓ Agree</button>
-              <button className="btn btn-sm" style={{ background:"rgba(100,20,20,.4)",border:"1px solid rgba(160,40,40,.5)",color:"var(--crim3)",padding:"12px 20px",fontSize:".85rem" }}
-                onClick={async()=>{ await save(gameId+"-hottake-"+myId,"disagree"); setVoted("disagree"); }}>✗ Disagree</button>
-            </div>
-          ) : (
-            <div style={{ color:"var(--gold)",fontFamily:"'Cinzel',serif" }}>✓ Voted {voted}. Waiting for others.</div>
-          )}
-        </div>
-      );
+      return <PlayerHotTakePanel gameId={gameId} myId={myId} />;
     }
 
     // ── The Witness: answer questions privately ──
     if (m.digitalType === "the_witness") {
-      const [qs, setQs] = useState([]);
-      const [qIdx, setQIdx] = useState(0);
-      const [answers, setAnswers] = useState({});
-      const [done, setDone] = useState(false);
-      useEffect(() => { load(gameId+"-witness-qs").then(q=>{ if(q) setQs(q); }); }, []);
-      const q = qs[qIdx];
-      const submit = async (opt) => {
-        const newAnswers = {...answers, [qIdx]: opt};
-        setAnswers(newAnswers);
-        await save(gameId+"-witness-ans-"+myId, newAnswers);
-        if (qIdx >= Math.min(qs.length,5)-1) setDone(true);
-        else setQIdx(i=>i+1);
-      };
-      return (
-        <div className="card" style={{ marginTop: 16 }}>
-          <div style={{ fontFamily:"'Cinzel Decorative',cursive",fontSize:".9rem",color:"#dd88ff",textAlign:"center",marginBottom:14 }}>👁️ The Witness</div>
-          {done ? (
-            <div style={{ textAlign:"center",padding:"20px 0",color:"var(--gold)",fontFamily:"'Cinzel',serif",fontSize:".85rem" }}>
-              ✓ Your answers are in. The host is tallying scores.
-            </div>
-          ) : !q ? (
-            <div style={{ textAlign:"center",color:"var(--dim)",fontStyle:"italic" }}>Loading questions…</div>
-          ) : (
-            <>
-              <div style={{ fontFamily:"'Cinzel',serif",fontSize:".58rem",color:"var(--dim)",marginBottom:8 }}>Question {qIdx+1} of {Math.min(qs.length,5)}</div>
-              <div style={{ fontSize:".95rem",color:"var(--text)",lineHeight:1.6,marginBottom:14,fontWeight:600 }}>{q.q}</div>
-              <div style={{ display:"flex",flexDirection:"column",gap:8 }}>
-                {(q.opts ? q.opts() : [q.a]).map((opt,i) => (
-                  <button key={i} className="btn btn-outline" onClick={()=>submit(opt)}
-                    style={{ textAlign:"left",padding:"10px 14px",borderColor:"rgba(120,0,180,.3)",color:"var(--text)" }}>
-                    {opt}
-                  </button>
-                ))}
-              </div>
-            </>
-          )}
-        </div>
-      );
+      return <PlayerWitnessPanel gameId={gameId} myId={myId} />;
     }
 
     // ── The Draw: show winner notification to the winner only ──
     if (m.digitalType === "the_draw") {
-      const [isWinner, setIsWinner] = useState(false);
-      useEffect(() => {
-        load(gameId + "-draw-winner").then(wid => { if (wid === myId) setIsWinner(true); });
-      }, []);
-      return (
-        <div className="card" style={{ marginTop: 16, textAlign: "center", padding: "28px 20px" }}>
-          <div style={{ fontSize: "2.5rem", marginBottom: 10 }}>🎴</div>
-          <div style={{ fontFamily: "'Cinzel Decorative',cursive", fontSize: "1.1rem", color: "var(--gold)", marginBottom: 12 }}>The Draw</div>
-          {isWinner ? (
-            <div style={{ background: "rgba(201,168,76,.1)", border: "2px solid rgba(201,168,76,.4)", borderRadius: 6, padding: "16px 20px" }}>
-              <div style={{ fontFamily: "'Cinzel',serif", fontSize: ".65rem", letterSpacing: ".15em", textTransform: "uppercase", color: "var(--gold2)", marginBottom: 8 }}>You have been chosen</div>
-              <div style={{ fontSize: "2rem", marginBottom: 6 }}>🛡️</div>
-              <div style={{ fontFamily: "'Cinzel',serif", fontSize: ".82rem", color: "var(--dim)", fontStyle: "italic" }}>Tell no one. The host will award your shield silently.</div>
-            </div>
-          ) : (
-            <div style={{ color: "var(--dim)", fontStyle: "italic", fontSize: ".9rem", lineHeight: 1.7 }}>
-              The castle chooses one player at random. Sit quietly. If it's you — you'll know.
-            </div>
-          )}
-        </div>
-      );
+      return <PlayerDrawPanel gameId={gameId} myId={myId} />;
     }
 
     // ── Emoji Cipher: show the emoji on player phones ──
     if (m.digitalType === "emoji_cipher") {
-      const [emojiDisplay, setEmojiDisplay] = useState("…");
-      useEffect(() => {
-        load(gameId + "-emoji-cipher").then(e => { if (e) setEmojiDisplay(e); });
-      }, []);
-      return (
-        <div className="card" style={{ marginTop: 16, textAlign: "center", padding: "28px 20px" }}>
-          <div style={{ fontFamily: "'Cinzel Decorative',cursive", fontSize: "1rem", color: "var(--gold)", marginBottom: 16 }}>📱 Emoji Cipher</div>
-          <div style={{ fontSize: "3rem", letterSpacing: ".3em", margin: "0 auto 20px", padding: "16px", background: "rgba(255,255,255,.03)", border: "1px solid rgba(201,168,76,.15)", borderRadius: 6 }}>{emojiDisplay}</div>
-          <div style={{ color: "var(--dim)", fontStyle: "italic", fontSize: ".9rem", lineHeight: 1.7 }}>
-            Decode the emojis. If you know the answer —<br />whisper it to the host <em>immediately</em>.
-          </div>
-        </div>
-      );
+      return <PlayerEmojiCipherPanel gameId={gameId} />;
     }
 
     // ── Name 5 in 30: show current category on player phones ──
     if (m.digitalType === "name5") {
-      const [cat, setCat] = useState("…");
-      useEffect(() => {
-        const poll = () => load(gameId + "-name5-cat").then(c => { if (c) setCat(c); });
-        poll();
-        const t = setInterval(poll, 2000);
-        return () => clearInterval(t);
-      }, []);
-      return (
-        <div className="card" style={{ marginTop: 16, textAlign: "center", padding: "28px 20px" }}>
-          <div style={{ fontFamily: "'Cinzel Decorative',cursive", fontSize: "1rem", color: "var(--gold)", marginBottom: 16 }}>⏱️ Name 5 in 30</div>
-          <div style={{ background: "rgba(201,168,76,.08)", border: "1px solid rgba(201,168,76,.25)", borderRadius: 6, padding: "18px 20px", marginBottom: 16 }}>
-            <div style={{ fontFamily: "'Cinzel',serif", fontSize: ".62rem", letterSpacing: ".15em", textTransform: "uppercase", color: "var(--gold2)", marginBottom: 8 }}>Category</div>
-            <div style={{ fontFamily: "'Cinzel Decorative',cursive", fontSize: "1.2rem", color: "var(--gold)", lineHeight: 1.4 }}>{cat}</div>
-          </div>
-          <div style={{ color: "var(--dim)", fontStyle: "italic", fontSize: ".9rem" }}>
-            First to shout 5 valid answers wins the round.
-          </div>
-        </div>
-      );
+      return <PlayerName5Panel gameId={gameId} />;
     }
 
     // ── RPS Bracket: show current matchup on player phones ──
     if (m.digitalType === "rps_bracket") {
-      const [matchup, setMatchup] = useState(null);
-      useEffect(() => {
-        const poll = () => load(gameId + "-rps-matchup").then(m => { if (m) setMatchup(m); });
-        poll();
-        const t = setInterval(poll, 2000);
-        return () => clearInterval(t);
-      }, []);
-      return (
-        <div className="card" style={{ marginTop: 16, textAlign: "center", padding: "28px 20px" }}>
-          <div style={{ fontFamily: "'Cinzel Decorative',cursive", fontSize: "1rem", color: "var(--gold)", marginBottom: 16 }}>✊ Rock Paper Scissors</div>
-          {matchup?.p1 === myId || matchup?.p2 === myId ? (
-            <div style={{ background: "rgba(201,168,76,.1)", border: "2px solid rgba(201,168,76,.4)", borderRadius: 6, padding: "20px" }}>
-              <div style={{ fontFamily: "'Cinzel',serif", fontSize: ".65rem", letterSpacing: ".15em", textTransform: "uppercase", color: "var(--crim3)", marginBottom: 8 }}>⚔️ It's Your Turn</div>
-              <div style={{ fontSize: "1.5rem", marginBottom: 8 }}>
-                {alivePlayers.find(p=>p.id===matchup.p1)?.emoji} vs {alivePlayers.find(p=>p.id===matchup.p2)?.emoji}
-              </div>
-              <div style={{ fontFamily: "'Cinzel',serif", fontSize: ".85rem", color: "var(--text)" }}>
-                {alivePlayers.find(p=>p.id===matchup.p1)?.name} vs {alivePlayers.find(p=>p.id===matchup.p2)?.name}
-              </div>
-              <div style={{ color: "var(--dim)", fontStyle: "italic", fontSize: ".82rem", marginTop: 10 }}>Best of 3. Step forward when called.</div>
-            </div>
-          ) : (
-            <div style={{ color: "var(--dim)", fontStyle: "italic", fontSize: ".9rem", lineHeight: 1.7 }}>
-              {matchup ? `Current match: ${alivePlayers.find(p=>p.id===matchup.p1)?.name} vs ${alivePlayers.find(p=>p.id===matchup.p2)?.name}` : "Waiting for the host to call the next match…"}
-            </div>
-          )}
-        </div>
-      );
+      return <PlayerRpsBracketPanel gameId={gameId} myId={myId} alivePlayers={alivePlayers} />;
     }
 
     // ── The Relic: phase-aware player screen ──
     if (m.digitalType === "the_relic") {
-      const [phase, setPhase] = useState("waiting");
-      useEffect(() => {
-        const poll = () => load(gameId+"-relic-phase").then(p => { if (p) setPhase(p); });
-        poll();
-        const t = setInterval(poll, 2000);
-        return () => clearInterval(t);
-      }, []);
-      return (
-        <div className="card" style={{ marginTop:16, textAlign:"center", padding:"28px 20px" }}>
-          <div style={{ fontSize:"2.5rem",marginBottom:10 }}>🗿</div>
-          <div style={{ fontFamily:"'Cinzel Decorative',cursive",fontSize:"1rem",color:"var(--gold)",marginBottom:12 }}>The Relic</div>
-          {phase === "blindfold" || phase === "hide" ? (
-            <div style={{ background:"rgba(40,0,60,.2)",border:"1px solid rgba(120,0,180,.3)",borderRadius:6,padding:"20px" }}>
-              <div style={{ fontFamily:"'Cinzel',serif",fontSize:".65rem",letterSpacing:".15em",textTransform:"uppercase",color:"#dd88ff",marginBottom:10 }}>🙈 Blindfolds On</div>
-              <div style={{ fontSize:".9rem",color:"var(--dim)",lineHeight:1.7 }}>Eyes closed. Phone face-down. Don't move. Don't peek.<br /><em>The host is hiding something.</em></div>
-            </div>
-          ) : phase === "search" ? (
-            <div>
-              <div style={{ background:"rgba(201,168,76,.08)",border:"1px solid rgba(201,168,76,.25)",borderRadius:6,padding:"18px 20px",marginBottom:12 }}>
-                <div style={{ fontFamily:"'Cinzel Decorative',cursive",fontSize:"1rem",color:"var(--gold)",marginBottom:8 }}>Blindfolds Off — Search</div>
-                <div style={{ fontSize:".9rem",color:"var(--dim)",lineHeight:1.7 }}>Somewhere in this space, a small object is hidden. Find it.<br /><br />If you find it — <strong style={{ color:"var(--gold)" }}>pocket it silently</strong> and say nothing. Act completely normal.<br /><br />After the search ends, the group will vote on who they think found it.</div>
-              </div>
-            </div>
-          ) : (
-            <div style={{ color:"var(--dim)",fontStyle:"italic",fontSize:".9rem" }}>Waiting for the host to begin…</div>
-          )}
-        </div>
-      );
+      return <PlayerRelicPanel gameId={gameId} />;
     }
 
     // Default player view (analog missions)
