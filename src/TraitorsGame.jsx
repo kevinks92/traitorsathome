@@ -1086,6 +1086,15 @@ const votes = g.dayVotes || {};
 const daggerPid = g.daggerActivePlayerId || null;
 const tieBreakRound = g.tieBreakRound || 0;
 const tieLockedIds = g.tieLockedIds || [];
+
+// Guard: if no votes were cast at all (e.g. dev mode with no players), treat as no-result
+// and restart voting rather than looping through three empty tie rounds.
+if (!Object.keys(votes).length) {
+  await addMsg(gameId, { type: "system", text: "⚖️ No votes were recorded. The floor reopens." });
+  await advanceTo(PHASES.VOTING, { dayVotes: {}, daggerActivePlayerId: null, tieBreakRound: 0, tieLockedIds: [] });
+  return;
+}
+
 const tally = {};
 Object.entries(votes).forEach(([vId, tId]) => {
 const w = (daggerPid && vId === daggerPid) ? 2 : 1;
@@ -1137,6 +1146,12 @@ if (isTie) {
 const tieReset = { tieBreakRound: 0, tieLockedIds: [] };
 const banId = sorted[0][0];
 const ban = g.players.find(p => p.id === banId);
+// Guard: voted-for player no longer exists (stale vote from a previously removed player)
+if (!ban) {
+  await addMsg(gameId, { type: "system", text: "⚖️ The banishment target could not be found. The vote restarts." });
+  await advanceTo(PHASES.VOTING, { dayVotes: {}, daggerActivePlayerId: null, tieBreakRound: 0, tieLockedIds: [] });
+  return;
+}
 // Dagger is consumed when used
 const daggerUsed = daggerPid != null;
 const newPlayers = g.players.map(p => {
@@ -1526,12 +1541,16 @@ const devAdvanceFakePlayers = async () => {
   const aliveAll = (g.players || []).filter(p => p.alive);
 
   if (g.phase === PHASES.VOTING) {
-    // Fake players vote for a random alive real player
-    const aliveReal = aliveAll.filter(p => !p.isFake);
+    // Fake players each vote for a random alive player that isn't themselves and isn't the host.
+    // Using all alive players (not just non-fake) so this works in pure dev-mode where the
+    // host is not in game.players — otherwise aliveReal would be empty and no votes would be cast.
     const newVotes = { ...(g.dayVotes || {}) };
     for (const fp of fakePlayers) {
-      if (!newVotes[fp.id] && aliveReal.length > 0) {
-        newVotes[fp.id] = aliveReal[Math.floor(Math.random() * aliveReal.length)].id;
+      if (!newVotes[fp.id]) {
+        const targets = aliveAll.filter(p => p.id !== fp.id && p.id !== myId);
+        if (targets.length > 0) {
+          newVotes[fp.id] = targets[Math.floor(Math.random() * targets.length)].id;
+        }
       }
     }
     const updated = { ...g, dayVotes: newVotes };

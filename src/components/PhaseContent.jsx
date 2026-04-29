@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { GoldFrame } from "./GoldFrame.jsx";
 import { RoleCard } from "./RoleCard.jsx";
 import { BanishReveal } from "./BanishReveal.jsx";
@@ -13,6 +13,47 @@ import { MISSIONS, TRIVIA_BANK, NAME5_CATEGORIES, EMOJI_CIPHERS,
          WHISPER_PHRASES, LAST_WORD_CATEGORIES, RELIC_OBJECTS, HOT_TAKES } from "../constants/content.js";
 import { SHIELD_MODE_LABELS, EMOJIS, genId, getEmoji, shuffleArray, shuffle } from "../utils/gameUtils.js";
 import { generateWitnessQuestions } from "../utils/gameUtils.js";
+
+// ── Objective vs subjective mission helpers ───────────────────────────────────
+// Objective missions have app-tracked scores → auto-award top performers.
+// Subjective missions are judged by the host → manual award grid.
+function isObjectiveMission(digitalType) {
+  return ["trivia_scored", "trivia_buzzer", "secret_ballot", "auction", "name5", "rps_bracket"].includes(digitalType);
+}
+
+// Returns players sorted by score descending, as [{ player, score }] entries.
+function getObjectiveRanking(digitalType, { dmTriviaScores, dmSecretBallotVotes, dmAuctionBids, dmName5Scores, dmRpsBracket, alivePlayers }) {
+  if (digitalType === "trivia_scored" || digitalType === "trivia_buzzer") {
+    return alivePlayers
+      .map(p => ({ player: p, score: dmTriviaScores[p.id] || 0 }))
+      .sort((a, b) => b.score - a.score);
+  }
+  if (digitalType === "secret_ballot") {
+    const tally = {};
+    Object.values(dmSecretBallotVotes || {}).forEach(vid => { tally[vid] = (tally[vid] || 0) + 1; });
+    return alivePlayers
+      .map(p => ({ player: p, score: tally[p.id] || 0 }))
+      .sort((a, b) => b.score - a.score);
+  }
+  if (digitalType === "auction") {
+    return alivePlayers
+      .map(p => ({ player: p, score: Number(dmAuctionBids[p.id]) || 0 }))
+      .sort((a, b) => b.score - a.score);
+  }
+  if (digitalType === "name5") {
+    return alivePlayers
+      .map(p => ({ player: p, score: dmName5Scores[p.id] || 0 }))
+      .sort((a, b) => b.score - a.score);
+  }
+  if (digitalType === "rps_bracket") {
+    if (dmRpsBracket.length === 1) {
+      const champ = alivePlayers.find(p => p.id === dmRpsBracket[0]);
+      if (champ) return [{ player: champ, score: 1 }];
+    }
+    return []; // tournament still in progress
+  }
+  return [];
+}
 
 // ── Extracted mission sub-components (React hooks compliance) ─────────────────
 // Each branch that calls hooks must be its own named component so that hooks
@@ -582,7 +623,11 @@ const pt = phaseTimers || PHASE_TIMERS; // scaled timers for this game
 const isRecruitTarget = game.recruitTargetId === myId;
 const p = game.phase;
 const instr = PHASE_INSTRUCTIONS[p];
-const quip = p === PHASES.LOBBY ? "" : getQuip([PHASES.NIGHT_SEQUESTER, PHASES.NIGHT_SEER, PHASES.NIGHT_RECRUIT, PHASES.NIGHT_RECRUIT_RESPONSE, PHASES.NIGHT_SECRET_TRAITOR, PHASES.NIGHT_TRAITOR_CHAT].includes(p) ? "night_sequester" : p === PHASES.BREAKFAST ? "breakfast" : p.replace("_", " ").split(" ")[0].toLowerCase() || p);
+// Memoise the quip so it doesn't re-roll on every poll-driven re-render —
+// only pick a new one when the phase actually changes.
+const quip = useMemo(() =>
+  p === PHASES.LOBBY ? "" : getQuip([PHASES.NIGHT_SEQUESTER, PHASES.NIGHT_SEER, PHASES.NIGHT_RECRUIT, PHASES.NIGHT_RECRUIT_RESPONSE, PHASES.NIGHT_SECRET_TRAITOR, PHASES.NIGHT_TRAITOR_CHAT].includes(p) ? "night_sequester" : p === PHASES.BREAKFAST ? "breakfast" : p.replace("_", " ").split(" ")[0].toLowerCase() || p)
+, [p]);
 const nightVoteCount = Object.keys(game.nightVotes || {}).length;
 const dayVoteCount = Object.keys(game.dayVotes || {}).length;
 const breakfastGroups = game.breakfastGroups || [];
@@ -801,27 +846,86 @@ Tapping Done — Release Roles →
             const awardLabel = isDaggerMission ? "🗡️ Dagger Mission — Award the Dagger" : isSeerMission ? "👁️ Seer Mission — Award the Seer Power (secretly)" : `🛡️ Award up to ${seededShieldCount} Shield${seededShieldCount > 1 ? "s" : ""} (max 25% of ${alive} players)`;
 
             // ── Award bar (used at bottom of every digital mission) ──
-            const AwardBar = () => (
-              <div style={{ marginTop: 10 }}>
-                {isDaggerMission && <div style={{ background:"rgba(139,26,26,.1)",border:"1px solid rgba(139,26,26,.35)",borderRadius:3,padding:"7px 10px",marginBottom:8,fontSize:".78rem",color:"var(--crim3)" }}>🗡️ Dagger Mission — award the Dagger to the winner silently.</div>}
-                {isSeerMission && <div style={{ background:"rgba(60,0,90,.15)",border:"1px solid rgba(120,0,180,.3)",borderRadius:3,padding:"7px 10px",marginBottom:8,fontSize:".78rem",color:"#dd88ff" }}>👁️ Seer Mission — award Seer silently. They will be notified privately.</div>}
-                {daggerAlreadyGone && <div style={{ fontSize:".75rem",color:"var(--dim)",marginBottom:6,fontStyle:"italic" }}>🗡️ Dagger already awarded — award a shield instead.</div>}
-                {seerAlreadyGone && <div style={{ fontSize:".75rem",color:"var(--dim)",marginBottom:6,fontStyle:"italic" }}>👁️ Seer already awarded — award a shield instead.</div>}
-                {!isDaggerMission && !isSeerMission && <div style={{ fontSize:".72rem",color:"var(--gold2)",marginBottom:6 }}>🛡️ Up to {seededShieldCount} shield{seededShieldCount>1?"s":""} · {m.shieldMode==="public"||m.shieldMode==="all_know"?"📢 Announce publicly":m.shieldMode==="team_hidden"?"👥 Award team quietly":"🤫 Award silently"}</div>}
-                <div className="label" style={{ fontSize:".62rem",marginBottom:6 }}>Award to winner:</div>
-                <div style={{ display:"flex",flexWrap:"wrap",gap:6 }}>
-                  {alivePlayers.map(pl => (
-                    <div key={pl.id} style={{ display:"flex",flexDirection:"column",alignItems:"center",gap:3 }}>
-                      <div style={{ fontSize:".85rem" }}>{pl.emoji}</div>
-                      <div style={{ fontFamily:"'Cinzel',serif",fontSize:".5rem",color:"var(--dim)" }}>{pl.name}</div>
-                      {isDaggerMission && !game.daggerAwarded && <button className="btn btn-ghost btn-sm" style={{ padding:"2px 6px",fontSize:".5rem" }} onClick={()=>awardPower(pl.id,"dagger")}>🗡️</button>}
-                      {isSeerMission && !game.seerAwarded && <button className="btn btn-outline btn-sm" style={{ padding:"2px 6px",fontSize:".5rem",borderColor:"rgba(140,0,180,.4)",color:"#dd88ff" }} onClick={()=>awardPower(pl.id,"seer")}>👁️</button>}
-                      {((!isDaggerMission&&!isSeerMission)||daggerAlreadyGone||seerAlreadyGone) && <button className="btn btn-outline btn-sm" style={{ padding:"2px 6px",fontSize:".5rem" }} onClick={()=>awardPower(pl.id,"shield",m.shieldMode)}>🛡️</button>}
-                    </div>
-                  ))}
+            const AwardBar = () => {
+              // Objective missions (app-tracked scores): auto-award top performers.
+              // Dagger/seer missions always use manual award regardless.
+              const isObjectiveShield = !isDaggerMission && !isSeerMission && isObjectiveMission(m.digitalType);
+
+              if (isObjectiveShield) {
+                const ranked = getObjectiveRanking(m.digitalType, { dmTriviaScores, dmSecretBallotVotes, dmAuctionBids, dmName5Scores, dmRpsBracket, alivePlayers });
+                const topScore = ranked[0]?.score || 0;
+                // rps_bracket: tournament must be done (1 remaining) to show winner
+                const hasScores = m.digitalType === "rps_bracket" ? dmRpsBracket.length === 1 : topScore > 0;
+                const targetCount = m.digitalType === "rps_bracket" ? 1 : seededShieldCount;
+                // Collect top targetCount slots; include all ties at the boundary
+                const winners = [];
+                let slot = 0;
+                let boundaryScore = null;
+                for (const entry of ranked) {
+                  if (entry.score === 0) break;
+                  if (slot < targetCount) {
+                    winners.push(entry); slot++; boundaryScore = entry.score;
+                  } else if (entry.score === boundaryScore) {
+                    winners.push(entry); // tied at boundary — award all
+                  } else break;
+                }
+                const hasTie = winners.length > targetCount && targetCount > 0;
+                return (
+                  <div style={{ marginTop: 10 }}>
+                    {daggerAlreadyGone && <div style={{ fontSize:".75rem",color:"var(--dim)",marginBottom:6,fontStyle:"italic" }}>🗡️ Dagger already awarded — awarding a shield instead.</div>}
+                    {seerAlreadyGone && <div style={{ fontSize:".75rem",color:"var(--dim)",marginBottom:6,fontStyle:"italic" }}>👁️ Seer already awarded — awarding a shield instead.</div>}
+                    {!hasScores ? (
+                      <div style={{ background:"rgba(201,168,76,.04)",border:"1px solid rgba(201,168,76,.12)",borderRadius:4,padding:"10px 12px",fontSize:".78rem",color:"var(--dim)",fontStyle:"italic" }}>
+                        Scoring in progress — top performers will appear here automatically.
+                      </div>
+                    ) : (
+                      <div style={{ background:"rgba(10,40,10,.15)",border:"1px solid rgba(60,140,60,.3)",borderRadius:4,padding:"12px 14px" }}>
+                        <div style={{ fontFamily:"'Cinzel',serif",fontSize:".58rem",letterSpacing:".12em",textTransform:"uppercase",color:"#80e080",marginBottom:8 }}>
+                          🏆 Auto-Award — {m.digitalType === "rps_bracket" ? "Champion" : hasTie ? `Top ${targetCount} + tie` : `Top ${Math.min(targetCount, winners.length)}`}
+                        </div>
+                        {hasTie && <div style={{ fontSize:".72rem",color:"var(--gold)",fontStyle:"italic",marginBottom:8 }}>⚖️ Tie at boundary — awarding all {winners.length} tied players</div>}
+                        <div style={{ display:"flex",flexWrap:"wrap",gap:6,marginBottom:10 }}>
+                          {winners.map(({ player, score }) => (
+                            <div key={player.id} style={{ display:"flex",flexDirection:"column",alignItems:"center",gap:3,background:"rgba(60,140,60,.12)",border:"1px solid rgba(60,140,60,.35)",borderRadius:4,padding:"8px 10px" }}>
+                              <div style={{ fontSize:"1.2rem" }}>{player.emoji}</div>
+                              <div style={{ fontFamily:"'Cinzel',serif",fontSize:".55rem",color:"var(--text)" }}>{player.name}</div>
+                              <div style={{ fontSize:".6rem",color:"#80e080" }}>{m.digitalType === "rps_bracket" ? "🏆 Champion" : `${score} pts`}</div>
+                            </div>
+                          ))}
+                        </div>
+                        <button className="btn btn-sm" style={{ background:"linear-gradient(135deg,rgba(30,80,30,.8),rgba(20,50,20,.9))",border:"1px solid rgba(60,140,60,.5)",color:"#90f0a0",fontSize:".7rem" }}
+                          onClick={async () => { for (const { player } of winners) await awardPower(player.id, "shield", m.shieldMode); }}>
+                          ✓ Award {winners.length === 1 ? "Shield" : `${winners.length} Shields`} to {winners.map(w => w.player.name).join(" & ")}
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                );
+              }
+
+              // Dagger/seer missions or subjective missions: manual award
+              return (
+                <div style={{ marginTop: 10 }}>
+                  {isDaggerMission && <div style={{ background:"rgba(139,26,26,.1)",border:"1px solid rgba(139,26,26,.35)",borderRadius:3,padding:"7px 10px",marginBottom:8,fontSize:".78rem",color:"var(--crim3)" }}>🗡️ Dagger Mission — award the Dagger to the winner silently.</div>}
+                  {isSeerMission && <div style={{ background:"rgba(60,0,90,.15)",border:"1px solid rgba(120,0,180,.3)",borderRadius:3,padding:"7px 10px",marginBottom:8,fontSize:".78rem",color:"#dd88ff" }}>👁️ Seer Mission — award Seer silently. They will be notified privately.</div>}
+                  {daggerAlreadyGone && <div style={{ fontSize:".75rem",color:"var(--dim)",marginBottom:6,fontStyle:"italic" }}>🗡️ Dagger already awarded — award a shield instead.</div>}
+                  {seerAlreadyGone && <div style={{ fontSize:".75rem",color:"var(--dim)",marginBottom:6,fontStyle:"italic" }}>👁️ Seer already awarded — award a shield instead.</div>}
+                  {!isDaggerMission && !isSeerMission && <div style={{ fontSize:".72rem",color:"var(--gold2)",marginBottom:6 }}>🛡️ Up to {seededShieldCount} shield{seededShieldCount>1?"s":""} · {m.shieldMode==="public"||m.shieldMode==="all_know"?"📢 Announce publicly":m.shieldMode==="team_hidden"?"👥 Award team quietly":"🤫 Award silently"}</div>}
+                  <div className="label" style={{ fontSize:".62rem",marginBottom:6 }}>Award to winner:</div>
+                  <div style={{ display:"flex",flexWrap:"wrap",gap:6 }}>
+                    {alivePlayers.map(pl => (
+                      <div key={pl.id} style={{ display:"flex",flexDirection:"column",alignItems:"center",gap:3 }}>
+                        <div style={{ fontSize:".85rem" }}>{pl.emoji}</div>
+                        <div style={{ fontFamily:"'Cinzel',serif",fontSize:".5rem",color:"var(--dim)" }}>{pl.name}</div>
+                        {isDaggerMission && !game.daggerAwarded && <button className="btn btn-ghost btn-sm" style={{ padding:"2px 6px",fontSize:".5rem" }} onClick={()=>awardPower(pl.id,"dagger")}>🗡️</button>}
+                        {isSeerMission && !game.seerAwarded && <button className="btn btn-outline btn-sm" style={{ padding:"2px 6px",fontSize:".5rem",borderColor:"rgba(140,0,180,.4)",color:"#dd88ff" }} onClick={()=>awardPower(pl.id,"seer")}>👁️</button>}
+                        {((!isDaggerMission&&!isSeerMission)||daggerAlreadyGone||seerAlreadyGone) && <button className="btn btn-outline btn-sm" style={{ padding:"2px 6px",fontSize:".5rem" }} onClick={()=>awardPower(pl.id,"shield",m.shieldMode)}>🛡️</button>}
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            );
+              );
+            };
 
             // ── DIGITAL MISSION PANELS ──
             if (m.digitalType === "trivia_scored") {
