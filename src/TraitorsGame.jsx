@@ -33,6 +33,7 @@ import { GoldFrame }         from "./components/GoldFrame.jsx";
 import { MsgLog }            from "./components/MsgLog.jsx";
 import { GhostChat }         from "./components/GhostChat.jsx";
 import { RoleCard }          from "./components/RoleCard.jsx";
+import { BanishReveal }      from "./components/BanishReveal.jsx";
 
 // ─── Dev Mode ─────────────────────────────────────────────────────────────────
 // Hidden feature: 3-second long-press on the title activates solo dev mode.
