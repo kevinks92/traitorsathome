@@ -769,10 +769,10 @@ Tapping Done — Release Roles →
             {step === "done" && (
               <div className="col">
                 <div className="info-box" style={{ textAlign: "center" }}>
-                  Everyone has read their role. Traitors are composing themselves. Faithful are already suspicious of the wrong person. Whenever you're ready — begin.
+                  Everyone has read their role. Traitors are composing themselves. Faithful are already suspicious of the wrong person. Give them a roam before the first mission — let the scheming begin.
                 </div>
-                <button className="btn btn-gold next-phase-btn" onClick={() => advanceTo(PHASES.MISSION_BRIEFING)}>
-                  Everyone's Ready — Begin the Game →
+                <button className="btn btn-gold next-phase-btn" onClick={() => advanceTo(PHASES.FREE_ROAM, { openingRoam: true })}>
+                  Everyone's Ready — Open the Castle →
                 </button>
               </div>
             )}
@@ -1345,8 +1345,13 @@ Tapping Done — Release Roles →
               🛡️ Hidden Shield Search locked — fewer than 7 players remain.
             </div>
           )}
-        <button className="btn btn-gold next-phase-btn" onClick={() => advanceTo(PHASES.ROUND_TABLE)}>
-          {alivePlayers.length === 5 ? "Call the Final Round Table →" : "Call the Round Table →"}
+        <button className="btn btn-gold next-phase-btn"
+          onClick={() => game.openingRoam
+            ? advanceTo(PHASES.MISSION_BRIEFING, { openingRoam: false })
+            : advanceTo(PHASES.ROUND_TABLE)}>
+          {game.openingRoam
+            ? "Opening Roam Done — Head to the First Mission →"
+            : alivePlayers.length === 5 ? "Call the Final Round Table →" : "Call the Round Table →"}
         </button>
         </>
       )}

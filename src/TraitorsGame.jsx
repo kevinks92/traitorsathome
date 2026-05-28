@@ -299,7 +299,9 @@ setStRevealResult(null); // clear once phase moves on
         [`${PHASES.MISSION_BRIEFING}_${PHASES.MISSION_ACTIVE}`]: { icon:"⚔️", title:"The Mission Begins", sub:"Compete well. Win suspiciously. Or lose strategically.", color:"var(--gold)", duration:2000 },
         [`${PHASES.ENDGAME_FREE_ROAM}_${PHASES.ENDGAME}`]: { icon:"🔥", title:"The Fire of Truth", sub:"The final gathering. Only honesty — or a very convincing lie — will do.", color:"var(--crim3)", duration:2800 },
         [`${PHASES.NIGHT_SECRET_TRAITOR}_${PHASES.NIGHT_TRAITOR_CHAT}`]: { icon:"🗡️", title:"The Turret Convenes", sub:"The castle holds its breath. The wolves are awake.", color:"#c090ff", duration:2000 },
+        [`${PHASES.ROLE_REVEAL}_${PHASES.FREE_ROAM}`]: { icon:"🏰", title:"The Castle is Yours", sub:"Whatever you just read — bury it. The scheming starts now.", color:"var(--gold)", duration:2800 },
         [`${PHASES.ROLE_REVEAL}_${PHASES.MISSION_BRIEFING}`]: { icon:"🏰", title:"The Game Has Begun", sub:"Whatever you just read — bury it. Keep your face still. Trust no one.", color:"var(--gold)", duration:2800 },
+        [`${PHASES.FREE_ROAM}_${PHASES.MISSION_BRIEFING}`]: { icon:"⚔️", title:"The First Mission Awaits", sub:"Opening roam over. A new challenge — and a first chance to read the room.", color:"var(--gold)", duration:2400 },
         [`${PHASES.GAME_INTRO}_${PHASES.SECRET_TRAITOR_SELECTION}`]: { icon:"🎭", title:"The Ceremony Begins", sub:"Step forward when the host calls your name. Look everyone in the eye.", color:"#c090ff", duration:2600 },
         [`${PHASES.GAME_INTRO}_${PHASES.ROLE_REVEAL}`]: { icon:"🌙", title:"Blindfolds On", sub:"Stay seated. Stay silent. Whatever happens next — do not react.", color:"#c090ff", duration:2600 },
       };
